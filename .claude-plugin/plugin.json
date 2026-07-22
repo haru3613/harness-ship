@@ -1,0 +1,23 @@
+{
+  "name": "harness-ship",
+  "version": "0.1.0",
+  "description": "Idea → shipped, humans on the ends. A self-contained dev + testing workflow for Claude Code: clarify → feasibility → spec → tickets → implement → QA → acceptance.",
+  "author": {
+    "name": "haru3613",
+    "url": "https://github.com/haru3613"
+  },
+  "repository": "https://github.com/haru3613/harness-ship",
+  "license": "MIT",
+  "keywords": [
+    "workflow",
+    "dev-workflow",
+    "testing-workflow",
+    "qa",
+    "spec",
+    "tickets",
+    "code-review",
+    "tdd",
+    "feasibility",
+    "acceptance"
+  ]
+}

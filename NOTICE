@@ -1,0 +1,12 @@
+harness-ship
+Copyright (c) 2026 haru3613
+
+The skills in this repository are original works. Several of them reimplement, in
+original wording and structure, well-known engineering practices and workflow ideas
+that have been popularized by the open-source Claude Code / agent-skills community —
+notably staged spec→ticket flows, TDD-at-seams, dual-axis code review, throwaway
+feasibility spikes, and red-repro-first bug diagnosis.
+
+No third-party skill files are redistributed here. Where a practice was learned from
+another author's open-source skill, credit is due to that community; the text in this
+repository was written independently for this pack.

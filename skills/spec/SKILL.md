@@ -1,0 +1,50 @@
+---
+name: spec
+description: >-
+  Synthesize the current conversation into a spec/PRD — no re-interview, just write down what's
+  already been decided, anchored at the highest test seam. Use after clarifying + feasibility, before
+  breaking work into tickets. Triggers: "/spec", "write the spec", "turn this into a PRD",
+  "document what we decided".
+---
+
+# spec
+
+Turn the conversation and codebase understanding into a spec. Do **not** re-interview the user —
+`clarify` already did that. Synthesize what you already know.
+
+## Process
+
+1. **Explore the codebase** enough to use the project's real vocabulary and respect existing ADRs in
+   the area you touch.
+2. **Choose the test seams.** Sketch where this feature will be tested. Prefer existing seams; use
+   the *highest* seam that still isolates the behaviour; the fewer seams, the better (ideal: one).
+   Confirm the seams match the user's mental model before writing.
+3. **Write the spec** with the template below and publish it to the project's configured issue
+   tracker (GitHub / Linear / local files — whatever the repo's `CLAUDE.md` / `AGENTS.md` declares).
+
+## Template
+
+```
+## Problem
+The problem, from the user's perspective.
+
+## Solution
+The solution, from the user's perspective.
+
+## User stories
+A long, numbered list — "As an <actor>, I want <feature>, so that <benefit>." Cover every aspect.
+
+## Implementation decisions
+Modules to build/modify, interfaces, architectural calls, schema changes, API contracts.
+No file paths or code snippets — they go stale. Exception: a decision-encoding snippet from a
+spike (state machine, reducer, schema shape), trimmed to the decision-rich parts.
+
+## Test decisions
+What makes a good test here (assert external behaviour, not implementation); which modules get
+tested; prior art in the codebase; the seams from step 2.
+
+## Out of scope
+What this spec deliberately does not cover.
+```
+
+Keep it about behaviour and decisions, not a task list — the task breakdown is `tickets`' job.
