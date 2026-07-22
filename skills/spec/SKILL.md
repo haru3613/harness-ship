@@ -19,8 +19,8 @@ Turn the conversation and codebase understanding into a spec. Do **not** re-inte
 2. **Choose the test seams.** Sketch where this feature will be tested. Prefer existing seams; use
    the *highest* seam that still isolates the behaviour; the fewer seams, the better (ideal: one).
    Confirm the seams match the user's mental model before writing.
-3. **Write the spec** with the template below and publish it to the project's configured issue
-   tracker (GitHub / Linear / local files — whatever the repo's `CLAUDE.md` / `AGENTS.md` declares).
+3. **Write the spec** with the template below and publish it to the tracker named in the project's
+   `## harness-ship` config (GitHub / Linear / local files); run `setup` if that config is absent.
 
 ## Template
 

@@ -15,6 +15,7 @@ dependencies — everything needed is in this repo.
 
 | Skill | Role |
 |---|---|
+| **`setup`** | one-time: detect the project's stack/tracker/branches and write the config the workflows read |
 | **`dev-workflow`** | idea → clarify → feasibility → spec → tickets → implement → QA handoff |
 | **`testing-workflow`** | journeys → tests (RD unit+contract / QA integration+E2E) → gate → acceptance report |
 | `clarify` | bounded requirement clarification — only load-bearing questions, defaults become assumptions |
@@ -38,22 +39,25 @@ Never sail past a gate autonomously. Between gates, don't stall for permission.
 ```
 /plugin marketplace add haru3613/harness-ship
 /plugin install harness-ship
+/setup                          # once per project — configures the workflows for your repo
 ```
 
+`setup` detects your stack, issue tracker, branch topology and test commands, asks only the few
+forks it can't infer, and writes a `## harness-ship` config block into your `AGENTS.md` (or
+`CLAUDE.md`). Every workflow reads that block, so nothing runs on generic guesses.
+
 Then invoke `/dev-workflow <your idea>` or `/testing-workflow` — or just describe a feature and the
-skills trigger themselves.
+skills trigger themselves. Re-run `/setup` any time the stack, tracker, or branches change.
 
-## Project configuration (optional)
-
-The workflows are stack- and tracker-agnostic. Tell them your project specifics once (in your repo's
-`CLAUDE.md` or an `AGENTS.md`) and they adapt:
+## What `setup` configures
 
 - **Issue tracker** — where `spec`/`tickets` publish (GitHub `gh`, Linear, local files…).
-- **Branch topology** — integration vs protected release branch.
-- **Test commands** — typecheck / lint / test per your stack.
-- **Data-mutation safety gate** — enable `review`'s cron/batch-write BLOCK gate if your project has
-  scheduled jobs that write the database (abort guard before the write loop, sparse-input test,
-  failure alerting). Off by default.
+- **Branch topology** — integration vs protected release branch (workflows never merge the release branch).
+- **Test / lint / typecheck commands** — per your stack.
+- **Data-mutation safety gate** — turns on `review`'s cron/batch-write BLOCK gate when the project
+  has scheduled jobs that write the database (abort guard before the write loop, sparse-input test,
+  failure alerting). Off unless detected.
+- **UI convention** — front-end-first mocks, if the project uses them.
 
 ## Design notes
 
