@@ -1,6 +1,6 @@
 {
   "name": "harness-ship",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Idea → shipped, humans on the ends. A self-contained dev + testing workflow for Claude Code: clarify → feasibility → spec → tickets → implement → QA → acceptance.",
   "author": {
     "name": "haru3613",

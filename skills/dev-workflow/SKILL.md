@@ -15,6 +15,10 @@ Take a feature from a **rough idea** to **merged code**. The shape is deliberate
 > **Humans hold the ends, AI runs the middle.** The user pilots four judgment gates (feasibility,
 > ticket granularity, UI 定稿, acceptance). Everything between them is automated.
 
+**Prerequisite:** read the project's `## harness-ship` config (tracker, integration vs protected
+branch, test/lint commands, safety gate) in `AGENTS.md` / `CLAUDE.md`. If it is absent, run `setup`
+first — otherwise the stages below fall back to generic guesses.
+
 ## Operating principle — bring out the 90%
 
 Assume the user has stated ~10% of what the feature needs. Surface the other 90% **not by

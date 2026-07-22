@@ -13,6 +13,9 @@ QA is the role closest to the user. Tests written from the **user's path through
 the bugs unit tests structurally can't. This workflow turns a dev→QA handoff into user-journey tests
 and a report the user can actually read and accept.
 
+**Prerequisite:** read the project's `## harness-ship` config (test env, test/lint commands, tracker)
+in `AGENTS.md` / `CLAUDE.md`; run `setup` if it is absent.
+
 ## Ownership + pyramid (settle first — prevents duplication)
 
 | Tier | Owner | What |

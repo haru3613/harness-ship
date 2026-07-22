@@ -39,9 +39,10 @@ all block a final integrate-and-verify ticket.
 
 ## Publish + work
 
-Publish to the project's configured tracker (per `CLAUDE.md` / `AGENTS.md`), blockers first, so each
-ticket's edges can reference real IDs; apply the tracker's agent-ready label. Then **work the
-frontier** — any ticket whose blockers are all done — one at a time, clearing context between them.
+Publish to the tracker named in the project's `## harness-ship` config (run `setup` if absent),
+blockers first, so each ticket's edges can reference real IDs; apply that config's agent-ready
+label. Then **work the frontier** — any ticket whose blockers are all done — one at a time,
+clearing context between them.
 
 ## Quiz the user (the granularity gate)
 
