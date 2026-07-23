@@ -51,8 +51,8 @@ skills trigger themselves. Re-run `/setup` any time the stack, tracker, or branc
 
 ## What `setup` configures
 
-- **Issue tracker** — where `spec`/`tickets` publish (GitHub `gh`, Linear, local files…).
-- **Branch topology** — integration vs protected release branch (workflows never merge the release branch).
+- **Issue tracker** — where `spec`/`tickets` publish (Jira via MCP, GitHub `gh`, Linear, local files…), its access method, and any forbidden tool. Issues and PRs may live in different systems.
+- **Branch topology** — integration vs protected release branch (workflows never merge the release branch); collapses to one branch when the repo has only `main`.
 - **Test / lint / typecheck commands** — per your stack.
 - **Data-mutation safety gate** — turns on `review`'s cron/batch-write BLOCK gate when the project
   has scheduled jobs that write the database (abort guard before the write loop, sparse-input test,

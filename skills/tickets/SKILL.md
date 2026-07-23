@@ -41,7 +41,8 @@ all block a final integrate-and-verify ticket.
 
 Publish to the tracker named in the project's `## harness-ship` config (run `setup` if absent),
 blockers first, so each ticket's edges can reference real IDs; apply that config's agent-ready
-label. Then **work the frontier** — any ticket whose blockers are all done — one at a time,
+signal (a label, a Jira status, or a sprint — whatever the tracker uses; skip if `none`). Then
+**work the frontier** — any ticket whose blockers are all done — one at a time,
 clearing context between them.
 
 ## Quiz the user (the granularity gate)
