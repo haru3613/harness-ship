@@ -89,9 +89,11 @@ Then drive the frontier ticket (all blockers done). Per ticket, non-negotiable:
   coverage %.
 - **Code review = `review`** (dual-axis Standards × Spec; enable its data-mutation safety gate if the
   project has batch/cron DB writers).
-- **A pre-push gate** — typecheck / lint / test / review all green before push.
+- **A pre-push gate** — typecheck / lint / test / review all green before push (skip any step the
+  config marks `none`).
 - Merge to the **integration branch**. **NEVER** merge to a protected release branch — that's a human
-  + release gate.
+  + release gate. *(When the config lists the same branch for both — a single-branch repo — the PR
+  still goes through review + CI and is never auto-merged; the human is the release gate.)*
 - **Clean up the worktree right after merge**, verifying no other session uses it.
 
 *(If you have an autonomous implement loop available — e.g. a `ship-loop` skill — this stage can
