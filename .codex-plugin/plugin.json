@@ -1,0 +1,42 @@
+{
+  "name": "harness-ship",
+  "version": "0.3.0",
+  "description": "Idea → shipped, humans on the ends. A self-contained development and testing workflow with explicit human judgment gates.",
+  "author": {
+    "name": "haru3613",
+    "url": "https://github.com/haru3613"
+  },
+  "homepage": "https://github.com/haru3613/harness-ship",
+  "repository": "https://github.com/haru3613/harness-ship",
+  "license": "MIT",
+  "keywords": [
+    "workflow",
+    "dev-workflow",
+    "testing-workflow",
+    "qa",
+    "spec",
+    "tickets",
+    "code-review",
+    "tdd",
+    "feasibility",
+    "acceptance"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Harness Ship",
+    "shortDescription": "Idea-to-acceptance development workflow",
+    "longDescription": "Turn an idea into an accepted change through clarification, feasibility, specification, pre-implementation acceptance scenarios, implementation, review, testing, and a plain-language acceptance report.",
+    "developerName": "haru3613",
+    "category": "Engineering",
+    "capabilities": [
+      "Instructions"
+    ],
+    "websiteURL": "https://github.com/haru3613/harness-ship",
+    "defaultPrompt": [
+      "Set up harness-ship for this repository.",
+      "Run the development workflow for this feature.",
+      "Run the testing workflow for the current change."
+    ],
+    "brandColor": "#0F766E"
+  }
+}

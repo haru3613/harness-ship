@@ -1,7 +1,7 @@
 # harness-ship
 
 **Idea → shipped, humans on the ends.** A self-contained development + testing workflow for
-Claude Code. You pilot five judgment gates; AI runs everything between them.
+Codex and Claude Code. You pilot five judgment gates; AI runs everything between them.
 
 > The core belief: assume the user has stated ~10% of what a feature needs. The AI's job is to
 > surface the other 90% — not by interrogating, but by answering it with stated assumptions and
@@ -37,6 +37,24 @@ Never sail past a gate autonomously. Between gates, don't stall for permission.
 
 ## Install
 
+### Codex
+
+```sh
+codex plugin marketplace add haru3613/harness-ship --ref main
+codex plugin add harness-ship@harness-ship
+```
+
+Start a new Codex session, then invoke `$harness-ship:setup` once per project. To update:
+
+```sh
+codex plugin marketplace upgrade harness-ship
+codex plugin add harness-ship@harness-ship
+```
+
+Start a new session after upgrading so Codex loads the refreshed skills.
+
+### Claude Code
+
 ```
 /plugin marketplace add haru3613/harness-ship
 /plugin install harness-ship
@@ -47,8 +65,8 @@ Never sail past a gate autonomously. Between gates, don't stall for permission.
 forks it can't infer, and writes a `## harness-ship` config block into your `AGENTS.md` (or
 `CLAUDE.md`). Every workflow reads that block, so nothing runs on generic guesses.
 
-Then invoke `/dev-workflow <your idea>` or `/testing-workflow` — or just describe a feature and the
-skills trigger themselves. Re-run `/setup` any time the stack, tracker, or branches change.
+Then invoke the platform's `dev-workflow` or `testing-workflow` skill — or just describe a feature
+and the skills trigger themselves. Re-run `setup` any time the stack, tracker, or branches change.
 
 ## What `setup` configures
 

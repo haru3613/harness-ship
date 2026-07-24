@@ -1,0 +1,21 @@
+{
+  "name": "harness-ship",
+  "interface": {
+    "displayName": "Harness Ship"
+  },
+  "plugins": [
+    {
+      "name": "harness-ship",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/haru3613/harness-ship.git",
+        "ref": "main"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Engineering"
+    }
+  ]
+}
