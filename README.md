@@ -1,7 +1,7 @@
 # harness-ship
 
 **Idea → shipped, humans on the ends.** A self-contained development + testing workflow for
-Claude Code. You pilot four judgment gates; AI runs everything between them.
+Claude Code. You pilot five judgment gates; AI runs everything between them.
 
 > The core belief: assume the user has stated ~10% of what a feature needs. The AI's job is to
 > surface the other 90% — not by interrogating, but by answering it with stated assumptions and
@@ -16,21 +16,22 @@ dependencies — everything needed is in this repo.
 | Skill | Role |
 |---|---|
 | **`setup`** | one-time: detect the project's stack/tracker/branches and write the config the workflows read |
-| **`dev-workflow`** | idea → clarify → feasibility → spec → tickets → implement → QA handoff |
-| **`testing-workflow`** | journeys → tests (RD unit+contract / QA integration+E2E) → gate → acceptance report |
+| **`dev-workflow`** | idea → clarify → feasibility → spec → acceptance contract → tickets → implement → QA handoff |
+| **`testing-workflow`** | scenarios before implementation → tests after handoff → gate → acceptance report |
 | `clarify` | bounded requirement clarification — only load-bearing questions, defaults become assumptions |
 | `spike` | time-boxed throwaway prototype that returns a feasible / not / needs-more verdict |
-| `spec` | synthesize the conversation into a spec/PRD at the highest test seam |
-| `tickets` | break a spec into vertical-slice tracer-bullet tickets with blocking edges + per-ticket AC |
+| `spec` | synthesize the conversation into a spec/PRD with explicit AC at the highest test seam |
+| `tickets` | break an approved spec + acceptance contract into vertical-slice tracer-bullet tickets |
 | `review` | dual-axis code review (Standards × Spec) with an optional data-mutation safety gate |
 | `diagnose` | red-repro-first bug diagnosis for the QA→dev loopback |
 
-## The four human gates
+## The five human gates
 
 1. **Feasibility** — go / spike-first / split / no.
-2. **Ticket granularity** — are the slices and dependencies right.
-3. **UI 定稿** — for UI features, the design is approved before backend.
-4. **Acceptance** — after the testing-workflow produces a plain-language acceptance report.
+2. **UI 定稿** — for UI features, the design is approved before backend.
+3. **Acceptance contract** — do the pre-implementation scenarios describe the right behaviour.
+4. **Ticket granularity** — are the slices and dependencies right.
+5. **Acceptance** — after the testing-workflow produces a plain-language acceptance report.
 
 Never sail past a gate autonomously. Between gates, don't stall for permission.
 

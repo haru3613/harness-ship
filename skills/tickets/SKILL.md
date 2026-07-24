@@ -1,10 +1,10 @@
 ---
 name: tickets
 description: >-
-  Break a spec or plan into vertical-slice tracer-bullet tickets — each a narrow but complete path
-  through every layer, demoable on its own, with blocking edges and per-ticket acceptance criteria.
-  Use after a spec, before implementing. Triggers: "/tickets", "break this into tickets", "split the
-  work", "make issues".
+  Break an approved spec and acceptance contract into vertical-slice tracer-bullet tickets — each a
+  narrow but complete path through every layer, demoable on its own, with blocking edges and
+  traceable per-ticket acceptance criteria. Use after acceptance-scenario approval, before
+  implementing. Triggers: "/tickets", "break this into tickets", "split the work", "make issues".
 ---
 
 # tickets
@@ -26,7 +26,8 @@ units an agent (or a person) can pick up one at a time in a fresh context.
 - **What to build** — the end-to-end behaviour this makes work, from the user's view. Not a
   layer-by-layer task list. No file paths (they go stale).
 - **Blocked by** — the tickets that must finish first, or "None — can start immediately."
-- **Acceptance criteria** — a checklist. Each item is independently checkable.
+- **Acceptance criteria** — a checklist. Each item is independently checkable and cites the
+  approved contract revision, SC-ID, and spec AC-ID it implements.
 
 ## Wide refactors are the exception
 

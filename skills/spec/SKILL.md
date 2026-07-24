@@ -2,9 +2,9 @@
 name: spec
 description: >-
   Synthesize the current conversation into a spec/PRD — no re-interview, just write down what's
-  already been decided, anchored at the highest test seam. Use after clarifying + feasibility, before
-  breaking work into tickets. Triggers: "/spec", "write the spec", "turn this into a PRD",
-  "document what we decided".
+  already been decided, anchored at the highest test seam with explicit acceptance criteria. Use
+  after clarifying + feasibility, before acceptance-scenario design and tickets. Triggers: "/spec",
+  "write the spec", "turn this into a PRD", "document what we decided".
 ---
 
 # spec
@@ -34,6 +34,11 @@ The solution, from the user's perspective.
 ## User stories
 A long, numbered list — "As an <actor>, I want <feature>, so that <benefit>." Cover every aspect.
 
+## Acceptance criteria
+Stable AC-IDs with externally observable outcomes. Cover success, rejection/failure, and important
+negative behaviour. Do not write Given/When/Then here — `testing-workflow` turns these criteria into
+the acceptance contract.
+
 ## Implementation decisions
 Modules to build/modify, interfaces, architectural calls, schema changes, API contracts.
 No file paths or code snippets — they go stale. Exception: a decision-encoding snippet from a
@@ -47,4 +52,5 @@ tested; prior art in the codebase; the seams from step 2.
 What this spec deliberately does not cover.
 ```
 
-Keep it about behaviour and decisions, not a task list — the task breakdown is `tickets`' job.
+Keep it about behaviour and decisions, not a task list — acceptance-scenario design is
+`testing-workflow`'s job and task breakdown is `tickets`' job.

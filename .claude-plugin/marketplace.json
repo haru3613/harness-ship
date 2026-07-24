@@ -9,7 +9,7 @@
     {
       "name": "harness-ship",
       "source": "./",
-      "description": "Two orchestration workflows (dev + testing) plus the self-contained blocks they need: clarify, spike, spec, tickets, review, diagnose. Humans pilot four judgment gates; AI runs the middle.",
+      "description": "Two orchestration workflows (dev + testing) plus the self-contained blocks they need: clarify, spike, spec, tickets, review, diagnose. Humans pilot five judgment gates; AI runs the middle.",
       "category": "engineering",
       "keywords": [
         "workflow",

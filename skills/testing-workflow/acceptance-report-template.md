@@ -5,7 +5,9 @@
 
 **Feature:** <one line, user-facing>
 **Ticket(s):** <IDs / links>
-**Tested on:** <test env / commit>
+**Acceptance contract:** <spec-id/acceptance-vN>
+**Source commit:** <full SHA>
+**Tested artifact/environment:** <deployment or artifact revision + environment>
 **Date:** <YYYY-MM-DD>
 
 ---
@@ -23,12 +25,12 @@
 > Each row is something a user does, in their words. Result maps to the ticket's acceptance
 > criteria. Evidence links open a screenshot / video / trace for anything not ✅.
 
-| # | User journey | Acceptance criterion it proves | Result | Evidence |
-|---|---|---|---|---|
-| 1 | <what the user does> | <AC-1> | ✅ | — |
-| 2 | <…> | <AC-2> | ✅ | — |
-| 3 | <…> | <AC-3> | ⚠️ | [video](…) |
-| 4 | <…> | <AC-4> | ❌ | [trace](…) |
+| # | User journey | Scenario | Spec criterion | Ticket | Result | Evidence |
+|---|---|---|---|---|---|---|
+| 1 | <what the user does> | <SC-001> | <AC-1> | <ID> | ✅ | — |
+| 2 | <…> | <SC-002> | <AC-2> | <ID> | ✅ | — |
+| 3 | <…> | <SC-003> | <AC-3> | <ID> | ⚠️ | [video](…) |
+| 4 | <…> | <SC-004> | <AC-4> | <ID> | ❌ | [trace](…) |
 
 **Legend:** ✅ works as intended · ⚠️ works with a caveat (below) · ❌ broken
 
