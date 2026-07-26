@@ -75,13 +75,19 @@ codex plugin add harness-ship@harness-ship
 Start a new Codex session after installing or upgrading so Codex loads the refreshed skills. Invoke
 `$harness-ship:setup` once per project.
 
-**v0.5.0 migration:** run setup once again after this upgrade so the project config records the
-host's pre-defined agent role profiles. Later plugin updates do not require setup unless the stack,
-tracker, branches, or host agent profiles change.
+Codex installation supplies skills only; it does not supply an independent verifier. Setup binds
+only a validated existing live host profile and fails closed when none is available. It never
+creates or overwrites global agents or settings.
+
+**v0.5.0 migration:** setup began recording the host's pre-defined agent role profiles.
 
 **v0.6.0 migration:** call `$harness-ship:acceptance-design` for pre-implementation scenario design.
 `$harness-ship:testing-workflow` redirects legacy pre-implementation and missing-contract calls
 there for this minor release and otherwise starts only after the dev→QA handoff.
+
+**v0.6.2 migration:** every Config v1 project must run `$harness-ship:setup` once to add and verify
+the executable role Boundary digest. After this migration, rerun setup when release notes require a
+migration or when the stack, tracker, branches, or live host profiles change.
 
 ### Claude Code
 
@@ -101,13 +107,20 @@ claude plugin update harness-ship@harness-ship
 
 Restart Claude Code after installing or upgrading, then run `/setup` once per project.
 
-**v0.5.0 migration:** run setup once again after this upgrade so the project config records the
-host's pre-defined agent role profiles. Later plugin updates do not require setup unless the stack,
-tracker, branches, or host agent profiles change.
+Install supplies the verifier capability as the scoped Claude plugin agent
+`harness-ship:harness-ship-independent-verifier`; project setup performs the current-host binding
+after validating the effective live boundary. Harness Ship never copies agents into
+`~/.claude/agents` and never overwrites global agents or settings.
+
+**v0.5.0 migration:** setup began recording the host's pre-defined agent role profiles.
 
 **v0.6.0 migration:** call `/harness-ship:acceptance-design` for pre-implementation scenario
 design. `/harness-ship:testing-workflow` redirects legacy pre-implementation and missing-contract
 calls there for this minor release and otherwise starts only after the dev→QA handoff.
+
+**v0.6.2 migration:** every Config v1 project must run `/harness-ship:setup` once to add and verify
+the executable role Boundary digest. After this migration, rerun setup when release notes require a
+migration or when the stack, tracker, branches, or live host profiles change.
 
 Canonical direct commands are not compatibility aliases and remain after the v0.6 redirect expires:
 Codex uses `$harness-ship:acceptance-design` and `$harness-ship:testing-workflow`; Claude Code uses

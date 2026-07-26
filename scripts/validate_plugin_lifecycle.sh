@@ -64,12 +64,33 @@ validate_current_install() {
 
   local required
   for required in \
+    "agents/harness-ship-independent-verifier.md" \
+    "scripts/role_binding_contract.py" \
     "skills/bug-workflow/SKILL.md" \
     "skills/diagnose/diagnosis-receipt-template.md" \
     "skills/implement/defect-repair-receipt-template.md" \
     "skills/testing-workflow/qa-handoff-template.md"; do
     test -f "${install_root}/${required}"
   done
+
+  local agent_path
+  while IFS= read -r -d '' agent_path; do
+    python3 "${install_root}/scripts/role_binding_contract.py" \
+      validate-agent "${agent_path}" >/dev/null
+  done < <(find "${install_root}/agents" -mindepth 1 -maxdepth 1 -name '*.md' -print0)
+
+  python3 "${install_root}/scripts/role_binding_contract.py" self-test >/dev/null
+
+  if command -v claude >/dev/null 2>&1; then
+    local claude_inventory
+    claude_inventory="$(
+      cd "${install_root}"
+      claude --plugin-dir . plugin details harness-ship
+    )"
+    grep -Eq \
+      'Agents \(1\).*harness-ship-independent-verifier' \
+      <<<"${claude_inventory}"
+  fi
 }
 
 archive_ref "${current_ref}" "${fresh_dir}"
@@ -97,6 +118,7 @@ PY
 current_sha="$(git -C "${repo_root}" rev-parse "${current_ref}")"
 base_sha="$(git -C "${repo_root}" rev-parse "${base_ref}")"
 skill_count="$(find "${fresh_dir}/skills" -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
+agent_count="$(find "${fresh_dir}/agents" -mindepth 1 -maxdepth 1 -name '*.md' | wc -l | tr -d ' ')"
 
-echo "fresh-install receipt: source=${current_sha} version=${current_version} discovered-skills=${skill_count}"
-echo "upgrade receipt: from=${base_sha}:${base_version} to=${current_sha}:${current_version} discovered-skills=${skill_count}"
+echo "fresh-install receipt: source=${current_sha} version=${current_version} discovered-skills=${skill_count} discovered-agents=${agent_count}"
+echo "upgrade receipt: from=${base_sha}:${base_version} to=${current_sha}:${current_version} discovered-skills=${skill_count} discovered-agents=${agent_count}"

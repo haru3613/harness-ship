@@ -1,6 +1,6 @@
 {
   "name": "harness-ship",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Idea → shipped, humans on the ends. A root-orchestrated dev + QA workflow for Claude Code: clarify → feasibility → spec → acceptance design → role-routed implementation → QA execution → acceptance.",
   "author": {
     "name": "haru3613",

@@ -1,0 +1,33 @@
+{
+  "current_host": "codex",
+  "bindings": {
+    "codex": null,
+    "claude-code": {
+      "sentinel": "preserve-claude-binding"
+    }
+  },
+  "candidates": [
+    {
+      "profile": {
+        "host": "codex",
+        "profile_id": "Codex/verifier",
+        "definition_source": "host-registry://codex/verifier",
+        "mode_sandbox": "read-only",
+        "model": "host-assigned-review-model",
+        "effort": "high",
+        "work_nature": "independent verification",
+        "write_scope": "no source edits",
+        "may_spawn": false,
+        "fresh_context": true,
+        "effective_tools_capabilities": ["Glob", "Grep", "Read"],
+        "mcp_plugins": []
+      },
+      "source_kind": "host-record",
+      "source": "{\"definition_source\":\"host-registry://codex/verifier\",\"effective_tools_capabilities\":[\"Glob\",\"Grep\",\"Read\"],\"effort\":\"high\",\"fresh_context\":true,\"host\":\"codex\",\"may_spawn\":false,\"mcp_plugins\":[],\"mode_sandbox\":\"read-only\",\"model\":\"host-assigned-review-model\",\"profile_id\":\"Codex/verifier\",\"work_nature\":\"independent verification\",\"write_scope\":\"no source edits\"}"
+    }
+  ],
+  "global_settings": {
+    "models": "untouched",
+    "permissions": "untouched"
+  }
+}

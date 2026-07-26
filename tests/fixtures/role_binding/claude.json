@@ -1,0 +1,32 @@
+{
+  "current_host": "claude-code",
+  "bindings": {
+    "codex": {
+      "sentinel": "preserve-codex-binding"
+    },
+    "claude-code": null
+  },
+  "candidates": [
+    {
+      "profile": {
+        "host": "claude-code",
+        "profile_id": "harness-ship:harness-ship-independent-verifier",
+        "definition_source": "$PLUGIN_AGENT",
+        "mode_sandbox": "read-only tools",
+        "model": "inherit",
+        "effort": "high",
+        "work_nature": "independent verification",
+        "write_scope": "none",
+        "may_spawn": false,
+        "fresh_context": true,
+        "effective_tools_capabilities": ["Glob", "Grep", "Read"],
+        "mcp_plugins": []
+      },
+      "source_kind": "file",
+      "source": "$PLUGIN_AGENT"
+    }
+  ],
+  "global_settings": {
+    "sentinel": ["do", "not", "mutate"]
+  }
+}
