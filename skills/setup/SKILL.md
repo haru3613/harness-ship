@@ -107,9 +107,11 @@ Update only the current host section and preserve the other host section plus al
 models, effort, permissions, MCP access, plugin settings, and unrelated project configuration.
 Setup never writes global agent or settings files.
 
-Persist the helper-returned fully qualified ID, origin scope, authoritative source and definition
-digest, declared and effective models, safety fields, and Boundary digest in the current-host
-binding. The helper validates live semantics and source bytes before hashing. Apply only its exact
+Persist the helper-returned fully qualified ID, authoritative source and definition digest, safety
+fields, and Boundary digest in the current-host binding. Origin scope is carried by the exact
+scoped authoritative source/profile identity. The existing 13-column table remains authoritative;
+its **Model** cell is a typed JSON object with exact keys `declared` and `effective`. The helper
+validates live semantics and source bytes before hashing. Apply only its exact
 returned Config text: it preserves the other host section and every unrelated byte. Re-run setup
 after install, upgrade, profile change, or profile removal. A valid exact binding is preserved;
 collisions, removal, stale provenance, or drift stop unchanged until the profile is repaired or an
@@ -182,15 +184,15 @@ with the user. After this, every harness-ship workflow consumes it automatically
 
 - **Agent role bindings — Codex:** `not-configured`, or one live row per requirement:
 
-  | Work nature | Host / profile ID | Origin scope | Definition source | Definition digest | Mode / sandbox | Declared model | Effective model | Effort | Write scope | Effective tools/capabilities | MCP/plugins | Fresh context | May spawn | Boundary digest |
-  |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-  | `<requirement>` | `<host value>` | `<builtin | plugin | project | user>` | `<host value>` | `sha256:<64 hex>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<true | false>` | `<false>` | `sha256:<64 hex>` |
+  | Work nature | Host / profile ID | Definition source | Definition digest | Mode / sandbox | Model | Effort | Write scope | Effective tools/capabilities | MCP/plugins | Fresh context | May spawn | Boundary digest |
+  |---|---|---|---|---|---|---|---|---|---|---|---|---|
+  | `<requirement>` | `<host value>` | `<scoped host value carrying origin>` | `sha256:<64 hex>` | `<host value>` | `{"declared":"<host value>","effective":"<host value>"}` | `<host value>` | `<host value>` | `<JSON array>` | `<JSON array>` | `<true | false>` | `<false>` | `sha256:<64 hex>` |
 
 - **Agent role bindings — Claude Code:** `not-configured`, or one live row per requirement:
 
-  | Work nature | Host / profile ID | Origin scope | Definition source | Definition digest | Mode / sandbox | Declared model | Effective model | Effort | Write scope | Effective tools/capabilities | MCP/plugins | Fresh context | May spawn | Boundary digest |
-  |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-  | `<requirement>` | `<host value>` | `<builtin | plugin | project | user>` | `<host value>` | `sha256:<64 hex>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<true | false>` | `<false>` | `sha256:<64 hex>` |
+  | Work nature | Host / profile ID | Definition source | Definition digest | Mode / sandbox | Model | Effort | Write scope | Effective tools/capabilities | MCP/plugins | Fresh context | May spawn | Boundary digest |
+  |---|---|---|---|---|---|---|---|---|---|---|---|---|
+  | `<requirement>` | `<host value>` | `<scoped host value carrying origin>` | `sha256:<64 hex>` | `<host value>` | `{"declared":"<host value>","effective":"<host value>"}` | `<host value>` | `<host value>` | `<JSON array>` | `<JSON array>` | `<true | false>` | `<false>` | `sha256:<64 hex>` |
 
 - **Delegation limits — Codex:** <host max direct children / depth / root-only spawning | `not-configured`>
 - **Delegation limits — Claude Code:** <host max direct children / depth / root-only spawning | `not-configured`>

@@ -91,15 +91,17 @@ class RoleBootstrapContractTests(unittest.TestCase):
         setup = normalized("skills/setup/SKILL.md")
         implement = normalized("skills/implement/SKILL.md")
         expected_header = (
-            "| Work nature | Host / profile ID | Origin scope | Definition source | "
-            "Definition digest | Mode / sandbox | Declared model | Effective model | Effort | "
-            "Write scope | Effective tools/capabilities | MCP/plugins | Fresh context | "
-            "May spawn | Boundary digest |"
+            "| Work nature | Host / profile ID | Definition source | Definition digest | "
+            "Mode / sandbox | Model | Effort | Write scope | Effective tools/capabilities | "
+            "MCP/plugins | Fresh context | May spawn | Boundary digest |"
         )
 
         self.assertEqual(setup_raw.count(expected_header), 2)
         self.assertIn("executable reference", setup)
         self.assertIn("restricted rfc 8785-compatible", setup)
+        self.assertIn("typed json object", setup)
+        self.assertIn("`declared`", setup)
+        self.assertIn("`effective`", setup)
         self.assertIn("role_binding_contract.py reconcile-config", setup)
         self.assertIn("role_binding_contract.py preflight", implement)
         self.assertIn("post-launch reconciliation", implement)

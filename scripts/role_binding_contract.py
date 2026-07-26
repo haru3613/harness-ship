@@ -101,13 +101,7 @@ LEGACY_TABLE_HEADER = (
     "Mode / sandbox | Model | Effort | Write scope | Effective tools/capabilities | "
     "MCP/plugins | Fresh context | May spawn | Boundary digest |"
 )
-EXPANDED_TABLE_HEADER = (
-    "| Work nature | Host / profile ID | Origin scope | Definition source | "
-    "Definition digest | Mode / sandbox | Declared model | Effective model | Effort | "
-    "Write scope | Effective tools/capabilities | MCP/plugins | Fresh context | "
-    "May spawn | Boundary digest |"
-)
-EXPANDED_TABLE_SEPARATOR = "|" + "---|" * 15
+TABLE_SEPARATOR = "|" + "---|" * 13
 GOLDEN_PROFILE = {
     "host": "codex",
     "origin_scope": "builtin",
@@ -661,18 +655,18 @@ def _config_json_cell(value: Any) -> str:
     return rendered.replace("|", "\\u007c")
 
 
-def _serialize_binding_section(host: str, binding: Mapping[str, Any]) -> str:
+def _serialize_binding_row(binding: Mapping[str, Any]) -> str:
     validated = validate_binding(binding)
-    label = "Codex" if host == "codex" else "Claude Code"
     values = [
         validated["work_nature"],
         validated["profile_id"],
-        validated["origin_scope"],
         validated["definition_source"],
         validated["authoritative_definition_digest"],
         validated["mode_sandbox"],
-        validated["model"],
-        validated["effective_model"],
+        {
+            "declared": validated["model"],
+            "effective": validated["effective_model"],
+        },
         validated["effort"],
         validated["write_scope"],
         validated["effective_tools_capabilities"],
@@ -681,12 +675,16 @@ def _serialize_binding_section(host: str, binding: Mapping[str, Any]) -> str:
         validated["may_spawn"],
         validated["boundary_digest"],
     ]
-    row = "  | " + " | ".join(_config_json_cell(value) for value in values) + " |"
+    return "  | " + " | ".join(_config_json_cell(value) for value in values) + " |"
+
+
+def _serialize_binding_section(host: str, binding: Mapping[str, Any]) -> str:
+    label = "Codex" if host == "codex" else "Claude Code"
     return (
         f"- **Agent role bindings — {label}:**\n\n"
-        f"  {EXPANDED_TABLE_HEADER}\n"
-        f"  {EXPANDED_TABLE_SEPARATOR}\n"
-        f"{row}\n"
+        f"  {LEGACY_TABLE_HEADER}\n"
+        f"  {TABLE_SEPARATOR}\n"
+        f"{_serialize_binding_row(binding)}\n"
     )
 
 
@@ -697,23 +695,52 @@ def _decode_config_cell(cell: str) -> Any:
         raise ContractError(f"malformed canonical role binding cell: {error}") from error
 
 
-def _parse_expanded_binding(lines: List[str], host: str) -> Dict[str, Any]:
-    if len(lines) != 5 or lines[1] != "":
-        raise ContractError("expanded role binding table must contain exactly one row")
-    if lines[2].strip() != EXPANDED_TABLE_HEADER:
-        raise ContractError("malformed expanded role binding header")
-    if lines[3].strip() != EXPANDED_TABLE_SEPARATOR:
-        raise ContractError("malformed expanded role binding separator")
-    cells = [_decode_config_cell(cell) for cell in _table_cells(lines[4], 15)]
+def _derive_origin_scope(
+    host: str, profile_id: str, definition_source: str
+) -> str:
+    if host == "codex":
+        profile_match = CODEX_PROFILE_RE.fullmatch(profile_id)
+        source_match = re.fullmatch(
+            r"host-registry://codex/(builtin|project|user)/"
+            r"([A-Za-z0-9][A-Za-z0-9._-]*)",
+            definition_source,
+        )
+        if (
+            profile_match is None
+            or source_match is None
+            or profile_match.group(1) != source_match.group(2)
+        ):
+            raise ContractError("canonical Codex identity does not encode one origin")
+        return source_match.group(1)
+    if (
+        profile_id == CLAUDE_PROFILE_ID
+        and definition_source == CLAUDE_PLUGIN_DEFINITION_SOURCE
+    ):
+        return "plugin"
+    profile_match = CLAUDE_CUSTOM_PROFILE_RE.fullmatch(profile_id)
+    source_match = re.fullmatch(
+        r"host-registry://claude-code/(project|user)/"
+        r"([A-Za-z0-9][A-Za-z0-9._-]*)",
+        definition_source,
+    )
+    if (
+        profile_match is None
+        or source_match is None
+        or profile_match.groups() != source_match.groups()
+    ):
+        raise ContractError("canonical Claude identity does not encode one origin")
+    return source_match.group(1)
+
+
+def _parse_canonical_binding(cells_raw: List[str], host: str) -> Dict[str, Any]:
+    cells = [_decode_config_cell(cell) for cell in cells_raw]
     (
         work_nature,
         profile_id,
-        origin_scope,
         definition_source,
         definition_digest,
         mode_sandbox,
-        model,
-        effective_model,
+        models,
         effort,
         write_scope,
         tools,
@@ -722,15 +749,16 @@ def _parse_expanded_binding(lines: List[str], host: str) -> Dict[str, Any]:
         may_spawn,
         digest,
     ) = cells
+    _require_exact_keys(models, {"declared", "effective"}, "canonical Model cell")
     binding = {
         "host": host,
-        "origin_scope": origin_scope,
+        "origin_scope": _derive_origin_scope(host, profile_id, definition_source),
         "profile_id": profile_id,
         "definition_source": definition_source,
         "authoritative_definition_digest": definition_digest,
         "mode_sandbox": mode_sandbox,
-        "model": model,
-        "effective_model": effective_model,
+        "model": models["declared"],
+        "effective_model": models["effective"],
         "effort": effort,
         "work_nature": work_nature,
         "write_scope": write_scope,
@@ -768,10 +796,10 @@ def _legacy_binding_matches(binding: Mapping[str, Any], cells: List[str]) -> boo
     ) = values
     host = binding["host"]
     if host == "codex":
-        match = CODEX_PROFILE_RE.fullmatch(profile_id)
         if (
-            match is None
-            or definition_source != f"host-registry://codex/{match.group(1)}"
+            binding["origin_scope"] != "builtin"
+            or profile_id != "Codex/verifier"
+            or definition_source != "host-registry://codex/verifier"
         ):
             return False
     else:
@@ -848,17 +876,39 @@ def _legacy_binding_matches(binding: Mapping[str, Any], cells: List[str]) -> boo
     return values == expected
 
 
-def _parse_legacy_binding(
+def _parse_binding_table(
     lines: List[str], candidates: List[Mapping[str, Any]], host: str
 ) -> Dict[str, Any]:
-    if len(lines) != 5 or lines[1] != "":
-        raise ContractError("legacy role binding table must contain exactly one row")
+    if len(lines) < 5 or lines[1] != "":
+        raise ContractError("role binding table must contain at least one row")
     if lines[2].strip() != LEGACY_TABLE_HEADER:
-        raise ContractError("malformed legacy role binding header")
+        raise ContractError("malformed role binding header")
     separator = _table_cells(lines[3], 13)
     if separator != ["---"] * 13:
-        raise ContractError("malformed legacy role binding separator")
-    cells = _table_cells(lines[4], 13)
+        raise ContractError("malformed role binding separator")
+    rows = []
+    verifier_rows = []
+    for index, line in enumerate(lines[4:], start=4):
+        cells = _table_cells(line, 13)
+        rows.append((index, cells))
+        work_nature = _legacy_cell(cells[0])
+        if work_nature != INDEPENDENT_VERIFICATION:
+            try:
+                work_nature = _decode_config_cell(cells[0])
+            except ContractError:
+                pass
+        if work_nature == INDEPENDENT_VERIFICATION:
+            verifier_rows.append((index, cells))
+    if len(verifier_rows) != 1:
+        raise ContractError(
+            "role binding table must contain exactly one independent verification row"
+        )
+    row_index, cells = verifier_rows[0]
+    try:
+        binding = _parse_canonical_binding(cells, host)
+        return {"binding": binding, "legacy": False, "row_index": row_index}
+    except ContractError:
+        pass
     matches = []
     for candidate in candidates:
         try:
@@ -874,7 +924,7 @@ def _parse_legacy_binding(
         raise ContractError(
             "legacy role binding is stale or does not match exactly one trusted candidate"
         )
-    return matches[0]
+    return {"binding": matches[0], "legacy": True, "row_index": row_index}
 
 
 def reconcile_config_text(
@@ -895,7 +945,11 @@ def reconcile_config_text(
         return _config_result(
             original, "invalid-config", "Config input must be exact UTF-8 text."
         )
-    if current_host not in HOSTS or type(candidates) is not list:
+    if (
+        type(current_host) is not str
+        or current_host not in HOSTS
+        or type(candidates) is not list
+    ):
         return _config_result(
             original,
             "invalid-config",
@@ -937,18 +991,20 @@ def reconcile_config_text(
             if next_field
             else block_end
         )
-        payload = config_text[payload_start:payload_end].rstrip("\n")
+        raw_payload = config_text[payload_start:payload_end]
+        payload = raw_payload.rstrip("\n")
         lines = payload.splitlines()
         legacy = False
+        row_index = None
         if lines == [f"{marker} `not-configured`"]:
             explicit = None
         else:
-            legacy = len(lines) >= 3 and lines[2].strip() == LEGACY_TABLE_HEADER
-            explicit = (
-                _parse_legacy_binding(lines, candidates, current_host)
-                if legacy
-                else _parse_expanded_binding(lines, current_host)
-            )
+            if not lines or lines[0] != marker:
+                raise ContractError("current-host table marker must be exact")
+            parsed_table = _parse_binding_table(lines, candidates, current_host)
+            explicit = parsed_table["binding"]
+            legacy = parsed_table["legacy"]
+            row_index = parsed_table["row_index"]
         other_host = "claude-code" if current_host == "codex" else "codex"
         resolved = resolve_document(
             {
@@ -974,9 +1030,18 @@ def reconcile_config_text(
                 "mutation": False,
                 "config_text": original,
             }
-        replacement = _serialize_binding_section(
-            current_host, resolved["bindings"][current_host]
-        )
+        if legacy:
+            payload_lines = raw_payload.splitlines(keepends=True)
+            old_row = payload_lines[row_index]
+            newline = "\n" if old_row.endswith("\n") else ""
+            payload_lines[row_index] = (
+                _serialize_binding_row(resolved["bindings"][current_host]) + newline
+            )
+            replacement = "".join(payload_lines)
+        else:
+            replacement = _serialize_binding_section(
+                current_host, resolved["bindings"][current_host]
+            )
         reconciled = (
             config_text[:payload_start] + replacement + config_text[payload_end:]
         )

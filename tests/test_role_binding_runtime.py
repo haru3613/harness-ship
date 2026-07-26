@@ -101,7 +101,9 @@ class RoleBindingRuntimeTests(unittest.TestCase):
                 self.assertEqual(result["status"], "selected")
                 self.assertTrue(result["mutation"])
                 self.assertEqual(result["config_text"].count(other_label), 1)
-                self.assertIn("| Origin scope |", result["config_text"])
+                self.assertIn(self.contract.LEGACY_TABLE_HEADER, result["config_text"])
+                self.assertIn('"declared":', result["config_text"])
+                self.assertIn('"effective":', result["config_text"])
                 current_marker = (
                     "- **Agent role bindings — Codex:**"
                     if host == "codex"
@@ -146,8 +148,9 @@ class RoleBindingRuntimeTests(unittest.TestCase):
             with self.subTest(host=host):
                 self.assertEqual(migrated["status"], "migrated")
                 self.assertTrue(migrated["mutation"])
-                self.assertIn("| Origin scope |", migrated["config_text"])
-                self.assertIn("| Effective model |", migrated["config_text"])
+                self.assertIn(self.contract.LEGACY_TABLE_HEADER, migrated["config_text"])
+                self.assertIn('"declared":', migrated["config_text"])
+                self.assertIn('"effective":', migrated["config_text"])
                 second = self.contract.reconcile_config_text(
                     migrated["config_text"], host, candidates
                 )
@@ -180,7 +183,55 @@ class RoleBindingRuntimeTests(unittest.TestCase):
                 self.assertFalse(blocked["mutation"])
                 self.assertEqual(blocked["config_text"], tampered)
 
-    def test_reconcile_config_upgrades_exact_legacy_custom_codex_binding(self) -> None:
+    def test_reconcile_config_migrates_only_verifier_in_realistic_multi_role_table(
+        self,
+    ) -> None:
+        original = self.config_text("codex_multi_legacy.md")
+        before = (
+            "  | narrow lookup | `Codex/scout` | Codex built-in role registry + "
+            "active project instructions | unsupported | read-only | `gpt-5.6-luna` | "
+            "low | none | unsupported | none | true | false | unsupported |"
+        )
+        after = (
+            "  | security review | `Codex/security_reviewer` | Codex built-in role "
+            "registry + active project instructions | unsupported | read-only "
+            "trust-boundary analysis | `gpt-5.6-sol` | xhigh | none | unsupported | "
+            "none | true | false | unsupported |"
+        )
+
+        result = self.contract.reconcile_config_text(
+            original, "codex", fixture("codex.json")["candidates"]
+        )
+
+        self.assertEqual(result["status"], "migrated")
+        self.assertIn(before, result["config_text"])
+        self.assertIn(after, result["config_text"])
+        self.assertEqual(
+            result["config_text"].split(before, 1)[0],
+            original.split(before, 1)[0],
+        )
+        self.assertEqual(
+            result["config_text"].split(after, 1)[1],
+            original.split(after, 1)[1],
+        )
+        self.assertEqual(result["config_text"].count(self.contract.LEGACY_TABLE_HEADER), 1)
+        second = self.contract.reconcile_config_text(
+            result["config_text"], "codex", fixture("codex.json")["candidates"]
+        )
+        self.assertEqual(second["status"], "preserved")
+        self.assertEqual(second["config_text"], result["config_text"])
+
+        canonical = self.config_text("codex_multi_canonical.md")
+        preserved = self.contract.reconcile_config_text(
+            canonical, "codex", fixture("codex.json")["candidates"]
+        )
+        self.assertEqual(preserved["status"], "preserved")
+        self.assertFalse(preserved["mutation"])
+        self.assertEqual(preserved["config_text"], canonical)
+
+    def test_reconcile_config_rejects_legacy_custom_and_builtin_to_user_laundering(
+        self,
+    ) -> None:
         raw = fixture("codex.json")["candidates"][0]
         raw["profile"]["origin_scope"] = "project"
         raw["profile"]["profile_id"] = "Codex/project-verifier"
@@ -241,15 +292,24 @@ class RoleBindingRuntimeTests(unittest.TestCase):
             original, "codex", [raw]
         )
 
-        self.assertEqual(migrated["status"], "migrated")
-        self.assertTrue(migrated["mutation"])
-        self.assertIn('"Codex/project-verifier"', migrated["config_text"])
-        self.assertIn('"project"', migrated["config_text"])
-        second = self.contract.reconcile_config_text(
-            migrated["config_text"], "codex", [raw]
+        self.assertEqual(migrated["status"], "invalid-config")
+        self.assertFalse(migrated["mutation"])
+        self.assertEqual(migrated["config_text"], original)
+
+        laundering = fixture("codex.json")["candidates"][0]
+        laundering["profile"]["origin_scope"] = "user"
+        laundering["profile"]["definition_source"] = (
+            "host-registry://codex/user/verifier"
         )
-        self.assertEqual(second["status"], "preserved")
-        self.assertEqual(second["config_text"], migrated["config_text"])
+        laundering["source"] = canonical_record(laundering["profile"])
+        refresh_receipt(laundering, host_default=False)
+        builtin_legacy = self.config_text("codex_legacy.md")
+        blocked = self.contract.reconcile_config_text(
+            builtin_legacy, "codex", [laundering]
+        )
+        self.assertEqual(blocked["status"], "invalid-config")
+        self.assertFalse(blocked["mutation"])
+        self.assertEqual(blocked["config_text"], builtin_legacy)
 
     def test_reconcile_config_rejects_malformed_text_with_exact_zero_mutation(
         self,
@@ -273,6 +333,18 @@ class RoleBindingRuntimeTests(unittest.TestCase):
                 "- **Agent role bindings — Codex:** `not-configured`",
                 "- **Agent role bindings — Codex:**\n\n  | malformed |",
             ),
+            valid.replace(
+                "- **Agent role bindings — Codex:** `not-configured`",
+                "- **Agent role bindings — Codex:** garbage\n\n"
+                f"  {load_contract().LEGACY_TABLE_HEADER}\n"
+                f"  {'|' + '---|' * 13}",
+            ),
+            valid.replace(
+                "- **Agent role bindings — Codex:** `not-configured`",
+                "- **Agent role bindings — Codex:** `not-configured`\n\n"
+                f"  {load_contract().LEGACY_TABLE_HEADER}\n"
+                f"  {'|' + '---|' * 13}",
+            ),
         )
         for raw in malformed:
             result = self.contract.reconcile_config_text(
@@ -282,6 +354,36 @@ class RoleBindingRuntimeTests(unittest.TestCase):
                 self.assertEqual(result["status"], "invalid-config")
                 self.assertFalse(result["mutation"])
                 self.assertEqual(result["config_text"], raw)
+
+        unhashable_host = self.contract.reconcile_config_text(
+            valid, ["codex"], fixture("codex.json")["candidates"]
+        )
+        self.assertEqual(unhashable_host["status"], "invalid-config")
+        self.assertFalse(unhashable_host["mutation"])
+        self.assertEqual(unhashable_host["config_text"], valid)
+
+        multi = self.config_text("codex_multi_legacy.md")
+        verifier_line = next(
+            line
+            for line in multi.splitlines()
+            if "`independent verification`" in line
+        )
+        malformed_tables = (
+            multi.replace(verifier_line, f"{verifier_line}\n{verifier_line}"),
+            multi.replace(verifier_line, ""),
+            multi.replace(
+                "| narrow lookup |",
+                "| narrow lookup | extra |",
+                1,
+            ),
+        )
+        for raw in malformed_tables:
+            result = self.contract.reconcile_config_text(
+                raw, "codex", fixture("codex.json")["candidates"]
+            )
+            self.assertEqual(result["status"], "invalid-config")
+            self.assertFalse(result["mutation"])
+            self.assertEqual(result["config_text"], raw)
 
     def test_reconcile_config_blocked_live_states_preserve_all_raw_text(self) -> None:
         original = self.config_text("codex_not_configured.md")
@@ -626,11 +728,16 @@ class RoleBindingRuntimeTests(unittest.TestCase):
                 path.parent.mkdir()
                 path.write_text(source_text, encoding="utf-8")
                 candidate = deepcopy(raw)
-                candidate["profile"]["definition_source"] = str(path.resolve())
                 candidate["source"] = str(path.resolve())
                 with self.subTest(index=index):
-                    with self.assertRaises(self.contract.ContractError):
-                        self.contract.build_candidate(**candidate)
+                    with mock.patch.object(
+                        self.contract, "PLUGIN_AGENT", path.resolve()
+                    ):
+                        with self.assertRaisesRegex(
+                            self.contract.ContractError,
+                            "agent|Claude profile boundary",
+                        ):
+                            self.contract.build_candidate(**candidate)
 
     def test_codex_record_semantics_must_equal_supplied_profile(self) -> None:
         raw = fixture("codex.json")["candidates"][0]
