@@ -26,7 +26,10 @@ acceptance contract already exists, preserve its identifiers unless observable b
 ## Produce the acceptance contract
 
 Assign the scenario set the identifier `<spec-id>/acceptance-vN`. Start at `acceptance-v1` and
-increment `vN` only when approved behaviour changes. Publish it alongside the spec.
+publish it alongside the spec. After approval, increment `vN` whenever **any approved contract
+content changes**, including behaviour, priority, surface or QA-executable seam, fixture/data needs,
+or the QA assurance profile. Preserve stable SC-ID and AC-ID values when behaviour is unchanged;
+draft edits before the first approval stay within `acceptance-v1`.
 
 Every scenario must contain:
 

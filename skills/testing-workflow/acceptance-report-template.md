@@ -23,14 +23,14 @@
 ## Journeys
 
 > Each row is something a user does, in their words. Result maps to the ticket's acceptance
-> criteria. Evidence links open a screenshot / video / trace for anything not ✅.
+> criteria. Record the approved profile and produced evidence for every scenario, including ✅.
 
-| # | User journey | Scenario | Spec criterion | Ticket | Result | Evidence |
-|---|---|---|---|---|---|---|
-| 1 | <what the user does> | <SC-001> | <AC-1> | <ID> | ✅ | — |
-| 2 | <…> | <SC-002> | <AC-2> | <ID> | ✅ | — |
-| 3 | <…> | <SC-003> | <AC-3> | <ID> | ⚠️ | [video](…) |
-| 4 | <…> | <SC-004> | <AC-4> | <ID> | ❌ | [trace](…) |
+| # | User journey | Scenario | Spec criterion | Ticket | QA assurance profile | Execution method / automation | Result | Required evidence | Produced evidence | Risk-probe result |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | <what the user does> | <SC-001> | <AC-1> | <ID> | <integration; probes…> | <runner / manual> | ✅ | <trace + assertion> | [trace](…) | <probe → result> |
+| 2 | <…> | <SC-002> | <AC-2> | <ID> | <E2E; probes…> | <runner> | ✅ | <video + trace> | [video](…) [trace](…) | <probe → result> |
+| 3 | <…> | <SC-003> | <AC-3> | <ID> | <integration; probes…> | <runner> | ⚠️ | <trace> | [trace](…) | <probe → caveat> |
+| 4 | <…> | <SC-004> | <AC-4> | <ID> | <E2E; probes…> | <runner> | ❌ | <video + trace> | [video](…) [trace](…) | <probe → failure> |
 
 **Legend:** ✅ works as intended · ⚠️ works with a caveat (below) · ❌ broken
 

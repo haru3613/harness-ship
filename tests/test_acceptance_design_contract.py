@@ -29,6 +29,13 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             ):
                 self.assertNotIn(marker, normalized)
             self.assertNotIn("**v0.6.0 migration:**", readme)
+            for command in (
+                "$harness-ship:acceptance-design",
+                "$harness-ship:testing-workflow",
+                "/harness-ship:acceptance-design",
+                "/harness-ship:testing-workflow",
+            ):
+                self.assertIn(command, readme)
             return
 
         self.assertEqual((major, minor), (0, 6))
@@ -90,6 +97,20 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             "QA assurance profile",
         ):
             self.assertIn(marker, text)
+
+    def test_any_approved_contract_content_change_increments_revision(self) -> None:
+        text = " ".join(read("skills/acceptance-design/SKILL.md").lower().split())
+
+        self.assertIn("any approved contract content changes", text)
+        for field in (
+            "priority",
+            "surface",
+            "qa-executable seam",
+            "fixture/data needs",
+            "qa assurance profile",
+        ):
+            self.assertIn(field, text)
+        self.assertIn("preserve stable sc-id and ac-id", text)
 
     def test_acceptance_design_stops_before_implementation_or_qa_execution(self) -> None:
         text = " ".join(read("skills/acceptance-design/SKILL.md").lower().split())
@@ -166,6 +187,32 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         self.assertIn("return to `acceptance-design`", text)
         self.assertIn("report the profile and evidence for every scenario", text)
 
+    def test_testing_workflow_executes_integration_and_e2e_at_the_approved_layer(self) -> None:
+        text = " ".join(read("skills/testing-workflow/SKILL.md").lower().split())
+
+        self.assertIn("## stage 3 — execute approved qa layer", text)
+        self.assertIn("integration profile", text)
+        self.assertIn("at its named seam", text)
+        self.assertIn("e2e / journey profile", text)
+        self.assertIn("journey runner", text)
+        self.assertIn("do not escalate an integration profile to e2e", text)
+
+    def test_acceptance_report_template_records_assurance_evidence_for_every_scenario(self) -> None:
+        template = " ".join(
+            read("skills/testing-workflow/acceptance-report-template.md").lower().split()
+        )
+
+        for field in (
+            "qa assurance profile",
+            "execution method / automation",
+            "required evidence",
+            "produced evidence",
+            "risk-probe result",
+        ):
+            self.assertIn(field, template)
+        self.assertIn("every scenario", template)
+        self.assertNotIn("evidence links open", template)
+
     def test_versioned_compatibility_redirect_and_expiry(self) -> None:
         text = read("skills/testing-workflow/SKILL.md")
         readme = read("README.md")
@@ -192,6 +239,9 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             current_readme,
             flags=re.DOTALL,
         )
+        with self.assertRaises(AssertionError):
+            self.assert_compatibility_policy("0.7.0", future_workflow, future_readme)
+
         future_readme += (
             "\nCanonical commands remain valid: "
             "`$harness-ship:acceptance-design`, `$harness-ship:testing-workflow`, "
@@ -204,7 +254,7 @@ class AcceptanceDesignContractTests(unittest.TestCase):
 
         for heading in (
             "## Stage 2 — Route approved scenarios by ownership",
-            "## Stage 3 — Execute E2E",
+            "## Stage 3 — Execute approved QA layer",
             "## Stage 4 — Anti-fake-green gate",
             "## Stage 5 — Acceptance report",
             "## Stage 6 — Bug loopback",

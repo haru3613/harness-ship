@@ -58,12 +58,19 @@ artifact seam, return to `acceptance-design`; QA must not silently redesign it d
 - **RD tier** (may already be covered — check the handoff's "what unit+contract tests cover"): unit +
   contract tests. Test the contract against the API schema; don't re-test at E2E what a contract test
   already pins.
-- **QA tier**: integration + E2E → Stage 3.
+- **QA tier**: integration + E2E → Stage 3, routed by the approved profile layer.
 
-## Stage 3 — Execute E2E
+## Stage 3 — Execute approved QA layer
 
-Route by surface, using whatever runner fits the stack (web UI → a browser-automation runner such as
-Playwright; native app → the platform's integration-test harness). Then:
+Route by the approved QA assurance profile:
+
+- **Integration profile:** execute at its named seam with the stack's integration harness and real
+  module/service wiring.
+- **E2E / journey profile:** route by surface through a journey runner (web UI → browser automation
+  such as Playwright; native app → the platform's journey/integration-test harness).
+
+Do not escalate an integration profile to E2E or replace an E2E journey with a narrower integration
+check. Then:
 
 - **Run against a test environment**, never production. Seed test data on staging/local only —
   **never write fake/seed data into a production database.**
