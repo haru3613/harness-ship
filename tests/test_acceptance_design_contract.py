@@ -14,6 +14,53 @@ def read(path: str) -> str:
 class AcceptanceDesignContractTests(unittest.TestCase):
     """HS-QA-BUG/acceptance-v1: SC-001 traces to AC-1 and AC-7."""
 
+    def assert_compatibility_policy(
+        self, version: str, testing_workflow: str, readme: str
+    ) -> None:
+        major, minor, _patch = (int(part) for part in version.split("."))
+        normalized = " ".join(testing_workflow.split())
+
+        if (major, minor) >= (0, 7):
+            for marker in (
+                "v0.6 compatibility",
+                "implementation already exists",
+                "no approved acceptance contract",
+                "one minor release",
+            ):
+                self.assertNotIn(marker, normalized)
+            self.assertNotIn("**v0.6.0 migration:**", readme)
+            for command in (
+                "$harness-ship:acceptance-design",
+                "$harness-ship:testing-workflow",
+                "/harness-ship:acceptance-design",
+                "/harness-ship:testing-workflow",
+            ):
+                self.assertNotIn(command, readme)
+            return
+
+        self.assertEqual((major, minor), (0, 6))
+        compatibility = normalized.split("v0.6 compatibility", maxsplit=1)[1].split(
+            "## Stage 2", maxsplit=1
+        )[0]
+        self.assertIn("pre-implementation", compatibility)
+        self.assertIn("`acceptance-design`", compatibility)
+        self.assertNotIn("/testing-workflow", compatibility)
+        self.assertRegex(compatibility.lower(), r"do not (begin|start|run) qa execution")
+        self.assertIn("one minor release", compatibility.lower())
+        self.assertIn("implementation already exists", compatibility)
+        self.assertIn("no approved acceptance contract", compatibility)
+        self.assertIn("original or current stable spec", compatibility)
+        self.assertIn("never infer expected behaviour from code", compatibility.lower())
+        self.assertIn("stop", compatibility.lower())
+        self.assertIn("**v0.6.0 migration:**", readme)
+        for command in (
+            "$harness-ship:acceptance-design",
+            "$harness-ship:testing-workflow",
+            "/harness-ship:acceptance-design",
+            "/harness-ship:testing-workflow",
+        ):
+            self.assertIn(command, readme)
+
     def test_acceptance_design_is_a_discoverable_skill(self) -> None:
         text = read("skills/acceptance-design/SKILL.md")
 
@@ -57,12 +104,22 @@ class AcceptanceDesignContractTests(unittest.TestCase):
 
         self.assertIn("current stable spec", skill)
         self.assertIn("do not require a separate spec-approval gate", skill)
-        self.assertIn("approve the spec criteria and scenario set together", skill)
+        self.assertIn("presents the spec criteria and scenario set together", skill)
+        self.assertIn("for explicit user approval", skill)
         self.assertIn("spec criteria and scenarios describe the right behaviour", dev)
         self.assertIn("current stable spec", readme)
         self.assertTrue(
             any("current spec" in prompt.lower() for prompt in codex["interface"]["defaultPrompt"])
         )
+
+    def test_only_the_user_can_approve_the_acceptance_contract(self) -> None:
+        skill = " ".join(read("skills/acceptance-design/SKILL.md").lower().split())
+        dev = " ".join(read("skills/dev-workflow/SKILL.md").lower().split())
+
+        self.assertIn("only the user may approve", skill)
+        self.assertIn("unapproved draft", skill)
+        self.assertIn("never self-approve", skill)
+        self.assertIn("user confirms", dev)
 
     def test_dev_workflow_invokes_acceptance_design_at_the_acceptance_gate(self) -> None:
         text = read("skills/dev-workflow/SKILL.md")
@@ -95,30 +152,33 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         self.assertIn("do not redesign", normalized)
         self.assertIn("integration + e2e", normalized)
 
-    def test_v06_compatibility_redirect_and_expiry(self) -> None:
-        text = " ".join(read("skills/testing-workflow/SKILL.md").split())
+    def test_versioned_compatibility_redirect_and_expiry(self) -> None:
+        text = read("skills/testing-workflow/SKILL.md")
+        readme = read("README.md")
         version = json.loads(read(".codex-plugin/plugin.json"))["version"]
-        major, minor, _patch = (int(part) for part in version.split("."))
 
-        if (major, minor) >= (0, 7):
-            self.assertNotIn("v0.6 compatibility", text)
-            return
+        self.assert_compatibility_policy(version, text, readme)
 
-        self.assertEqual((major, minor), (0, 6))
-        compatibility = text.split("v0.6 compatibility", maxsplit=1)[1].split(
-            "## Stage 2", maxsplit=1
-        )[0]
-        self.assertIn("pre-implementation", compatibility)
-        self.assertIn("`acceptance-design`", compatibility)
-        self.assertNotIn("/testing-workflow", compatibility)
-        self.assertRegex(compatibility.lower(), r"do not (begin|start|run) qa execution")
-        self.assertIn("one minor release", compatibility.lower())
-        self.assertIn("v0.6 compatibility", text)
-        self.assertIn("implementation already exists", compatibility)
-        self.assertIn("no approved acceptance contract", compatibility)
-        self.assertIn("original or current stable spec", compatibility)
-        self.assertIn("never infer expected behaviour from code", compatibility.lower())
-        self.assertIn("stop", compatibility.lower())
+    def test_v07_policy_rejects_retained_alias_and_accepts_complete_removal(self) -> None:
+        current_workflow = read("skills/testing-workflow/SKILL.md")
+        current_readme = read("README.md")
+
+        with self.assertRaises(AssertionError):
+            self.assert_compatibility_policy("0.7.0", current_workflow, current_readme)
+
+        future_workflow = re.sub(
+            r"## v0\.6 compatibility redirect.*?(?=## Stage 2)",
+            "",
+            current_workflow,
+            flags=re.DOTALL,
+        )
+        future_readme = re.sub(
+            r"\n\*\*v0\.6\.0 migration:\*\*.*?(?=\n\n)",
+            "",
+            current_readme,
+            flags=re.DOTALL,
+        )
+        self.assert_compatibility_policy("0.7.0", future_workflow, future_readme)
 
     def test_existing_execution_stage_ids_and_references_remain_stable(self) -> None:
         text = read("skills/testing-workflow/SKILL.md")
@@ -133,24 +193,23 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             self.assertIn(heading, text)
         self.assertIn("acceptance-report-template.md", text)
 
-    def test_readme_and_plugin_metadata_advertise_acceptance_design_v06(self) -> None:
+    def test_readme_and_plugin_metadata_advertise_acceptance_design(self) -> None:
         readme = read("README.md")
 
         self.assertRegex(readme, r"(?m)^\| `acceptance-design` \|")
         self.assertIn("eight self-contained blocks", readme)
-        self.assertIn("v0.6.0 migration", readme)
-        self.assertIn("$harness-ship:acceptance-design", readme)
-        self.assertIn("$harness-ship:testing-workflow", readme)
-        self.assertIn("/harness-ship:acceptance-design", readme)
-        self.assertIn("/harness-ship:testing-workflow", readme)
 
+        versions = set()
         for manifest in (
             ".codex-plugin/plugin.json",
             ".claude-plugin/plugin.json",
         ):
             payload = json.loads(read(manifest))
-            self.assertEqual(payload["version"], "0.6.0")
+            versions.add(payload["version"])
             self.assertIn("acceptance-design", payload["keywords"])
+        self.assertEqual(len(versions), 1)
+        version = versions.pop()
+        self.assertGreaterEqual(tuple(int(part) for part in version.split(".")), (0, 6, 0))
 
         codex = json.loads(read(".codex-plugin/plugin.json"))
         self.assertTrue(

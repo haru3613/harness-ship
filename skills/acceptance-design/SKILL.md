@@ -15,9 +15,9 @@ it translates the current stable spec without inferring expected behaviour from 
 
 Require the current stable spec and its stable acceptance criteria. If criteria are missing,
 ambiguous, or not externally observable, return to `spec`; do not invent the product decision here.
-Do not require a separate spec-approval gate: `dev-workflow` approves the spec criteria and scenario
-set together at its acceptance-contract gate. If an approved acceptance contract already exists,
-preserve its identifiers unless observable behaviour changes.
+Do not require a separate spec-approval gate: `dev-workflow` presents the spec criteria and scenario
+set together at its acceptance-contract gate, where the user approves them. If an approved
+acceptance contract already exists, preserve its identifiers unless observable behaviour changes.
 
 ## Produce the acceptance contract
 
@@ -47,7 +47,9 @@ silently renumber identifiers when revising the contract.
 
 Check that the scenarios describe the spec rather than the current code, that every assertion is
 observable at its QA-executable seam, and that fixture/data needs are safe outside production.
-Present and approve the spec criteria and scenario set together.
+Present the spec criteria and scenario set together for explicit user approval. **Only the user may
+approve** the acceptance contract; never self-approve it. Until that approval is recorded, label
+the result an **unapproved draft** and stop.
 
 Then **stop**. Do not implement or generate runner code. Do not begin QA execution. Implementation
 starts only after approval of the named acceptance-contract revision; QA execution starts only after

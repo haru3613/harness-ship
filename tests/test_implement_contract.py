@@ -199,12 +199,16 @@ class ImplementSkillContractTests(unittest.TestCase):
         self.assertRegex(readme, r"(?m)^\| \*\*`implement`\*\* \|")
         self.assertIn("Test / lint / typecheck / build", readme)
 
+        versions = set()
         for manifest in (
             ".codex-plugin/plugin.json",
             ".claude-plugin/plugin.json",
         ):
             payload = json.loads(read(manifest))
-            self.assertEqual(payload["version"], "0.6.0")
+            versions.add(payload["version"])
+        self.assertEqual(len(versions), 1)
+        version = versions.pop()
+        self.assertGreaterEqual(tuple(int(part) for part in version.split(".")), (0, 6, 0))
 
         marketplace = json.loads(read(".claude-plugin/marketplace.json"))
         listing = marketplace["plugins"][0]
