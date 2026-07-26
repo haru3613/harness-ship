@@ -68,12 +68,22 @@ class ImplementSkillContractTests(unittest.TestCase):
             "heartbeat",
             "takeover",
             "release",
+            "workflow phase",
+            "deployment-only resume",
+            "independent outcome verifier",
         ):
             self.assertIn(marker, text)
 
         cleanup_position = text.index("worktree **cleanup**")
         deployment_position = text.index("obtain a **deployment receipt**")
         self.assertLess(cleanup_position, deployment_position)
+
+        remote_loop = text.split("remote feedback loop", maxsplit=1)[1].split(
+            "proceed only", maxsplit=1
+        )[0]
+        self.assertIn("standards-only", remote_loop)
+        self.assertIn("keep tests green", remote_loop)
+        self.assertIn("independent outcome verifier", remote_loop)
 
     def test_setup_records_runtime_role_profiles_without_owning_them(self) -> None:
         text = read("skills/setup/SKILL.md").lower()
@@ -93,6 +103,8 @@ class ImplementSkillContractTests(unittest.TestCase):
         self.assertIn("agent role requirements", text)
         self.assertIn("agent role bindings — codex", text)
         self.assertIn("agent role bindings — claude code", text)
+        self.assertIn("delegation limits — codex", text)
+        self.assertIn("delegation limits — claude code", text)
         self.assertIn("security review", text)
         self.assertIn("security implementation", text)
         self.assertIn("build", text)
@@ -106,6 +118,7 @@ class ImplementSkillContractTests(unittest.TestCase):
 
         self.assertRegex(stage, r"Run \*\*`implement`\*\*")
         self.assertNotIn("ship-loop", stage)
+        self.assertLess(stage.index("cleanup"), stage.index("deployment evidence"))
 
     def test_review_pins_a_fixed_point_and_reviews_committed_work(self) -> None:
         text = read("skills/review/SKILL.md").lower()
@@ -121,6 +134,7 @@ class ImplementSkillContractTests(unittest.TestCase):
     def test_readme_and_manifests_advertise_the_new_minor_version(self) -> None:
         readme = read("README.md")
         self.assertRegex(readme, r"(?m)^\| \*\*`implement`\*\* \|")
+        self.assertIn("Test / lint / typecheck / build", readme)
 
         for manifest in (
             ".codex-plugin/plugin.json",
@@ -149,6 +163,7 @@ class ImplementSkillContractTests(unittest.TestCase):
         self.assertIn("python3 -m unittest discover -s tests -v", workflow)
         self.assertIn("jq empty", workflow)
         self.assertIn("${{ github.event.before }}", workflow)
+        self.assertIn("git cat-file -e", workflow)
 
 
 if __name__ == "__main__":

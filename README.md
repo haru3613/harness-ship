@@ -111,7 +111,7 @@ branches, or host agent profiles change.
 
 - **Issue tracker** — where `spec`/`tickets` publish (Jira via MCP, GitHub `gh`, Linear, local files…), its access method, and any forbidden tool. Issues and PRs may live in different systems.
 - **Branch topology** — integration vs protected release branch (workflows never merge the release branch); collapses to one branch when the repo has only `main`.
-- **Test / lint / typecheck commands** — per your stack.
+- **Test / lint / typecheck / build commands** — per your stack.
 - **Agent role profiles** — maps work nature to host-defined profiles and records each profile's
   definition source, mode/sandbox, model, effort, write scope, MCP/plugin boundary, and no-spawn
   status. Portable requirements are shared, while Codex and Claude Code keep separate live bindings.

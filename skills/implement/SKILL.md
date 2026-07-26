@@ -86,7 +86,10 @@ Root:
 
 1. Look first for a receipt-backed existing claim. Apply the configured **resume policy**: resume
    only the same valid owner/session, or use **takeover** only after the recorded lease/heartbeat has
-   expired and the takeover rule succeeds. An active claim owned elsewhere stops this root.
+   expired and the takeover rule succeeds. An active claim owned elsewhere stops this root. Read the
+   receipt's **workflow phase**, merge SHA, PR, and worktree-disposed state. An
+   `awaiting-deployment` **deployment-only resume** validates the merged SHA and jumps directly to
+   Phase 4 deployment handling; do not create or resume a feature worktree.
 2. For new work, resolve one frontier ticket that matches the configured **ready criteria**.
 3. Load the approved spec, acceptance-contract revision, stable scenario/criterion IDs, test seams,
    and explicit out-of-scope list. A stale, missing, or behaviourally contradictory contract stops
@@ -167,10 +170,11 @@ Root alone:
 3. attach the contract revision, SC-ID → AC-ID trace, TDD receipts, fixed point, commit list, and
    verification results;
 4. run the **remote feedback loop** on the exact head SHA. Classify review change requests and CI
-   failures: route code/spec fixes through a bounded RED → GREEN slice, commit, rerun affected plus
-   full configured checks and two fresh review runs, push a new HEAD, and wait again. Behaviour
-   changes return to the acceptance gate. Retry unrelated infrastructure failures only within the
-   configured bound, then stop with evidence;
+   failures before editing: approved-behaviour defects use a bounded RED → GREEN slice;
+   **standards-only** fixes keep tests green; requested contract changes return to the acceptance
+   gate. Commit valid fixes and rerun affected plus full configured checks. Rerun the
+   **independent outcome verifier** and two fresh review runs, push a new HEAD, and wait again. Retry unrelated
+   infrastructure failures only within the configured bound, then stop with evidence;
 5. proceed only when required review and CI are green on the new **exact head SHA**—stale green
    checks do not count;
 6. merge only under the configured branch policy. Never autonomously merge a protected release
@@ -199,6 +203,7 @@ the configured ticket/PR—not a transient scratch note:
 
 - ticket + acceptance-contract revision and SC-ID → AC-ID scope;
 - claim owner, lease/heartbeat, and allowed resume/release/takeover action;
+- workflow phase, PR, merge SHA, deployment state, and whether the feature worktree was disposed;
 - fixed point, branch, worktree, current HEAD, and clean/dirty state;
 - completed/current/remaining slices and assigned role profiles;
 - RED/GREEN/regression/static/full-suite commands and results;

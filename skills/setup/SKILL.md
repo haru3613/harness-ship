@@ -100,6 +100,7 @@ with the user. After this, every harness-ship workflow consumes it automatically
 - **Ready criteria:** <label / status / sprint that makes a ticket eligible, e.g. `ready-for-agent`>
 - **Claim transition:** <atomic assignment + claimed/in-progress state with root/session identity | single-root/manual claim policy>
 - **Claim recovery:** <lease + heartbeat interval; same-owner resume; receipt validation; expired-claim takeover; release policy>
+- **Remote CI infrastructure retry:** <attempt limit + backoff | none> — applies only to unrelated infrastructure failures, never code/test failures.
 - **Deployment / test environment:** <environment + deploy/status access + exact source-SHA/artifact revision surface + URL/fixtures | manual/none>
 - **Agent orchestration:** root session owns planning, delegation, integration, external state, and final decision; children may not spawn.
 - **Agent role requirements:** portable policy; host bindings below must satisfy it.
@@ -127,7 +128,9 @@ with the user. After this, every harness-ship workflow consumes it automatically
   |---|---|---|---|---|---|---|---|---|
   | `<requirement>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value or unsupported>` |
 
-- **Delegation limits:** <host max direct children> / depth `<value>`; root-only spawning; serialize all write-capable children in one ticket worktree.
+- **Delegation limits — Codex:** <host max direct children / depth / root-only spawning | `not-configured`>
+- **Delegation limits — Claude Code:** <host max direct children / depth / root-only spawning | `not-configured`>
+- **Writer scheduling:** serialize all write-capable children in one ticket worktree; only read-only work may run in parallel.
 - **Data-mutation safety gate:** <on | off> — on when the project has scheduled/batch DB writers.
 - **UI convention:** <front-end-first mocks under `docs/design/` | none>
 
