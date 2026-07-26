@@ -9,9 +9,10 @@ description: >-
 
 # setup
 
-A one-time step so `dev-workflow`, `testing-workflow`, `spec`, `tickets`, and `review` run against
-this project's **real** specifics instead of generic defaults. Detect what you can, ask only the
-forks a wrong guess would get wrong, and write the result where the workflows look.
+A one-time step so `dev-workflow`, `implement`, `testing-workflow`, `spec`, `tickets`, `tdd`, and
+`review` run against this project's **real** specifics instead of generic defaults. Detect what you
+can, ask only the forks a wrong guess would get wrong, and write the result where the workflows
+look.
 
 Follow the same discipline the workflows preach: **answer the 90% with stated assumptions, ask only
 the load-bearing forks** (don't interrogate).
@@ -41,6 +42,17 @@ the load-bearing forks** (don't interrogate).
   in the code → the `review` safety gate should be **on**.
 - **UI convention** — a `docs/design/` mocks directory or an existing design-system/tokens file →
   front-end-first applies.
+- **Agent role profiles** — inspect the host runtime's existing agent registry and project/global
+  instructions. Record each useful profile's name, work nature, mode/sandbox, model, effort, write
+  scope, MCP/plugin access, and whether it may spawn children. Also record root's thread/depth limit
+  when exposed.
+  - Route by nature: narrow lookup, exploration, mechanical implementation, judgment-bearing
+    implementation, plan verification, independent verification, and security review/execution.
+  - Profiles must already exist in the host. **Do not create or override** global agents, model
+    assignments, effort, mode, permissions, or MCP/plugin access during project setup.
+  - Undefined generic/default workers do not satisfy a required role. If no suitable profile exists,
+    record it as `missing`; `implement` keeps safe work in root or stops when independence/security
+    is required.
 
 ### 2. Propose, then ask only the forks
 
@@ -50,6 +62,8 @@ questions a wrong guess would get wrong — typically at most ~3:
   (skip if only one branch exists — they're the same);
 - the **tracker system and its access method**, if ambiguous — and whether issues/PRs are split;
 - the **data-mutation gate** on/off, if cron/batch writes are unclear.
+- a missing **required role profile**, only when it prevents independent verification or a
+  risk-mandated security boundary. Do not ask about profiles that can be read from the host config.
 
 Everything with a safe default → state the default, don't ask.
 
@@ -70,6 +84,20 @@ with the user. After this, every harness-ship workflow consumes it automatically
 - **Protected release branch:** <e.g. `main`> — human + release gate only; workflows never merge here.
 - **Test / lint / typecheck:** `<test cmd>` / `<lint cmd>` / `<typecheck cmd>` — write `none` for any the project lacks; workflows skip a `none` step instead of flagging it missing.
 - **Agent-ready signal:** <label / Jira status / sprint per tracker, e.g. `ready-for-agent` label | `In Progress` status | none>
+- **Agent orchestration:** root session owns planning, delegation, integration, external state, and final decision; children may not spawn.
+- **Agent role profiles:** host-defined and live-verified before dispatch.
+
+  | Work nature | Profile | Mode / sandbox | Model | Effort | Write scope | MCP/plugins |
+  |---|---|---|---|---|---|---|
+  | narrow lookup | `<profile | missing>` | `<read-only>` | `<host value>` | `<low>` | `none` | `none` |
+  | exploration | `<profile | missing>` | `<read-only>` | `<host value>` | `<medium>` | `none` | `none` |
+  | mechanical implementation | `<profile | missing>` | `<workspace-write>` | `<host value>` | `<medium>` | bounded | `none` |
+  | judgment implementation | `<profile | missing>` | `<workspace-write>` | `<host value>` | `<medium+>` | bounded | `none` |
+  | plan verification | `<profile | missing>` | `<read-only>` | `<host value>` | `<high>` | `none` | `none` |
+  | independent verification | `<profile | missing>` | `<verification-only>` | `<host value>` | `<high>` | no source edits | `none` |
+  | security review / implementation | `<profiles | missing>` | `<read-only / workspace-write>` | `<host value>` | `<highest configured>` | bounded | `none` |
+
+- **Delegation limits:** <host max direct children> / depth `<value>`; root-only spawning; one writer per overlapping file/worktree region.
 - **Data-mutation safety gate:** <on | off> — on when the project has scheduled/batch DB writers.
 - **UI convention:** <front-end-first mocks under `docs/design/` | none>
 
