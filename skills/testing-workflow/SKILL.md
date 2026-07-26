@@ -50,6 +50,14 @@ Resume here only after the dev→QA handoff. Confirm the handoff names the appro
 the exact source commit and deployed artifact/environment revision under test; do not redesign
 scenarios to match what was built.
 
+Require the handoff's **expected target HEAD**, **observed merge SHA**, **merge derivation**,
+**pair-bound RD receipt**, and **pair-bound P0 receipt**. Each receipt must name the same exact PR
+HEAD/target HEAD pair that produced the observed merge and handed-off artifact. A **mismatched or
+unrelated** receipt makes the handoff **Not ready**.
+
+Owner records use an **immutable provider principal ID** plus a human-readable **display label**.
+Compare principal IDs; labels are informational and may change.
+
 For every scenario, read its approved **QA assurance profile** and execute each approved profile
 unchanged: preserve its integration/E2E layer, automation expectation, required evidence, and
 risk-specific probes. If the profile is missing, contradictory, or cannot be executed at the named

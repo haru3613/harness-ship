@@ -292,6 +292,26 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         ):
             self.assertIn(field, report)
 
+    def test_owner_binding_uses_immutable_provider_principal_ids(self) -> None:
+        design = " ".join(read("skills/acceptance-design/SKILL.md").lower().split())
+        dev = " ".join(read("skills/dev-workflow/SKILL.md").lower().split())
+        implement = " ".join(read("skills/implement/SKILL.md").lower().split())
+        testing = " ".join(read("skills/testing-workflow/SKILL.md").lower().split())
+        report = " ".join(
+            read("skills/testing-workflow/acceptance-report-template.md").lower().split()
+        )
+
+        for text in (design, implement, testing):
+            self.assertIn("immutable provider principal id", text)
+            self.assertIn("display label", text)
+            self.assertIn("compare principal ids", text)
+        self.assertIn("accountable owner", dev)
+        self.assertIn("executing agent role", dev)
+        self.assertIn("accountable owner", implement)
+        self.assertIn("executing agent role", implement)
+        self.assertIn("principal id", report)
+        self.assertIn("display label", report)
+
     def test_qa_prerequisites_branch_for_automated_and_excepted_p0(self) -> None:
         testing = read("skills/testing-workflow/SKILL.md").lower()
         stage3 = " ".join(
@@ -546,11 +566,36 @@ class AcceptanceDesignContractTests(unittest.TestCase):
 
         for field in (
             "exact pr head",
+            "expected target head",
+            "observed merge sha/derivation",
+            "pair-bound rd receipt",
             "pr automation/ci evidence",
             "handed-off source/artifact revision",
             "independent qa evidence",
         ):
             self.assertIn(field, template)
+
+    def test_qa_handoff_consumes_the_pair_bound_merge_chain(self) -> None:
+        dev = read("skills/dev-workflow/SKILL.md").lower()
+        stage6 = " ".join(dev.split("## stage 6", maxsplit=1)[1].split())
+        testing = read("skills/testing-workflow/SKILL.md").lower()
+        stage2 = " ".join(
+            testing.split("## stage 2", maxsplit=1)[1]
+            .split("## stage 3", maxsplit=1)[0]
+            .split()
+        )
+
+        for field in (
+            "expected target head",
+            "observed merge sha",
+            "merge derivation",
+            "pair-bound rd receipt",
+            "pair-bound p0 receipt",
+        ):
+            self.assertIn(field, stage6)
+            self.assertIn(field, stage2)
+        self.assertIn("mismatched or unrelated", stage2)
+        self.assertIn("not ready", stage2)
 
     def test_initial_prepush_revalidates_live_exception_state(self) -> None:
         implement = read("skills/implement/SKILL.md").lower()
@@ -573,6 +618,45 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         self.assertIn("live assignee", initial_push)
         self.assertIn("owner match", initial_push)
         self.assertIn("before push", initial_push)
+
+    def test_human_merge_receipt_is_observed_at_the_actual_action(self) -> None:
+        implement = read("skills/implement/SKILL.md").lower()
+        publish = " ".join(
+            implement.split("## phase 4", maxsplit=1)[1]
+            .split("## stop and recovery", maxsplit=1)[0]
+            .split()
+        )
+        premerge = " ".join(
+            publish.split("6. ", maxsplit=1)[1].split("7. ", maxsplit=1)[0].split()
+        )
+        phase0 = " ".join(
+            implement.split("## phase 0", maxsplit=1)[1]
+            .split("## durable checkpoint protocol", maxsplit=1)[0]
+            .split()
+        )
+
+        for marker in (
+            "pre-merge authorization is not a merge receipt",
+            "at the actual human merge action",
+            "merge timestamp",
+            "observed human merge receipt",
+            "provider principal ids",
+        ):
+            self.assertIn(marker, premerge)
+        self.assertLess(
+            premerge.index("pre-merge authorization"),
+            premerge.index("at the actual human merge action"),
+        )
+        self.assertLess(
+            premerge.index("at the actual human merge action"),
+            premerge.index("observed human merge receipt"),
+        )
+        for marker in (
+            "observed human merge receipt",
+            "merge timestamp",
+            "actual-action snapshot",
+        ):
+            self.assertIn(marker, phase0)
 
     def test_tdd_seam_corrections_cannot_mutate_the_acceptance_contract(self) -> None:
         text = " ".join(read("skills/tdd/SKILL.md").lower().split())

@@ -100,11 +100,12 @@ Root:
    evidence proves the PR merged, enter the dedicated **post-merge reconciliation** path. First
    load the **pair-bound merge intent** and **authorization receipt**, verify the **actual merge
    derivation** matches their exact PR-HEAD/target-HEAD pair, and reconcile the **applicable
-   exception state** as of merge authorization, including its last live validation. Missing or
-   mismatched evidence must **fail closed** for **human reconciliation** before tracker transition,
-   cleanup, or deployment. Only then finish the development-complete tracker transition, safely
-   dispose the recorded feature worktree until `worktree-disposed=true`, and handle deployment.
-   Do not reuse the merged branch.
+   exception state** at the merge action. For a human merge, require the **observed human merge
+   receipt**, provider **merge timestamp**, and **actual-action snapshot** of the pair, all exception
+   fields, and owner principal IDs. Missing or mismatched evidence must **fail closed** for **human
+   reconciliation** before tracker transition, cleanup, or deployment. Only then finish the
+   development-complete tracker transition, safely dispose the recorded feature worktree until
+   `worktree-disposed=true`, and handle deployment. Do not reuse the merged branch.
    An `awaiting-deployment` **deployment-only resume** is allowed only after that disposal is
    confirmed; validate the merged SHA and jump directly to Phase 4 deployment handling without
    creating or resuming a feature worktree.
@@ -202,9 +203,11 @@ acceptance-contract gate. Standards-only refactoring keeps tests green; it does 
 ### Pre-merge P0 QA automation
 
 After the RD TDD slices, root copies the approved **QA automation owner** unchanged for every
-approved P0 integration/E2E profile into the ticket/receipt before PR creation. Any reassignment is
-an approved-contract content change and returns to `dev-workflow` Stage 3 for a new revision. Unless
-the approved contract
+approved P0 integration/E2E profile into the ticket/receipt before PR creation, preserving its
+**immutable provider principal ID** and **display label**. Compare principal IDs; labels are
+informational. This owner is the **accountable owner**; the configured **executing agent role**
+performs the bounded write. Any reassignment is an approved-contract content change and returns to
+`dev-workflow` Stage 3 for a new revision. Unless the approved contract
 carries a still-valid manual exception, treat each profile as a **bounded QA automation write
 slice** under the existing dispatch and durable-checkpoint protocol: reserve it before dispatch
 with allowed harness files and exact expected HEAD; dispatch the compatible configured write role;
@@ -315,11 +318,18 @@ Root alone:
    returns to `acceptance-design` through `dev-workflow` Stage 3.
 
    Checkpoint the merge intent bound to that exact PR-HEAD/target-HEAD pair. Enforce it with
-   **CAS/ref-lease** where policy permits automation, or require a **human merge receipt** bound to
-   the same pair for a protected or single-branch repository. Only after that checkpoint, merge
-   only under the configured branch policy; never autonomously merge a protected release branch or
-   auto-merge a single-branch repository. Checkpoint the observed merge SHA and verify the
-   **observed merge derives from that exact pair**;
+   **CAS/ref-lease** where policy permits automation. For a protected or single-branch repository,
+   issue a short-lived human merge authorization bound to the pair; **pre-merge authorization is
+   not a merge receipt**. **At the actual human merge action**, re-fetch both refs and revalidate all
+   exception fields by immutable **provider principal IDs**, then capture the provider
+   **merge timestamp** and actual-action snapshot. The provider result becomes the **observed human
+   merge receipt**, bound to the pair, actor principal ID, exception snapshot, and observed merge
+   SHA. If that action-time check/receipt cannot be obtained, fail closed for human reconciliation.
+
+   Only after the applicable atomic or action-time check, merge only under the configured branch
+   policy; never autonomously merge a protected release branch or auto-merge a single-branch
+   repository. Checkpoint the observed merge SHA and verify the **observed merge derives from that
+   exact pair**;
 7. run the idempotent **post-merge reconciliation** path: revalidate fencing, update the tracker to
    development-complete/awaiting-deployment, verify no process/session uses the clean merged feature
    worktree, then perform worktree **cleanup** immediately and checkpoint

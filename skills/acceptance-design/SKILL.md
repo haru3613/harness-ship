@@ -49,11 +49,13 @@ Every scenario must contain:
   required evidence, and risk-specific probes.
 
 Every **P0 assurance profile** expects the scenario to be automated on every PR and records a
-**QA automation owner**. If automation is not currently possible, record a manual P0 exception with
-explicit user approval, a follow-up ticket, an **approved exception owner**, expiry, exact-candidate
-execution method, and required evidence. The approved exception owner equals the QA automation owner
-and owns that follow-up ticket. The exception caps the acceptance verdict at **Accept with caveats**
-until its automation ticket closes.
+**QA automation owner** as an **immutable provider principal ID** plus a human-readable **display
+label**. Compare principal IDs; display labels are informational and may change. If automation is
+not currently possible, record a manual P0 exception with explicit user approval, a follow-up
+ticket, an **approved exception owner** in the same ID+label form, expiry, exact-candidate execution
+method, and required evidence. The approved exception owner equals the QA automation owner by
+immutable provider principal ID and owns that follow-up ticket. The exception caps the acceptance
+verdict at **Accept with caveats** until its automation ticket closes.
 
 Show the complete set as a P0/P1 matrix so omissions and priority are reviewable. Map every stable
 SC-ID to at least one stable AC-ID, and map every in-scope AC-ID to at least one scenario. Do not
