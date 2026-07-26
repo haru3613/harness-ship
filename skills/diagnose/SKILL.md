@@ -1,16 +1,20 @@
 ---
 name: diagnose
 description: >-
-  Root-cause a bug by building a red-capable, deterministic reproduction FIRST, then ranking
-  falsifiable hypotheses — no theorizing before you can make it fail on demand. Use when something is
-  broken, flaky, or slow, or on a QA→dev loopback. Triggers: "/diagnose", "debug this", "why is this
-  failing", "it's broken", "flaky test", "regression".
+  Root-cause an already-triaged product defect by building a red-capable, deterministic
+  reproduction FIRST, then ranking falsifiable hypotheses. For a QA finding, use only after
+  bug-workflow supplies a stable BUG-ID classified product-defect. Triggers: "/diagnose",
+  "root-cause this product defect", "diagnose BUG-ID".
 ---
 
 # diagnose
 
 Find the real cause, not a plausible one. The discipline that separates this from guess-and-patch is
 **a reproduction before a theory**.
+
+**QA boundary:** if the input came from QA or `testing-workflow`, require an existing stable BUG-ID
+whose classification is `product-defect`. Otherwise run `bug-workflow` and stop; do not bypass
+classification.
 
 ## Phase 1 — build a red-capable loop (no skipping to Phase 2)
 
@@ -29,6 +33,13 @@ fix.
 prior incident, then run one distinguishing query (DB / log / API) that **disproves** the old root
 cause before you accept it. "Plausible because it matches last time" is exactly the trap.
 
+## Repair authorization boundary
+
+When invoked from a QA Bug Case, Phases 1–2 are diagnosis-only. Append the red repro, tested
+hypotheses, and root-cause receipt to the same BUG-ID, then stop without changing product code or
+adding a regression test. Enter Phase 3 only when the downstream repair workflow explicitly
+authorizes implementation for that Bug Case.
+
 ## Phase 3 — fix at the root, once
 
 Fix where all callers route through, not the one path the report named — a report names a symptom;
@@ -37,5 +48,7 @@ fails before the fix and passes after, so the bug can't return silently.
 
 ## Loopback
 
-When this runs from a QA failure, file the root cause back as a new ticket (via `tickets`) with the
-red repro attached, so the fix flows through the normal dev path with its regression test.
+When `bug-workflow` routes a classified `product-defect` here, append the red repro, tested
+hypotheses, and root cause to the existing stable BUG-ID. Do not create a replacement defect. If
+implementation work needs a delivery ticket, create a linked ticket via `tickets` so the fix flows
+through the normal dev path with its RD-owned regression test.

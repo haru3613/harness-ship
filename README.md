@@ -26,7 +26,8 @@ external plugin dependencies — everything needed is in this repo.
 | `tickets` | break an approved spec + acceptance contract into vertical-slice tracer-bullet tickets |
 | `tdd` | implement one ticket through evidence-backed RED → GREEN behaviour slices at approved seams |
 | `review` | dual-axis code review (Standards × Spec) with an optional data-mutation safety gate |
-| `diagnose` | red-repro-first bug diagnosis for the QA→dev loopback |
+| `bug-workflow` | QA non-pass → one traceable Bug Case → classification-specific owner route |
+| `diagnose` | red-repro-first RD diagnosis for a classified product defect |
 
 ## The five human gates
 
@@ -121,9 +122,9 @@ stays `not-configured` or uses explicit manual steps; it never implies PASS.
 forks it can't infer, and writes a `## harness-ship` config block into your `AGENTS.md` (or
 `CLAUDE.md`). Every workflow reads that block, so nothing runs on generic guesses.
 
-Then invoke the platform's `dev-workflow`, `acceptance-design`, `implement`, `tdd`, or
-`testing-workflow` skill — or just describe a feature and the skills trigger themselves. Re-run
-`setup` any time the stack, tracker, branches, or host agent profiles change.
+Then invoke the platform's `dev-workflow`, `acceptance-design`, `implement`, `tdd`,
+`testing-workflow`, or `bug-workflow` skill — or just describe a feature and the skills trigger
+themselves. Re-run `setup` any time the stack, tracker, branches, or host agent profiles change.
 
 ## What `setup` configures
 
