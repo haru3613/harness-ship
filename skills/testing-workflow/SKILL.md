@@ -36,7 +36,7 @@ flaky — reach for E2E only where a journey crosses the whole stack.
 
 For one minor release, v0.6, redirect either legacy entry state to **`acceptance-design`**:
 
-- a pre-implementation `/testing-workflow` call; or
+- a pre-implementation `testing-workflow` call; or
 - a call where implementation already exists but there is no approved acceptance contract.
 
 Use the original or current stable spec and never infer expected behaviour from code. Stop when

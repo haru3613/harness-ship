@@ -95,7 +95,7 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         self.assertIn("do not redesign", normalized)
         self.assertIn("integration + e2e", normalized)
 
-    def test_v06_preimplementation_calls_redirect_without_starting_qa(self) -> None:
+    def test_v06_compatibility_redirect_and_expiry(self) -> None:
         text = " ".join(read("skills/testing-workflow/SKILL.md").split())
         version = json.loads(read(".codex-plugin/plugin.json"))["version"]
         major, minor, _patch = (int(part) for part in version.split("."))
@@ -110,16 +110,10 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         )[0]
         self.assertIn("pre-implementation", compatibility)
         self.assertIn("`acceptance-design`", compatibility)
+        self.assertNotIn("/testing-workflow", compatibility)
         self.assertRegex(compatibility.lower(), r"do not (begin|start|run) qa execution")
         self.assertIn("one minor release", compatibility.lower())
         self.assertIn("v0.6 compatibility", text)
-
-    def test_v06_missing_contract_recovery_never_infers_from_implementation(self) -> None:
-        text = " ".join(read("skills/testing-workflow/SKILL.md").split())
-        compatibility = text.split("v0.6 compatibility", maxsplit=1)[1].split(
-            "## Stage 2", maxsplit=1
-        )[0]
-
         self.assertIn("implementation already exists", compatibility)
         self.assertIn("no approved acceptance contract", compatibility)
         self.assertIn("original or current stable spec", compatibility)
@@ -146,6 +140,9 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         self.assertIn("eight self-contained blocks", readme)
         self.assertIn("v0.6.0 migration", readme)
         self.assertIn("$harness-ship:acceptance-design", readme)
+        self.assertIn("$harness-ship:testing-workflow", readme)
+        self.assertIn("/harness-ship:acceptance-design", readme)
+        self.assertIn("/harness-ship:testing-workflow", readme)
 
         for manifest in (
             ".codex-plugin/plugin.json",
