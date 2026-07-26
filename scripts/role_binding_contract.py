@@ -91,6 +91,23 @@ HOST_BOUNDARIES = {
         "effective_tools_capabilities": ["Glob", "Grep", "Read"],
     },
 }
+VERIFIER_REMEDIATION = [
+    (
+        "Upgrade and activate the current Harness Ship release, then restart the "
+        "host so it reloads verifier metadata."
+    ),
+    (
+        "Configure or select one safe live verifier whose permissions match the "
+        "required host-enforced boundary; Harness Ship does not mutate global profiles."
+    ),
+    (
+        "After reviewing the mismatch, explicitly clear or repair only the project's "
+        "current-host binding."
+    ),
+    (
+        "Rerun setup to reconcile Config v1, then rerun preflight before implementation."
+    ),
+]
 CODEX_PROFILE_RE = re.compile(r"Codex/([A-Za-z0-9][A-Za-z0-9._-]*)")
 CLAUDE_CUSTOM_PROFILE_RE = re.compile(
     r"Claude/(project|user)/([A-Za-z0-9][A-Za-z0-9._-]*)"
@@ -471,20 +488,7 @@ def _materialize_candidate(candidate: Mapping[str, Any]) -> Dict[str, Any]:
 
 def _safe_materialized_candidate(candidate: Mapping[str, Any], host: str) -> bool:
     binding = candidate["binding"]
-    boundary = HOST_BOUNDARIES[host]
-    if binding["host"] != host:
-        return False
-    if (
-        binding["may_spawn"]
-        or not binding["fresh_context"]
-        or binding["mcp_plugins"]
-        or binding["mode_sandbox"] != boundary["mode_sandbox"]
-        or binding["write_scope"] != boundary["write_scope"]
-        or binding["effort"].lower() not in HIGH_OR_HIGHER
-        or binding["work_nature"] != INDEPENDENT_VERIFICATION
-        or binding["effective_tools_capabilities"]
-        != boundary["effective_tools_capabilities"]
-    ):
+    if _boundary_violations(binding, host):
         return False
     if host == "claude-code":
         return _identity_kind(binding, candidate["source_kind"]) in {
@@ -495,6 +499,74 @@ def _safe_materialized_candidate(candidate: Mapping[str, Any], host: str) -> boo
         candidate["source_kind"] == "host-record"
         and _identity_kind(binding, candidate["source_kind"]) == "host-record"
     )
+
+
+def _required_boundary(host: str) -> Dict[str, Any]:
+    boundary = HOST_BOUNDARIES[host]
+    return {
+        "host": host,
+        "mode_sandbox": boundary["mode_sandbox"],
+        "write_scope": boundary["write_scope"],
+        "effort": "high or higher",
+        "work_nature": INDEPENDENT_VERIFICATION,
+        "may_spawn": False,
+        "fresh_context": True,
+        "effective_tools_capabilities": deepcopy(
+            boundary["effective_tools_capabilities"]
+        ),
+        "mcp_plugins": [],
+    }
+
+
+def _boundary_violations(
+    binding: Mapping[str, Any], expected_host: str
+) -> Dict[str, Dict[str, Any]]:
+    required = _required_boundary(expected_host)
+    violations: Dict[str, Dict[str, Any]] = {}
+    exact_fields = (
+        "host",
+        "mode_sandbox",
+        "write_scope",
+        "work_nature",
+        "may_spawn",
+        "fresh_context",
+        "effective_tools_capabilities",
+        "mcp_plugins",
+    )
+    for field in exact_fields:
+        if binding[field] != required[field]:
+            violations[field] = {
+                "observed": deepcopy(binding[field]),
+                "required": deepcopy(required[field]),
+            }
+    if binding["effort"].lower() not in HIGH_OR_HIGHER:
+        violations["effort"] = {
+            "observed": binding["effort"],
+            "required": required["effort"],
+        }
+    return violations
+
+
+def _boundary_observation(
+    binding: Mapping[str, Any], expected_host: str
+) -> Dict[str, Any]:
+    return {
+        "profile_id": binding["profile_id"],
+        "definition_source": binding["definition_source"],
+        "boundary_digest": binding["boundary_digest"],
+        "violations": _boundary_violations(binding, expected_host),
+    }
+
+
+def _unsafe_boundary_fields(
+    host: str, observed: Mapping[str, Any]
+) -> Dict[str, Any]:
+    return {
+        "reason_code": "unsafe-verifier-boundary",
+        "observed": deepcopy(observed),
+        "required": _required_boundary(host),
+        "remediation": deepcopy(VERIFIER_REMEDIATION),
+    }
 
 
 def _is_default_candidate(candidate: Mapping[str, Any], host: str) -> bool:
@@ -555,9 +627,40 @@ def resolve_document(document: Mapping[str, Any]) -> Dict[str, Any]:
         for candidate in current_host_candidates
         if _safe_materialized_candidate(candidate, host)
     ]
+    unsafe_candidates = [
+        candidate
+        for candidate in current_host_candidates
+        if not _safe_materialized_candidate(candidate, host)
+    ]
     explicit = bindings[host]
     binding_absent = explicit is None or explicit == "not-configured"
     if not binding_absent:
+        try:
+            validated_explicit = validate_binding(explicit)
+        except (ContractError, KeyError, TypeError, UnicodeError):
+            validated_explicit = None
+        if (
+            validated_explicit is not None
+            and _boundary_violations(validated_explicit, host)
+        ):
+            return {
+                "status": "stale-invalid",
+                "mutation": False,
+                "bindings": result_bindings,
+                "global_settings": result_global,
+                "actionable": (
+                    "The existing verifier binding has an unsafe effective boundary. "
+                    "Follow the ordered remediation without allowing setup to mutate it."
+                ),
+                **_unsafe_boundary_fields(
+                    host,
+                    {
+                        "persisted": _boundary_observation(
+                            validated_explicit, host
+                        )
+                    },
+                ),
+            }
         matching = [
             candidate
             for candidate in safe_candidates
@@ -570,6 +673,17 @@ def resolve_document(document: Mapping[str, Any]) -> Dict[str, Any]:
                 "bindings": result_bindings,
                 "global_settings": result_global,
             }
+        extra = {}
+        if unsafe_candidates:
+            extra = _unsafe_boundary_fields(
+                host,
+                {
+                    "candidates": [
+                        _boundary_observation(candidate["binding"], host)
+                        for candidate in unsafe_candidates
+                    ]
+                },
+            )
         return {
             "status": "stale-invalid",
             "mutation": False,
@@ -580,6 +694,7 @@ def resolve_document(document: Mapping[str, Any]) -> Dict[str, Any]:
                 "not matched by authoritative live metadata. Reconcile it explicitly "
                 "before setup may select a replacement."
             ),
+            **extra,
         }
     valid = [
         candidate
@@ -608,6 +723,26 @@ def resolve_document(document: Mapping[str, Any]) -> Dict[str, Any]:
                 }
                 for candidate in valid
             ],
+        }
+    if unsafe_candidates:
+        return {
+            "status": "missing",
+            "mutation": False,
+            "bindings": result_bindings,
+            "global_settings": result_global,
+            "actionable": (
+                f"The discovered {host} verifier candidate has an unsafe effective "
+                "boundary. Follow the ordered remediation, then rerun setup."
+            ),
+            **_unsafe_boundary_fields(
+                host,
+                {
+                    "candidates": [
+                        _boundary_observation(candidate["binding"], host)
+                        for candidate in unsafe_candidates
+                    ]
+                },
+            ),
         }
     return {
         "status": "missing",
@@ -1017,6 +1152,16 @@ def reconcile_config_text(
             }
         )
         if resolved["status"] not in {"selected", "preserved"}:
+            diagnostic = {
+                key: deepcopy(resolved[key])
+                for key in (
+                    "reason_code",
+                    "observed",
+                    "required",
+                    "remediation",
+                )
+                if key in resolved
+            }
             return _config_result(
                 original,
                 resolved["status"],
@@ -1025,6 +1170,7 @@ def reconcile_config_text(
                     "Reconcile the current-host verifier candidates explicitly.",
                 ),
                 candidates=resolved.get("candidates", []),
+                **diagnostic,
             )
         if resolved["status"] == "preserved" and not legacy:
             return {
@@ -1076,6 +1222,20 @@ def preflight_document(document: Mapping[str, Any]) -> Dict[str, Any]:
             "live": live["binding"],
             "launch_plan": launch_plan["binding"],
         }
+        host = bindings["persisted"]["host"]
+        unsafe_observed = {
+            source: _boundary_observation(binding, host)
+            for source, binding in bindings.items()
+            if _boundary_violations(binding, host)
+        }
+        if unsafe_observed:
+            return {
+                "status": "fail",
+                "before_phase_0": True,
+                "mutation": False,
+                "error": "unsafe verifier boundary",
+                **_unsafe_boundary_fields(host, unsafe_observed),
+            }
         digests = {
             field: bindings[field]["boundary_digest"]
             for field in expected
@@ -1084,7 +1244,6 @@ def preflight_document(document: Mapping[str, Any]) -> Dict[str, Any]:
             bindings["persisted"] == bindings["live"] == bindings["launch_plan"]
         ):
             raise ContractError("persisted, live, and launch metadata mismatch")
-        host = bindings["persisted"]["host"]
         if not all(
             _safe_materialized_candidate(candidate, host)
             for candidate in (live, launch_plan)

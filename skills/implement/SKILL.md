@@ -134,6 +134,12 @@ all three boundaries and digests to match. This preflight precedes ticket claim,
 
 If resolution or validation fails, stop with no tracker mutation, no claim, no worktree operation,
 no baseline, and no child. A missing helper or missing host launch metadata is a validation failure.
+When the helper returns `reason_code=unsafe-verifier-boundary`, report its structured `observed`,
+`required`, and ordered `remediation` fields together with `mutation=false`; do not reduce the
+failure to a generic profile error or perform any suggested repair. The ordered operator path is
+to upgrade and activate the current release, restart the host, configure or select a safe live
+verifier, explicitly clear or repair only the project's current-host binding after reviewing the
+mismatch, rerun setup, and rerun preflight.
 Launch and recovery must pass the actual loaded runtime metadata back through the helper's
 post-launch reconciliation before verifier output is trusted; a syntactically matching profile
 name is insufficient. Keep the same helper-backed validation immediately before every dispatch and
