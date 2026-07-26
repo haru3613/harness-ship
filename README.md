@@ -101,6 +101,11 @@ claude plugin update harness-ship@harness-ship
 
 Restart Claude Code after installing or upgrading, then run `/setup` once per project.
 
+Install supplies the verifier capability as the scoped Claude plugin agent
+`harness-ship:harness-ship-independent-verifier`; project setup performs the current-host binding
+after validating the effective live boundary. Harness Ship never copies agents into
+`~/.claude/agents` and never overwrites global agents or settings.
+
 **v0.5.0 migration:** run setup once again after this upgrade so the project config records the
 host's pre-defined agent role profiles. Later plugin updates do not require setup unless the stack,
 tracker, branches, or host agent profiles change.

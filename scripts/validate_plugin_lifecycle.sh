@@ -64,6 +64,7 @@ validate_current_install() {
 
   local required
   for required in \
+    "agents/harness-ship-independent-verifier.md" \
     "skills/bug-workflow/SKILL.md" \
     "skills/diagnose/diagnosis-receipt-template.md" \
     "skills/implement/defect-repair-receipt-template.md" \
@@ -97,6 +98,7 @@ PY
 current_sha="$(git -C "${repo_root}" rev-parse "${current_ref}")"
 base_sha="$(git -C "${repo_root}" rev-parse "${base_ref}")"
 skill_count="$(find "${fresh_dir}/skills" -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
+agent_count="$(find "${fresh_dir}/agents" -mindepth 1 -maxdepth 1 -name '*.md' | wc -l | tr -d ' ')"
 
-echo "fresh-install receipt: source=${current_sha} version=${current_version} discovered-skills=${skill_count}"
-echo "upgrade receipt: from=${base_sha}:${base_version} to=${current_sha}:${current_version} discovered-skills=${skill_count}"
+echo "fresh-install receipt: source=${current_sha} version=${current_version} discovered-skills=${skill_count} discovered-agents=${agent_count}"
+echo "upgrade receipt: from=${base_sha}:${base_version} to=${current_sha}:${current_version} discovered-skills=${skill_count} discovered-agents=${agent_count}"

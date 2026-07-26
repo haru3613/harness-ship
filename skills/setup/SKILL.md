@@ -66,6 +66,37 @@ the load-bearing forks** (don't interrogate).
   - Codex and Claude Code bindings are separate. Update only the current host's binding and preserve
     the other host section; never apply one host's profile IDs or model/effort values to the other.
 
+#### Current-host independent-verifier resolver
+
+Before any setup mutation, resolve either the sole existing config or a complete proposed config in
+memory, then require exactly one `## harness-ship` config and exactly one current-host binding
+section inside it. Duplicate configs, duplicate current-host sections, an incomplete proposed
+config, or an ambiguous host identity stop with zero mutation. Determine the current host from live
+runtime metadata, not from whichever binding happens to appear first.
+
+Resolve the mandatory independent-verification binding deterministically:
+
+1. Validate the semantic, effective live boundary and its authoritative source before you compute
+   its boundary digest. A syntactically present row is not sufficient. Preserve an explicit valid
+   project binding when its fully qualified ID, authoritative source, and effective live boundary
+   still validate.
+2. Otherwise enumerate only live-verifiable current-host candidates:
+   - For Claude Code, the plugin-shipped candidate is exactly
+     `harness-ship:harness-ship-independent-verifier`. Validate that scoped ID against the canonical
+     plugin source and canonical plugin digest, plus its effective loaded tool boundary.
+   - For Codex, a live host-provided verifier is eligible only when runtime metadata proves
+     read-only operation, no source edits, fresh context, high effort, `may_spawn=false`, its
+     effective tool/capability boundary, and authoritative source. Do not hard-code a universal
+     model family; validate the host's deliberate live assignment.
+3. One candidate selects deterministically. Multiple candidates require one load-bearing choice
+   from the user. No candidates emit an actionable missing-profile result and stop with zero
+   mutation.
+
+Write the fully qualified ID, authoritative source, and semantically validated boundary digest.
+Update only the current host section and preserve the other host section plus all global agents,
+models, effort, permissions, MCP access, plugin settings, and unrelated project configuration.
+Setup never writes global agent or settings files.
+
 ### 2. Propose, then ask only the forks
 
 Present the detected config as an **Assumptions** list (each line with its *why*). Ask ONLY the
