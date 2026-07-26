@@ -59,6 +59,17 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         self.assertNotIn("Stage 1 of `testing-workflow`", stage)
         self.assertIn("<spec-id>/acceptance-vN", stage)
 
+    def test_spec_routes_scenario_authoring_to_acceptance_design(self) -> None:
+        text = read("skills/spec/SKILL.md")
+        normalized = " ".join(text.lower().split())
+
+        self.assertIn("`acceptance-design` turns these criteria into", normalized)
+        self.assertIn("acceptance-scenario design is `acceptance-design`'s job", normalized)
+        self.assertNotRegex(
+            normalized,
+            r"testing-workflow.{0,80}(acceptance contract|scenario design|scenario authoring)",
+        )
+
     def test_testing_workflow_executes_approved_scenarios_but_does_not_author_them(self) -> None:
         text = read("skills/testing-workflow/SKILL.md")
         normalized = " ".join(text.lower().split())
