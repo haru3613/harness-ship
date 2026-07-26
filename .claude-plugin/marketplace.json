@@ -4,12 +4,12 @@
     "name": "haru3613",
     "url": "https://github.com/haru3613"
   },
-  "description": "Idea → shipped, humans on the ends. A self-contained dev + testing workflow for Claude Code.",
+  "description": "QA-led, evidence-driven software delivery for Claude Code.",
   "plugins": [
     {
       "name": "harness-ship",
       "source": "./",
-      "description": "Three orchestration workflows (dev, implement, and testing) plus nine self-contained blocks, including acceptance design and durable Bug Case routing. The root session routes bounded work to pre-defined role profiles while humans pilot five judgment gates.",
+      "description": "QA-led delivery through three orchestration workflows plus nine self-contained blocks: approve acceptance before code, route bounded RD work, verify the exact artifact in QA, and keep five judgment gates human-owned.",
       "category": "engineering",
       "keywords": [
         "workflow",

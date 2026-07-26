@@ -1,7 +1,7 @@
 {
   "name": "harness-ship",
   "version": "0.6.3",
-  "description": "Idea → shipped, humans on the ends. A root-orchestrated development and QA workflow with separate acceptance design, role-routed implementation, and explicit human judgment gates.",
+  "description": "QA-led, evidence-driven software delivery for Codex: acceptance contracts before code, role-routed RD implementation, exact-artifact QA, and human release decisions.",
   "author": {
     "name": "haru3613",
     "url": "https://github.com/haru3613"
@@ -28,8 +28,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Harness Ship",
-    "shortDescription": "Idea-to-acceptance development workflow",
-    "longDescription": "Turn an idea into an accepted change through clarification, feasibility, specification, a separate versioned acceptance-design contract, root-orchestrated role-routed TDD implementation, fixed-point review, exact-SHA delivery evidence, post-handoff QA testing, and a plain-language acceptance report.",
+    "shortDescription": "QA-led, evidence-backed software delivery",
+    "longDescription": "Move from feature intent to human acceptance through a versioned pre-implementation acceptance contract, root-orchestrated role-routed TDD, fixed-point review, exact-source and artifact handoff, independently owned QA execution, durable Bug Case routing, and a plain-language acceptance report.",
     "developerName": "haru3613",
     "category": "Engineering",
     "capabilities": [
