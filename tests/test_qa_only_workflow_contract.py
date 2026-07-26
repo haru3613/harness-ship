@@ -117,6 +117,12 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
             phase3,
             r"(do not|must not|never).{0,120}(run|invoke|consume).{0,100}qa.{0,80}(command|job)",
         )
+        phase3_review = phase3.split("run `review`", maxsplit=1)[1]
+        self.assertIn("rd-owned pre-handoff review", phase3_review)
+        self.assertRegex(
+            phase3_review,
+            r"(do not|must not|never).{0,120}(run|invoke|consume).{0,100}qa.{0,80}(command|job)",
+        )
 
         phase4 = section(implement_raw, "## Phase 4")
         self.assertIn("rd-owned ci", phase4)
@@ -125,6 +131,20 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
             phase4,
             r"(do not|must not|never).{0,120}(run|trigger|consume).{0,100}qa.{0,80}(command|job)",
         )
+        self.assertIn("non-qa branch-required checks", phase4)
+        self.assertIn("security, license, provenance, or policy", phase4)
+        rebase_review = phase4.split("rebase or conflict resolution", maxsplit=1)[1].split(
+            "2. apply", maxsplit=1
+        )[0]
+        remote_review = phase4.split("remote feedback loop", maxsplit=1)[1].split(
+            "5. proceed", maxsplit=1
+        )[0]
+        for review_path in (rebase_review, remote_review):
+            self.assertIn("rd-only pre-handoff review boundary", review_path)
+            self.assertRegex(
+                review_path,
+                r"(do not|must not|never).{0,120}(run|invoke|consume).{0,100}qa.{0,80}(command|job)",
+            )
 
     def test_reusable_qa_handoff_template_has_required_fields(self) -> None:
         template = " ".join(
@@ -174,6 +194,14 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
         ):
             self.assertIn(marker, ledger)
         self.assertIn("never overwrite", ledger)
+        self.assertIn("first matching rule wins", ledger)
+        for sequence in (
+            "`fail → pass` → `flaky`",
+            "`pass → fail` → `flaky`",
+            "`fail → pass → blocked` → `blocked`",
+            "`fail → pass → not run` → `not tested`",
+        ):
+            self.assertIn(sequence, ledger)
         attempt_header = next(
             line.lower() for line in raw_ledger.splitlines() if line.startswith("| Attempt |")
         )
@@ -209,6 +237,7 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
         self.assertIn("raw attempt outcome", stage3)
         self.assertIn("scenario classification", stage3)
         self.assertIn("not run", stage3)
+        self.assertIn("ordered first-match precedence", stage3)
         self.assertRegex(
             stage3,
             r"fail.{0,160}pass.{0,160}flaky",
@@ -323,6 +352,11 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
             "qa does not audit",
         ):
             self.assertIn(marker, stage6)
+        match = re.search(r"\[QA handoff template\]\(([^)]+)\)", dev)
+        self.assertIsNotNone(match)
+        referenced = (ROOT / "skills/dev-workflow" / match.group(1)).resolve()
+        self.assertTrue(referenced.is_file())
+        self.assertIn(ROOT.resolve(), referenced.parents)
 
 
 if __name__ == "__main__":

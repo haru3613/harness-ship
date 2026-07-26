@@ -214,7 +214,8 @@ When all slices are integrated:
    integration, P0, or full-suite command or job before the dev→QA handoff;
 4. run `review` with two fresh child runs from the mapped verification profile, the fixed point,
    originating ticket/spec/contract, repository standards, and data-mutation/security gates that
-   apply.
+   apply. Each is an **RD-owned pre-handoff review**: it may inspect the diff, RD verification
+   evidence, and non-QA checks, but must not run or consume any QA command or job.
 
 Blocking verification/review findings return to a bounded executor or root. Behaviour fixes restart
 a RED → GREEN slice; standards-only fixes keep tests green. Commit fixes, rerun affected checks,
@@ -228,22 +229,28 @@ Root alone:
 1. fetch the integration branch. If it advanced, rebase safely, **recompute the fixed point** from
    the new integration head, and treat the prior review/verification evidence as superseded. After
    any rebase or conflict resolution, require a clean tree and rerun the full RD verification gate,
-   independent verification, and `review` against the new `fixed-point...HEAD` before publishing;
+   independent verification, and `review` against the new `fixed-point...HEAD` before publishing.
+   Apply the same **RD-only pre-handoff review boundary**: these runs must not run or consume any QA
+   command or job;
 2. apply the fencing check and receipt write-ahead protocol, then push the feature branch and
    open/update one PR targeting the integration branch;
 3. attach the contract revision, SC-ID → AC-ID trace, TDD receipts, fixed point, commit list, and
    verification results;
-4. run the **remote feedback loop** on the exact head SHA. Before handoff, only **RD-owned CI** jobs
-   that invoke the configured RD verification gate may run or count as evidence. Triggering a QA
+4. run the **remote feedback loop** on the exact head SHA. Before handoff, only **RD-owned CI**
+   verification jobs may be actively triggered or counted as RD test evidence. Triggering a QA
    integration, P0, or full-suite job here is an **ownership violation**: stop, and do not trigger or
-   consume any QA command or job as merge evidence. Classify review change requests and RD-owned CI
-   failures before editing: approved-behaviour defects use a bounded RED → GREEN slice;
+   consume any QA command or job as merge evidence. Automatically triggered **non-QA
+   branch-required checks**—such as security, license, provenance, or policy—may run and must pass,
+   but are not RD test evidence. Classify review change requests and RD-owned CI failures before
+   editing: approved-behaviour defects use a bounded RED → GREEN slice;
    **standards-only** fixes keep tests green; requested contract changes return to the acceptance
    gate. Commit valid fixes and rerun affected plus the full RD verification gate. Rerun the
-   **independent outcome verifier** and two fresh review runs, push a new HEAD, and wait again. Retry unrelated
-   infrastructure failures only within the configured bound, then stop with evidence;
-5. proceed only when required review and RD-owned CI are green on the new **exact head SHA**—stale
-   green checks and QA-owned jobs do not count;
+   **independent outcome verifier** and two fresh review runs under the same **RD-only pre-handoff
+   review boundary**; they must not run or consume any QA command or job. Push a new HEAD and wait
+   again. Retry unrelated infrastructure failures only within the configured bound, then stop with
+   evidence;
+5. proceed only when required review, RD-owned CI, and all other non-QA branch-required checks are
+   green on the new **exact head SHA**—stale green checks and QA-owned jobs do not count;
 6. after a fresh fencing check and pre-mutation checkpoint, merge only under the configured branch
    policy. Never autonomously merge a protected release branch or auto-merge a single-branch
    repository. Checkpoint the observed merge SHA immediately;

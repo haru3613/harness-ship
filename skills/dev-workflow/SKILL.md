@@ -109,8 +109,9 @@ protected-branch decisions stop safely under `implement`'s rules.
 
 ## Stage 6 — Hand to QA
 
-Write a **QA handoff** onto the PR/ticket using
-`testing-workflow/qa-handoff-template.md` (not a scratch file, not a "resume the work" note). It
+Write a **QA handoff** onto the PR/ticket using the
+[QA handoff template](../testing-workflow/qa-handoff-template.md) (not a scratch file, not a
+"resume the work" note). It
 must name the approved contract and SC-ID → AC-ID scope, **full 40-character source SHA**, deployed
 artifact/environment revision, artifact-provenance source and receipt, access path,
 fixtures/accounts, and known risks.

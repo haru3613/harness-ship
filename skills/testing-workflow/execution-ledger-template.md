@@ -22,17 +22,27 @@ number; it never replaces an earlier raw outcome or scenario classification.
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | <1> | <none> | <timestamp> | <timestamp / in-progress> | <SC-002> | <AC-2> | <ID> | <SHA> | <artifact/env> | <source + receipt> | <integration / E2E / exploratory / non-functional> | <configured QA command or exact manual steps> | <PASS / FAIL / BLOCKED / NOT RUN> | <PASS / FAIL / FLAKY / BLOCKED / NOT TESTED> | <durable screenshot/video/trace/log/assertion link> | <risk result> |
 
-Normalize each appended row deterministically:
+Normalize each appended row using this ordered precedence. Evaluate top to bottom; the **first
+matching rule wins**:
 
 - An executed attempt records raw `PASS`, `FAIL`, or `BLOCKED`. A skipped, quarantined, or
   unavailable attempt records raw `NOT RUN`; it is still an appended observation with evidence.
-- If the latest raw outcome is `NOT RUN`, the latest scenario classification is `NOT TESTED`. If it
-  is `BLOCKED`, the classification is `BLOCKED`.
-- When the same scenario on the same QA-RUN-ID has both raw `FAIL` and raw `PASS`, its latest
-  classification is `FLAKY`, regardless of order. Otherwise the latest executed `PASS` or `FAIL`
-  classifies as `PASS` or `FAIL`.
+
+1. Latest raw outcome `NOT RUN` → scenario classification `NOT TESTED`.
+2. Latest raw outcome `BLOCKED` → scenario classification `BLOCKED`.
+3. Otherwise, any raw `FAIL` plus raw `PASS` for the same scenario and QA-RUN-ID → `FLAKY`.
+4. Otherwise, latest raw outcome `PASS` → `PASS`.
+5. Otherwise, latest raw outcome `FAIL` → `FAIL`.
+
 - The acceptance report uses the latest scenario classification, never a raw attempt outcome, and
   links every attempt that contributed to `FLAKY`, `BLOCKED`, or `NOT TESTED`.
+
+Composed-history examples:
+
+- `FAIL → PASS` → `FLAKY`
+- `PASS → FAIL` → `FLAKY`
+- `FAIL → PASS → BLOCKED` → `BLOCKED`
+- `FAIL → PASS → NOT RUN` → `NOT TESTED`
 
 Every attempt inherits and records the ledger's full source SHA, exact artifact/environment
 revision, artifact-provenance source, and provenance receipt. If any value changes, start a new

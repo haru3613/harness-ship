@@ -89,12 +89,15 @@ Then:
 - **Run against a test environment**, never production. Seed test data on staging/local only —
   **never write fake/seed data into a production database.**
 - A bounded retry appends its complete **attempt history**. Raw attempt outcomes are `PASS`, `FAIL`,
-  `BLOCKED`, or `NOT RUN`; the ledger template deterministically derives the scenario
-  classification. A raw `FAIL` followed by raw `PASS` for the same scenario and QA-RUN-ID is
-  **retry-green**; the reverse order is also inconsistent. In either case, the latest classification
-  is **FLAKY**, never rewritten as PASS.
+  `BLOCKED`, or `NOT RUN`. Apply the ledger template's **ordered first-match precedence**:
+  latest `NOT RUN` → `NOT TESTED`; else latest `BLOCKED` → `BLOCKED`; else mixed raw `FAIL` +
+  `PASS` → `FLAKY`; else latest `PASS` → `PASS`; else latest `FAIL` → `FAIL`.
+- A raw `FAIL` followed by raw `PASS` for the same scenario and QA-RUN-ID is **retry-green**; the
+  reverse order is also inconsistent. When neither a later `NOT RUN` nor `BLOCKED` takes precedence,
+  the latest classification is **FLAKY**, never rewritten as PASS.
 - A skipped, quarantined, unavailable, or `not-configured` attempt appends raw `NOT RUN` with the
-  reason and evidence; its latest scenario classification is **NOT TESTED**. Never omit it.
+  reason and evidence; by first-match precedence its latest scenario classification is **NOT
+  TESTED**. Never omit it.
 - A **P0** journey that is flaky, skipped, or quarantined **cannot be quarantined** to clear the
   gate, **must not count as PASS**, and makes the verdict **Not ready**.
 - A non-P0 flaky check may be quarantined only with a linked QA-maintenance ticket; its current
