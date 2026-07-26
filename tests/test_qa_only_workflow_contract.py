@@ -107,8 +107,12 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
             "skills/testing-workflow/SKILL.md",
         ):
             entrypoint = " ".join(read(path).lower().split())
-            self.assertIn("config version 1", entrypoint)
-            self.assertIn("legacy or unversioned", entrypoint)
+            self.assertIn("plugin version 0.7.0", entrypoint)
+            self.assertIn("config version 2", entrypoint)
+            self.assertIn("verifier binding-contract version 2", entrypoint)
+            self.assertIn("config v1", entrypoint)
+            self.assertIn("legacy", entrypoint)
+            self.assertIn("unversioned", entrypoint)
             self.assertIn("run `setup`", entrypoint)
             self.assertIn("do not reinterpret", entrypoint)
             self.assertIn("generic test command", entrypoint)
@@ -176,7 +180,7 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
         ):
             self.assertIn(trigger, phase4)
         self.assertIn("unclassified test job", phase4)
-        self.assertIn("re-read the current config v1", phase4)
+        self.assertIn("re-read the current validated config v2", phase4)
         self.assertIn("current remote workflow and job wiring", phase4)
         remote_loop = phase4.split("remote feedback loop", maxsplit=1)[1].split(
             "5. proceed", maxsplit=1
@@ -319,7 +323,7 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
         self.assertIn("still writable", stage3)
         for marker in (
             "qa execution ownership preflight",
-            "re-read the current config v1",
+            "re-read the current validated config v2",
             "current command, workflow, and job wiring",
             "initial direct or manual execution",
             "ci workflow dispatch or job rerun",
@@ -404,7 +408,9 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
         config = section(setup, "<config-template>", "</config-template>")
 
         for field in (
+            "plugin version:",
             "config version:",
+            "verifier binding-contract version:",
             "rd unit command:",
             "rd api-contract command:",
             "qa integration command:",
@@ -417,7 +423,12 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
             "legacy test-command migration note:",
         ):
             self.assertIn(field, config)
-        self.assertRegex(config, r"config version:\*\* `1`")
+        self.assertRegex(config, r"plugin version:\*\* `0\.7\.0`")
+        self.assertRegex(config, r"config version:\*\* `2`")
+        self.assertRegex(
+            config,
+            r"verifier binding-contract version:\*\* `2`",
+        )
         self.assertIn(
             "must agree with the qa environment and artifact-provenance source",
             config,
@@ -445,8 +456,10 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
         )
 
         for marker in (
-            "legacy v0",
-            "exactly one `## harness-ship` block",
+            "exactly one config v1 block",
+            "v1→v2",
+            "plan-config",
+            "confirmed-apply",
             "preserve",
             "not-configured",
             "manual: <steps",
@@ -464,9 +477,9 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
         self.assertIn("require explicit reconciliation", migration)
         for marker in (
             "no existing block",
-            "explicit `0`",
-            "exactly `1`",
-            "unsupported version",
+            "missing, duplicate, unsupported, or mismatched",
+            "config v1 is not valid workflow configuration",
+            "complete envelope",
             "zero mutation",
         ):
             self.assertIn(marker, migration)

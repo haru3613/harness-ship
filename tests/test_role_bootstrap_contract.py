@@ -59,7 +59,9 @@ class RoleBootstrapContractTests(unittest.TestCase):
         self.assertIn("preserve an explicit valid project binding", text)
         self.assertIn("update only the current host section", text)
         self.assertIn("preserve the other host section", text)
-        self.assertIn("role_binding_contract.py reconcile-config", text)
+        self.assertIn("role_binding_contract.py plan-config", text)
+        self.assertIn("role_binding_contract.py apply-config", text)
+        self.assertIn("exact plan-id confirmation", text)
         self.assertIn("stop with zero mutation", text)
         for setting in (
             "global agents",
@@ -110,7 +112,8 @@ class RoleBootstrapContractTests(unittest.TestCase):
         self.assertIn("typed json object", setup)
         self.assertIn("`declared`", setup)
         self.assertIn("`effective`", setup)
-        self.assertIn("role_binding_contract.py reconcile-config", setup)
+        self.assertIn("role_binding_contract.py plan-config", setup)
+        self.assertIn("role_binding_contract.py apply-config", setup)
         self.assertIn("role_binding_contract.py preflight", implement)
         self.assertIn("post-launch reconciliation", implement)
 
@@ -215,6 +218,37 @@ class RoleBootstrapContractTests(unittest.TestCase):
             self.assertIn("never repository", text)
             self.assertIn("never prompt", text)
             self.assertIn("never user-provided", text)
+
+    def test_v2_envelope_and_two_phase_file_safety_are_required(self) -> None:
+        setup = normalized("skills/setup/SKILL.md")
+        for marker in (
+            "plugin version:** `0.7.0",
+            "config version:** `2",
+            "verifier binding-contract version:** `2",
+            "config v1 is not valid workflow configuration",
+            "missing, duplicate, unsupported, or mismatched",
+            "plan-config",
+            "apply-config",
+            "confirmed apply",
+            "directory-fsync failure",
+            "indeterminate",
+            "byte-identical no-op",
+            "hostile same-uid or root",
+            "untrusted writable directories",
+        ):
+            self.assertIn(marker, setup)
+        for path in (
+            "skills/dev-workflow/SKILL.md",
+            "skills/implement/SKILL.md",
+            "skills/tdd/SKILL.md",
+            "skills/testing-workflow/SKILL.md",
+        ):
+            text = normalized(path)
+            self.assertIn("plugin version 0.7.0", text)
+            self.assertIn("config version 2", text)
+            self.assertIn("verifier binding-contract version 2", text)
+            self.assertIn("config v1", text)
+            self.assertIn("run `setup`", text)
 
 
 if __name__ == "__main__":

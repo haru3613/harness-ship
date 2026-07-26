@@ -4,6 +4,7 @@ import importlib.util
 import json
 from pathlib import Path
 import re
+import stat
 import subprocess
 import tempfile
 import unittest
@@ -63,6 +64,11 @@ def refresh_receipt(raw: dict, host_default=None) -> None:
 class RoleBindingRuntimeTests(unittest.TestCase):
     def setUp(self) -> None:
         self.contract = load_contract()
+        # Legacy parser coverage remains private migration-unit coverage; the
+        # public compatibility surface is separately asserted fail-closed.
+        self.contract.reconcile_config_text = (
+            self.contract._reconcile_config_text_v1
+        )
 
     def candidate(self, name: str, index: int = 0) -> dict:
         raw = fixture(name)["candidates"][index]
@@ -73,6 +79,438 @@ class RoleBindingRuntimeTests(unittest.TestCase):
 
     def config_text(self, name: str) -> str:
         return (CONFIG_FIXTURES / name).read_text(encoding="utf-8")
+
+    def versions(self) -> dict:
+        return deepcopy(self.contract.VERSION_ENVELOPE)
+
+    def test_version_envelope_names_verifier_contract_explicitly(self) -> None:
+        self.assertIn(
+            "verifier_binding_contract_version",
+            self.contract.VERSION_ENVELOPE,
+        )
+        self.assertNotIn("binding_contract_version", self.contract.VERSION_ENVELOPE)
+
+    def test_plan_config_reconciliation_is_non_mutating_v1_to_v2(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory) / "repo"
+            repo.mkdir(mode=0o700)
+            target = repo / "AGENTS.md"
+            original = self.config_text("codex_not_configured.md").encode("utf-8")
+            target.write_bytes(original)
+
+            result = self.contract.plan_config_reconciliation(
+                repo.resolve(),
+                "AGENTS.md",
+                "codex",
+                fixture("codex.json")["candidates"],
+            )
+
+            self.assertEqual(result["status"], "planned")
+            self.assertFalse(result["mutation"])
+            self.assertEqual(target.read_bytes(), original)
+            self.assertIn("- **Plugin version:** `0.7.0`", result["proposed_config"])
+            self.assertIn("- **Config version:** `2`", result["proposed_config"])
+            self.assertIn(
+                "- **Verifier binding-contract version:** `2`",
+                result["proposed_config"],
+            )
+            self.assertRegex(result["plan_id"], r"\Asha256:[0-9a-f]{64}\Z")
+            self.assertNotIn("discovery_receipt", repr(result))
+
+    def test_direct_reconciliation_compatibility_cannot_bypass_confirmation(
+        self,
+    ) -> None:
+        public_contract = load_contract()
+        original = self.config_text("codex_not_configured.md")
+        result = public_contract.reconcile_config_text(
+            original, "codex", fixture("codex.json")["candidates"]
+        )
+        self.assertEqual(result["status"], "confirmation-required")
+        self.assertFalse(result["mutation"])
+        self.assertEqual(result["config_text"], original)
+        self.assertNotIn("proposed_config", result)
+
+    def test_apply_requires_exact_confirmation_and_revalidates_to_noop(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = (Path(directory) / "repo").resolve()
+            repo.mkdir(mode=0o700)
+            target = repo / "CLAUDE.md"
+            original = self.config_text("claude_not_configured.md").encode("utf-8")
+            target.write_bytes(original)
+            candidates = fixture("claude.json")["candidates"]
+            planned = self.contract.plan_config_reconciliation(
+                repo, "CLAUDE.md", "claude-code", candidates
+            )
+
+            rejected = self.contract.apply_config_reconciliation(
+                repo,
+                "CLAUDE.md",
+                "claude-code",
+                candidates,
+                planned["plan"],
+                "sha256:" + "0" * 64,
+            )
+            self.assertEqual(rejected["status"], "confirmation-required")
+            self.assertFalse(rejected["mutation"])
+            self.assertEqual(target.read_bytes(), original)
+
+            applied = self.contract.apply_config_reconciliation(
+                repo,
+                "CLAUDE.md",
+                "claude-code",
+                candidates,
+                planned["plan"],
+                planned["plan_id"],
+            )
+            self.assertEqual(applied["status"], "applied")
+            self.assertTrue(applied["mutation"])
+            self.assertEqual(
+                hashlib.sha256(target.read_bytes()).hexdigest(),
+                planned["plan"]["proposed_sha256"].removeprefix("sha256:"),
+            )
+
+            second = self.contract.plan_config_reconciliation(
+                repo, "CLAUDE.md", "claude-code", candidates
+            )
+            self.assertEqual(second["status"], "preserved")
+            self.assertEqual(second["plan"]["operations"], [])
+            no_op = self.contract.apply_config_reconciliation(
+                repo,
+                "CLAUDE.md",
+                "claude-code",
+                candidates,
+                second["plan"],
+                second["plan_id"],
+            )
+            self.assertEqual(no_op["status"], "preserved")
+            self.assertFalse(no_op["mutation"])
+
+    def test_config_version_envelope_fails_closed_and_preflight_requires_v2(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = (Path(directory) / "repo").resolve()
+            repo.mkdir(mode=0o700)
+            target = repo / "AGENTS.md"
+            target.write_text(
+                self.config_text("codex_not_configured.md"), encoding="utf-8"
+            )
+            candidates = fixture("codex.json")["candidates"]
+            first = self.contract.plan_config_reconciliation(
+                repo, "AGENTS.md", "codex", candidates
+            )
+            applied = self.contract.apply_config_reconciliation(
+                repo,
+                "AGENTS.md",
+                "codex",
+                candidates,
+                first["plan"],
+                first["plan_id"],
+            )
+            self.assertEqual(applied["status"], "applied")
+            valid_v2 = target.read_text(encoding="utf-8")
+
+            malformed = (
+                valid_v2.replace("- **Plugin version:** `0.7.0`\n", ""),
+                valid_v2.replace(
+                    "- **Plugin version:** `0.7.0`",
+                    "- **Plugin version:** `0.7.0`\n"
+                    "- **Plugin version:** `0.7.0`",
+                ),
+                valid_v2.replace("- **Config version:** `2`", "- **Config version:** `3`"),
+                valid_v2.replace(
+                    "- **Verifier binding-contract version:** `2`",
+                    "- **Verifier binding-contract version:** `1`",
+                ),
+            )
+            for index, text in enumerate(malformed):
+                target.write_text(text, encoding="utf-8")
+                with self.subTest(index=index):
+                    result = self.contract.plan_config_reconciliation(
+                        repo, "AGENTS.md", "codex", candidates
+                    )
+                    self.assertEqual(result["status"], "invalid-config")
+                    self.assertFalse(result["mutation"])
+
+        candidate = self.candidate("codex.json")
+        packet = {
+            "versions": {
+                **self.versions(),
+                "config_version": "1",
+            },
+            "persisted": candidate["binding"],
+            "live": deepcopy(candidate),
+            "launch_plan": deepcopy(candidate),
+        }
+        result = self.contract.preflight_document(packet)
+        self.assertEqual(result["status"], "fail")
+        self.assertIn("run setup", result["error"])
+
+    def test_plan_and_apply_preserve_crlf_without_mixed_newlines(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = (Path(directory) / "repo").resolve()
+            repo.mkdir(mode=0o700)
+            target = repo / "AGENTS.md"
+            original = self.config_text("codex_not_configured.md")
+            target.write_bytes(original.replace("\n", "\r\n").encode("utf-8"))
+            candidates = fixture("codex.json")["candidates"]
+            planned = self.contract.plan_config_reconciliation(
+                repo, "AGENTS.md", "codex", candidates
+            )
+            self.assertEqual(planned["status"], "planned")
+            applied = self.contract.apply_config_reconciliation(
+                repo,
+                "AGENTS.md",
+                "codex",
+                candidates,
+                planned["plan"],
+                planned["plan_id"],
+            )
+            self.assertEqual(applied["status"], "applied")
+            output = target.read_bytes()
+            self.assertNotIn(b"\n", output.replace(b"\r\n", b""))
+            self.assertTrue(output.startswith(b"# Project instructions\r\n"))
+            self.assertTrue(
+                output.endswith(
+                    b"## Other section\r\n\r\nUnrelated suffix stays byte-for-byte.\r\n"
+                )
+            )
+
+    def test_plan_rejects_symlink_nonregular_hardlink_and_untrusted_repo(self) -> None:
+        candidates = fixture("codex.json")["candidates"]
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            source = base / "source.md"
+            source.write_text(self.config_text("codex_not_configured.md"))
+            cases = []
+            symlink_repo = base / "symlink-repo"
+            symlink_repo.mkdir()
+            (symlink_repo / "AGENTS.md").symlink_to(source)
+            cases.append(symlink_repo)
+            directory_repo = base / "directory-repo"
+            directory_repo.mkdir()
+            (directory_repo / "AGENTS.md").mkdir()
+            cases.append(directory_repo)
+            hardlink_repo = base / "hardlink-repo"
+            hardlink_repo.mkdir()
+            self.contract.os.link(source, hardlink_repo / "AGENTS.md")
+            cases.append(hardlink_repo)
+            writable_repo = base / "writable-repo"
+            writable_repo.mkdir(mode=0o777)
+            writable_repo.chmod(0o777)
+            (writable_repo / "AGENTS.md").write_bytes(source.read_bytes())
+            cases.append(writable_repo)
+            for repo in cases:
+                with self.subTest(repo=repo.name):
+                    result = self.contract.plan_config_reconciliation(
+                        repo, "AGENTS.md", "codex", candidates
+                    )
+                    self.assertEqual(result["status"], "invalid-config")
+
+    def test_apply_rejects_stale_target_and_candidate(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = (Path(directory) / "repo").resolve()
+            repo.mkdir(mode=0o700)
+            target = repo / "AGENTS.md"
+            target.write_text(self.config_text("codex_not_configured.md"))
+            candidates = fixture("codex.json")["candidates"]
+            planned = self.contract.plan_config_reconciliation(
+                repo, "AGENTS.md", "codex", candidates
+            )
+            target.write_text(target.read_text() + "\nexternal suffix\n")
+            stale_target = self.contract.apply_config_reconciliation(
+                repo,
+                "AGENTS.md",
+                "codex",
+                candidates,
+                planned["plan"],
+                planned["plan_id"],
+            )
+            self.assertEqual(stale_target["status"], "stale-plan")
+
+            target.write_text(self.config_text("codex_not_configured.md"))
+            planned = self.contract.plan_config_reconciliation(
+                repo, "AGENTS.md", "codex", candidates
+            )
+            drift = deepcopy(candidates)
+            drift[0]["profile"]["effective_model"] = "different-live-model"
+            drift[0]["source"] = canonical_record(drift[0]["profile"])
+            refresh_receipt(drift[0])
+            stale_candidate = self.contract.apply_config_reconciliation(
+                repo,
+                "AGENTS.md",
+                "codex",
+                drift,
+                planned["plan"],
+                planned["plan_id"],
+            )
+            self.assertEqual(stale_candidate["status"], "stale-plan")
+
+    def test_apply_reports_write_replace_directory_fsync_and_cleanup_failures(
+        self,
+    ) -> None:
+        candidates = fixture("codex.json")["candidates"]
+
+        def arrange(directory):
+            repo = (Path(directory) / "repo").resolve()
+            repo.mkdir(mode=0o700)
+            target = repo / "AGENTS.md"
+            target.write_text(self.config_text("codex_not_configured.md"))
+            planned = self.contract.plan_config_reconciliation(
+                repo, "AGENTS.md", "codex", candidates
+            )
+            return repo, target, planned
+
+        with tempfile.TemporaryDirectory() as directory:
+            repo, target, planned = arrange(directory)
+            original = target.read_bytes()
+            with mock.patch.object(
+                self.contract, "_write_all", side_effect=OSError("write failed")
+            ):
+                result = self.contract.apply_config_reconciliation(
+                    repo, "AGENTS.md", "codex", candidates,
+                    planned["plan"], planned["plan_id"],
+                )
+            self.assertEqual(result["status"], "apply-failed")
+            self.assertEqual(target.read_bytes(), original)
+
+        with tempfile.TemporaryDirectory() as directory:
+            repo, target, planned = arrange(directory)
+            original = target.read_bytes()
+            with mock.patch.object(
+                self.contract.os, "replace", side_effect=OSError("replace failed")
+            ):
+                result = self.contract.apply_config_reconciliation(
+                    repo, "AGENTS.md", "codex", candidates,
+                    planned["plan"], planned["plan_id"],
+                )
+            self.assertEqual(result["status"], "apply-failed")
+            self.assertEqual(target.read_bytes(), original)
+
+        with tempfile.TemporaryDirectory() as directory:
+            repo, _, planned = arrange(directory)
+            real_fsync = self.contract.os.fsync
+
+            def fail_directory_fsync(fd):
+                if stat.S_ISDIR(self.contract.os.fstat(fd).st_mode):
+                    raise OSError("directory fsync failed")
+                return real_fsync(fd)
+
+            with mock.patch.object(
+                self.contract.os, "fsync", side_effect=fail_directory_fsync
+            ):
+                result = self.contract.apply_config_reconciliation(
+                    repo, "AGENTS.md", "codex", candidates,
+                    planned["plan"], planned["plan_id"],
+                )
+            self.assertEqual(result["status"], "indeterminate")
+            self.assertEqual(
+                result["observed_sha256"], planned["plan"]["proposed_sha256"]
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            repo, _, planned = arrange(directory)
+            with mock.patch.object(
+                self.contract,
+                "_unlink_created",
+                side_effect=OSError("cleanup failed"),
+            ):
+                result = self.contract.apply_config_reconciliation(
+                    repo, "AGENTS.md", "codex", candidates,
+                    planned["plan"], planned["plan_id"],
+                )
+            self.assertEqual(result["status"], "applied-with-cleanup-error")
+            self.assertIn("cleanup_errors", result)
+
+    def test_apply_uses_unpredictable_lock_and_preserves_target_group(self) -> None:
+        candidates = fixture("codex.json")["candidates"]
+        with tempfile.TemporaryDirectory() as directory:
+            repo = (Path(directory) / "repo").resolve()
+            repo.mkdir(mode=0o700)
+            target = repo / "AGENTS.md"
+            target.write_text(self.config_text("codex_not_configured.md"))
+            planned = self.contract.plan_config_reconciliation(
+                repo, "AGENTS.md", "codex", candidates
+            )
+            target_group = target.stat().st_gid
+            real_open = self.contract.os.open
+            real_fchown = self.contract.os.fchown
+            opened_names = []
+            chown_calls = []
+
+            def recording_open(path, *args, **kwargs):
+                opened_names.append(path)
+                return real_open(path, *args, **kwargs)
+
+            def recording_fchown(fd, uid, gid):
+                chown_calls.append((uid, gid))
+                return real_fchown(fd, uid, gid)
+
+            with (
+                mock.patch.object(
+                    self.contract.os, "open", side_effect=recording_open
+                ),
+                mock.patch.object(
+                    self.contract.os, "fchown", side_effect=recording_fchown
+                ),
+            ):
+                result = self.contract.apply_config_reconciliation(
+                    repo,
+                    "AGENTS.md",
+                    "codex",
+                    candidates,
+                    planned["plan"],
+                    planned["plan_id"],
+                )
+
+            self.assertEqual(result["status"], "applied")
+            lock_names = [
+                name
+                for name in opened_names
+                if isinstance(name, str) and name.endswith(".lock")
+            ]
+            self.assertEqual(len(lock_names), 1)
+            self.assertRegex(
+                lock_names[0],
+                r"\A\.harness-ship-role-binding\.[0-9a-f]{64}\.lock\Z",
+            )
+            self.assertIn((self.contract.os.geteuid(), target_group), chown_calls)
+            self.assertEqual(target.stat().st_gid, target_group)
+
+    def test_apply_fails_closed_when_cooperative_lock_is_held(self) -> None:
+        candidates = fixture("codex.json")["candidates"]
+        with tempfile.TemporaryDirectory() as directory:
+            repo = (Path(directory) / "repo").resolve()
+            repo.mkdir(mode=0o700)
+            target = repo / "AGENTS.md"
+            target.write_text(self.config_text("codex_not_configured.md"))
+            original = target.read_bytes()
+            guard = repo / ".harness-ship-role-binding.lock"
+            guard.write_text("held by another apply\n", encoding="utf-8")
+            planned = self.contract.plan_config_reconciliation(
+                repo, "AGENTS.md", "codex", candidates
+            )
+
+            result = self.contract.apply_config_reconciliation(
+                repo,
+                "AGENTS.md",
+                "codex",
+                candidates,
+                planned["plan"],
+                planned["plan_id"],
+            )
+
+            self.assertEqual(result["status"], "apply-failed")
+            self.assertFalse(result["mutation"])
+            self.assertEqual(target.read_bytes(), original)
+            self.assertEqual(
+                guard.read_text(encoding="utf-8"),
+                "held by another apply\n",
+            )
+            self.assertEqual(
+                list(repo.glob(".harness-ship-role-binding.*.lock")),
+                [],
+            )
 
     def test_reconcile_config_populates_only_current_host_and_is_idempotent(
         self,
@@ -567,6 +1005,7 @@ class RoleBindingRuntimeTests(unittest.TestCase):
                     **document["candidates"][0]
                 )["binding"]
                 packet = {
+                    "versions": self.versions(),
                     "persisted": persisted,
                     "live": deepcopy(document["candidates"][0]),
                     "launch_plan": deepcopy(document["candidates"][0]),
@@ -639,6 +1078,7 @@ class RoleBindingRuntimeTests(unittest.TestCase):
         self.assertFalse(preserved["mutation"])
 
         packet = {
+            "versions": self.versions(),
             "persisted": materialized["binding"],
             "live": deepcopy(candidate),
             "launch_plan": deepcopy(candidate),
@@ -770,6 +1210,7 @@ class RoleBindingRuntimeTests(unittest.TestCase):
         raw = fixture("codex.json")["candidates"][0]
         persisted = self.contract.build_candidate(**raw)["binding"]
         packet = {
+            "versions": self.versions(),
             "persisted": persisted,
             "live": deepcopy(raw),
             "launch_plan": deepcopy(raw),
@@ -786,6 +1227,7 @@ class RoleBindingRuntimeTests(unittest.TestCase):
         for name in ("claude.json", "codex.json"):
             candidate = self.candidate(name)
             packet = {
+                "versions": self.versions(),
                 "persisted": candidate["binding"],
                 "live": deepcopy(candidate),
                 "launch_plan": deepcopy(candidate),
@@ -799,6 +1241,7 @@ class RoleBindingRuntimeTests(unittest.TestCase):
                         candidate["binding"],
                         deepcopy(candidate),
                         deepcopy(candidate),
+                        self.versions(),
                     )["status"],
                     "pass",
                 )
@@ -902,6 +1345,7 @@ class RoleBindingRuntimeTests(unittest.TestCase):
             self.contract.resolve_document(document)["status"], "preserved"
         )
         packet = {
+            "versions": self.versions(),
             "persisted": custom["binding"],
             "live": deepcopy(raw),
             "launch_plan": deepcopy(raw),
@@ -1061,6 +1505,7 @@ class RoleBindingRuntimeTests(unittest.TestCase):
                     drift["source"] = canonical_record(drift["profile"])
                 refresh_receipt(drift)
                 packet = {
+                    "versions": self.versions(),
                     "persisted": persisted,
                     "live": drift,
                     "launch_plan": deepcopy(drift),
@@ -1088,16 +1533,19 @@ class RoleBindingRuntimeTests(unittest.TestCase):
 
         packets = {
             "persisted": {
+                "versions": self.versions(),
                 "persisted": unsafe["binding"],
                 "live": deepcopy(safe),
                 "launch_plan": deepcopy(safe),
             },
             "live": {
+                "versions": self.versions(),
                 "persisted": safe["binding"],
                 "live": deepcopy(unsafe),
                 "launch_plan": deepcopy(safe),
             },
             "launch_plan": {
+                "versions": self.versions(),
                 "persisted": safe["binding"],
                 "live": deepcopy(safe),
                 "launch_plan": deepcopy(unsafe),
@@ -1252,11 +1700,13 @@ class RoleBindingRuntimeTests(unittest.TestCase):
         document = self.document("codex.json")
         candidate = self.candidate("codex.json")
         preflight = {
+            "versions": self.versions(),
             "persisted": candidate["binding"],
             "live": deepcopy(candidate),
             "launch_plan": deepcopy(candidate),
         }
         post_launch = {
+            "versions": self.versions(),
             "persisted": candidate["binding"],
             "live": deepcopy(candidate),
             "loaded": deepcopy(candidate),
@@ -1267,10 +1717,20 @@ class RoleBindingRuntimeTests(unittest.TestCase):
             "candidates": fixture("codex.json")["candidates"],
         }
         with tempfile.TemporaryDirectory() as directory:
+            repo = (Path(directory) / "repo").resolve()
+            repo.mkdir(mode=0o700)
+            (repo / "AGENTS.md").write_text(reconcile["config_text"])
+            plan_input = {
+                "repo_root": str(repo),
+                "target_basename": "AGENTS.md",
+                "current_host": "codex",
+                "candidates": reconcile["candidates"],
+            }
             inputs = {}
             for name, payload in (
                 ("resolve", document),
                 ("reconcile-config", reconcile),
+                ("plan-config", plan_input),
                 ("preflight", preflight),
                 ("post-launch", post_launch),
             ):
@@ -1286,13 +1746,6 @@ class RoleBindingRuntimeTests(unittest.TestCase):
                     "resolve",
                     "--input",
                     str(inputs["resolve"]),
-                ],
-                [
-                    "python3",
-                    str(HELPER),
-                    "reconcile-config",
-                    "--input",
-                    str(inputs["reconcile-config"]),
                 ],
                 [
                     "python3",
@@ -1314,6 +1767,41 @@ class RoleBindingRuntimeTests(unittest.TestCase):
                     command, text=True, capture_output=True, check=False
                 )
                 self.assertEqual(completed.returncode, 0, completed.stderr)
+
+            compatibility = subprocess.run(
+                [
+                    "python3", str(HELPER), "reconcile-config",
+                    "--input", str(inputs["reconcile-config"]),
+                ],
+                text=True, capture_output=True, check=False,
+            )
+            self.assertNotEqual(compatibility.returncode, 0)
+            self.assertIn("plan-config", compatibility.stderr)
+
+            planned = subprocess.run(
+                [
+                    "python3", str(HELPER), "plan-config",
+                    "--input", str(inputs["plan-config"]),
+                ],
+                text=True, capture_output=True, check=False,
+            )
+            self.assertEqual(planned.returncode, 0, planned.stderr)
+            plan_result = json.loads(planned.stdout)
+            apply_input = {
+                **plan_input,
+                "plan": plan_result["plan"],
+                "confirmed_plan_id": plan_result["plan_id"],
+            }
+            apply_path = Path(directory) / "apply-config.json"
+            apply_path.write_text(json.dumps(apply_input), encoding="utf-8")
+            applied = subprocess.run(
+                [
+                    "python3", str(HELPER), "apply-config",
+                    "--input", str(apply_path),
+                ],
+                text=True, capture_output=True, check=False,
+            )
+            self.assertEqual(applied.returncode, 0, applied.stderr)
 
 
 if __name__ == "__main__":

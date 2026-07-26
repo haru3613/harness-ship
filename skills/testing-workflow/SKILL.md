@@ -15,13 +15,14 @@ the bugs unit tests structurally can't. This workflow executes the **approved ac
 after the dev→QA handoff and produces a report the user can actually read and accept. Scenario
 ownership belongs to `acceptance-design`; this workflow must not author or redesign those scenarios.
 
-**Prerequisite:** require the project's exact `## harness-ship` **Config version 1** block in
-`AGENTS.md` / `CLAUDE.md`. Its QA environment, artifact-provenance source, QA evidence location, and
-tracker must be concrete and non-placeholder. If the block is absent, legacy or unversioned,
-explicitly version 0, or has a missing/placeholder/`not-configured` required field, run `setup` and
-stop before Stage 2. An unsupported other version stops for explicit reconciliation; never guess or
-downgrade it. Do not reinterpret a legacy generic test command. Individual QA command capabilities
-may remain `not-configured`; Stage 3 records those scenarios NOT TESTED rather than inferring PASS.
+**Prerequisite:** require the project's exact `## harness-ship` envelope with **Plugin version
+0.7.0**, **Config version 2**, and **Verifier binding-contract version 2** in `AGENTS.md` /
+`CLAUDE.md`. Its QA environment, artifact-provenance source, QA evidence location, and tracker must
+be concrete and non-placeholder. If the block is absent, Config v1, legacy, unversioned,
+duplicated, unsupported, mismatched, or has a missing/placeholder/`not-configured` required field,
+run `setup` and stop before Stage 2. Never guess or downgrade it. Do not reinterpret a legacy
+generic test command. Individual QA command capabilities may remain `not-configured`; Stage 3
+records those scenarios NOT TESTED rather than inferring PASS.
 
 ## Ownership + pyramid (settle first — prevents duplication)
 
@@ -85,7 +86,7 @@ method, or `not-configured`. A `not-configured` capability cannot run: record **
 the result **Not ready**; never infer PASS from an unknown capability.
 
 Run a fail-closed **QA execution ownership preflight** immediately before every trigger-capable QA
-action. Re-read the current Config v1, the capability's QA ownership, and the current command,
+action. Re-read the current validated Config v2, the capability's QA ownership, and the current command,
 workflow, and job wiring; revalidate the handoff-bound source/artifact/provenance and evidence
 destination. On configuration or ownership drift, an RD-owned/unclassified action, or a mismatch,
 do not execute: append raw `NOT RUN` → `NOT TESTED` with preflight evidence.

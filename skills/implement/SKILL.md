@@ -13,11 +13,12 @@ description: >-
 Implement **one approved ticket** from ready state to merged evidence. The main/root session is the
 orchestrator; subagents are bounded specialists, not competing controllers.
 
-**Prerequisite:** read the project's `## harness-ship` **Config version 1** block in `AGENTS.md` /
-`CLAUDE.md`. It must identify the tracker and PR access paths, branch topology, classified RD/QA
-commands, configured checks, and **Agent role profiles**. If it is absent, legacy or unversioned,
-or lacks role profiles, run `setup` and stop before delegating or running a baseline. Do not
-reinterpret a legacy generic test command.
+**Prerequisite:** read the project's `## harness-ship` block in `AGENTS.md` / `CLAUDE.md` and
+require exact **Plugin version 0.7.0**, **Config version 2**, and **Verifier binding-contract
+version 2** fields. It must identify the tracker and PR access paths, branch topology, classified
+RD/QA commands, configured checks, and **Agent role profiles**. If it is absent, Config v1,
+legacy, unversioned, duplicated, unsupported, mismatched, or lacks role profiles, run `setup` and
+stop before delegating or running a baseline. Do not reinterpret a legacy generic test command.
 
 ## Root ownership — never delegate the control plane
 
@@ -127,9 +128,11 @@ Preflight must validate the adapter receipt against the exact current source sna
 effective model, and launch plan before any ticket claim, worktree, baseline, or dispatch side
 effect.
 
-The input contains the persisted current-host binding, authoritative live metadata, and exact
-launch-plan metadata. The helper is authoritative for typed source/digest validation and requires
-all three boundaries and digests to match. This preflight precedes ticket claim, worktree creation,
+The input contains exact executing-helper version `2`, plugin version `0.7.0`, Config version `2`,
+and verifier binding-contract version `2`, plus the persisted current-host binding, authoritative
+live metadata, and exact launch-plan metadata. The helper requires the version envelope and all
+three boundaries and digests to agree; post-launch supplies the same envelope. A mismatch fails
+closed and sends Config v1 users to `setup`. This preflight precedes ticket claim, worktree creation,
 `git worktree list`, delegation, dispatch, and baseline execution. Do not substitute prose checks.
 
 If resolution or validation fails, stop with no tracker mutation, no claim, no worktree operation,
@@ -294,7 +297,7 @@ Root alone:
 Until the QA handoff is valid, rerun the **CI ownership preflight** immediately before every
 trigger-capable mutation: initial push, retry push, PR open/update, merge/integration push,
 deployment mutation, workflow dispatch, job rerun, and infrastructure retry. Immediately before
-each, re-read the current Config v1 and the current remote workflow and job wiring. If a QA-owned or
+each, re-read the current validated Config v2 and the current remote workflow and job wiring. If a QA-owned or
 **unclassified test job** would launch, stop before the mutation; only positively classified RD
 verification jobs and automatic non-QA branch-required checks may proceed.
 
@@ -305,7 +308,7 @@ verification jobs and automatic non-QA branch-required checks may proceed.
    Apply the same **RD-only pre-handoff review boundary**: these runs must not run or consume any QA
    command or job;
 2. before any push or PR mutation, run a **CI ownership preflight**: inspect the exact workflow
-   triggers and job-command wiring plus the Config v1 QA command mappings. If pushing the branch or
+   triggers and job-command wiring plus the Config v2 QA command mappings. If pushing the branch or
    opening/updating the PR would automatically launch a QA integration, P0, or full-suite job, stop
    before the mutation. Automatically triggered non-QA branch-required checks remain allowed. Once
    the preflight passes, apply the fencing check and receipt write-ahead protocol, then push the
