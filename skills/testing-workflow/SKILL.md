@@ -57,15 +57,16 @@ artifact seam, return to `acceptance-design`; QA must not silently redesign it d
 
 For every manual P0 exception, validate its **current explicit user approval**, that the
 **follow-up ticket exists and is open**, its **named owner**, its **unexpired deadline**, the
-**exact-candidate execution method**, and the **required evidence**. Any incomplete, closed, or
-expired exception makes the handoff **Not ready**: do not execute it, and return to
-`acceptance-design` through `dev-workflow` Stage 3 for a revised approved contract. Preserve all six
-fields and this evaluation in the acceptance report.
+**exact-candidate execution method**, and the **required evidence**; verify the **live
+follow-up-ticket assignee equals the approved QA automation owner** copied unchanged from the
+approved contract. Any incomplete, closed, expired, or **owner mismatch** makes the handoff **Not
+ready**: do not execute it, and return to `acceptance-design` through `dev-workflow` Stage 3 for a
+revised approved contract. Preserve all six fields, both owner values, and this evaluation in the
+acceptance report.
 
-- **RD tier** (may already be covered — check the handoff's "what unit+contract tests cover"): unit +
-  contract tests. Test the contract against the API schema; don't re-test at E2E what a contract test
-  already pins.
-- **QA tier**: integration + E2E → Stage 3, routed by the approved profile layer.
+- **RD tier is a handoff prerequisite:** verify the RD unit/contract receipt and its exact-HEAD
+  results. If RD coverage is missing or red, return to RD; QA does not write or execute those tests.
+- **QA tier:** QA executes only the approved integration + E2E profiles in Stage 3.
 
 ## Stage 3 — Execute approved QA layer
 
@@ -84,8 +85,9 @@ check. Then:
   against the exact source and artifact/environment revision named in the handoff.
 - Before running a manual P0 exception, freshly validate its **current explicit user approval**,
   that the **follow-up ticket exists and is open**, its **named owner**, its **unexpired deadline**,
-  the **exact-candidate execution method**, and the **required evidence**. Any invalid field is
-  **Not ready** and returns through `dev-workflow` Stage 3.
+  the **exact-candidate execution method**, and the **required evidence**; verify the **live
+  follow-up-ticket assignee equals the approved QA automation owner**. Any invalid field or **owner
+  mismatch** is **Not ready** and returns through `dev-workflow` Stage 3.
 - **Run against a test environment**, never production. Seed test data on staging/local only —
   **never write fake/seed data into a production database.**
 - **Flaky quarantine is non-P0 only** (skip + a linked issue), never delete; add a retry policy so

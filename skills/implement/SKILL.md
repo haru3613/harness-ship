@@ -214,9 +214,10 @@ pre-publication evidence to it.
 A manual exception may skip this pre-publication automation only after root re-reads and verifies
 all approved exception fields: **current explicit user approval**, that the **follow-up ticket
 exists and is open**, its **named owner**, its **unexpired deadline**, the **exact-candidate
-execution method**, and the **required evidence**. An incomplete, closed, or expired exception
-stops implementation and returns to `acceptance-design` through `dev-workflow` Stage 3 for a revised
-approved contract.
+execution method**, and the **required evidence**; also verify the **live follow-up-ticket assignee
+equals the approved QA automation owner**. An incomplete, closed, expired, or owner-mismatched
+exception stops implementation and returns to `acceptance-design` through `dev-workflow` Stage 3
+for a revised approved contract.
 
 ## Phase 3 — Integrate, verify, and review
 
@@ -230,9 +231,10 @@ When all slices are integrated:
    - **When a manual exception is requested:** immediately before this exception-based skip,
      re-read and verify all approved exception fields: **current explicit user approval**, that the
      **follow-up ticket exists and is open**, its **named owner**, its **unexpired deadline**, the
-     **exact-candidate execution method**, and the **required evidence**. If all fields are valid,
-     record the skip, exact HEAD, and validation evidence; any invalid field returns to
-     `acceptance-design` through `dev-workflow` Stage 3.
+     **exact-candidate execution method**, and the **required evidence**; also verify the **live
+     follow-up-ticket assignee equals the approved QA automation owner**. If all fields and the
+     owner binding are valid, record the skip, exact HEAD, and validation evidence; any invalid
+     field or owner mismatch returns to `acceptance-design` through `dev-workflow` Stage 3.
    A **P0 flaky** result is **Not ready**. It must not be quarantined or accepted through an
    infrastructure retry; a green retry alone is not PASS. Diagnose and fix the flake, then rerun at
    the new exact HEAD, or return through `dev-workflow` Stage 3 for the user to approve a complete
@@ -271,21 +273,27 @@ Root alone:
    invalidates the P0 receipt: before the next push, repeat Phase 3 step 3 and checkpoint the new
    exact HEAD, result, and evidence (or the freshly validated six-field exception). Then rerun the
    **independent outcome verifier** and two fresh review runs, push a new HEAD, and wait again.
-   Retry unrelated infrastructure failures only within the configured bound. A **P0 flaky** result
-   is **Not ready** and must not be quarantined or treated as an infrastructure retry; diagnose and
-   fix it, or return through `dev-workflow` Stage 3 for a complete manual exception;
+   Before any retry, require **checkpointed proof** that the approved **profile/test never started**
+   or that a named **provider incident** caused the failure. Only then is an infrastructure retry
+   permitted within the configured bound. Any **test-started or ambiguous** P0 failure is **Not
+   ready**. A **P0 flaky** result is **Not ready** and must not be quarantined or treated as
+   infrastructure; diagnose and fix it, or return through `dev-workflow` Stage 3 for a complete
+   manual exception;
 5. proceed only when required review and CI are green on the new **exact PR head SHA**—stale green
    checks do not count. Required CI includes every approved P0 integration/E2E automation profile;
    rerun it after every new commit or rebase unless the validated manual exception applies. Before
    every exception-based skip in this remote loop, re-read and verify all approved exception fields:
    **current explicit user approval**, that the **follow-up ticket exists and is open**, its
    **named owner**, its **unexpired deadline**, the **exact-candidate execution method**, and the
-   **required evidence**; prior validation is not reusable;
+   **required evidence**; also verify the **live follow-up-ticket assignee equals the approved QA
+   automation owner**. Any owner mismatch returns to `acceptance-design` through `dev-workflow`
+   Stage 3; prior validation is not reusable;
 6. after a fresh fencing check and pre-mutation checkpoint, merge only under the configured branch
    policy. Immediately before merge, re-read and verify all approved exception fields when an
    exception is being used: **current explicit user approval**, that the **follow-up ticket exists
    and is open**, its **named owner**, its **unexpired deadline**, the **exact-candidate execution
-   method**, and the **required evidence**. Any invalid state stops and returns to
+   method**, and the **required evidence**; also verify the **live follow-up-ticket assignee equals
+   the approved QA automation owner**. Any invalid state or owner mismatch stops and returns to
    `acceptance-design` through `dev-workflow` Stage 3. Never autonomously merge a protected release
    branch or auto-merge a single-branch repository. Checkpoint the observed merge SHA immediately;
 7. run the idempotent **post-merge reconciliation** path: revalidate fencing, update the tracker to

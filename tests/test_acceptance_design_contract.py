@@ -242,6 +242,7 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             "unexpired deadline",
             "exact-candidate execution method",
             "required evidence",
+            "live follow-up-ticket assignee equals the approved qa automation owner",
         )
 
         for phase in (premerge, integrate, publish):
@@ -251,6 +252,55 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         self.assertIn("before every exception-based skip", publish)
         self.assertIn("immediately before merge", publish)
         self.assertIn("stage 3", publish)
+
+    def test_exception_owner_binding_is_preserved_through_qa(self) -> None:
+        testing = read("skills/testing-workflow/SKILL.md").lower()
+        stage2 = " ".join(
+            testing.split("## stage 2", maxsplit=1)[1]
+            .split("## stage 3", maxsplit=1)[0]
+            .split()
+        )
+        stage3 = " ".join(
+            testing.split("## stage 3", maxsplit=1)[1]
+            .split("## stage 4", maxsplit=1)[0]
+            .split()
+        )
+        report = " ".join(
+            read("skills/testing-workflow/acceptance-report-template.md")
+            .lower()
+            .split("## manual p0 exceptions", maxsplit=1)[1]
+            .split("## what failed", maxsplit=1)[0]
+            .split()
+        )
+
+        for phase in (stage2, stage3):
+            self.assertIn(
+                "live follow-up-ticket assignee equals the approved qa automation owner",
+                phase,
+            )
+            self.assertIn("owner mismatch", phase)
+            self.assertIn("not ready", phase)
+            self.assertIn("stage 3", phase)
+        for field in (
+            "approved qa automation owner",
+            "live ticket assignee",
+            "owner match",
+        ):
+            self.assertIn(field, report)
+
+    def test_qa_only_checks_rd_receipts_instead_of_running_rd_tests(self) -> None:
+        testing = read("skills/testing-workflow/SKILL.md").lower()
+        stage2 = " ".join(
+            testing.split("## stage 2", maxsplit=1)[1]
+            .split("## stage 3", maxsplit=1)[0]
+            .split()
+        )
+
+        self.assertIn("verify the rd unit/contract receipt", stage2)
+        self.assertIn("missing or red", stage2)
+        self.assertIn("return to rd", stage2)
+        self.assertIn("qa executes only", stage2)
+        self.assertNotIn("test the contract against the api schema", stage2)
 
     def test_manual_p0_exception_is_validated_and_reported(self) -> None:
         testing = read("skills/testing-workflow/SKILL.md").lower()
@@ -288,7 +338,7 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         for field in (
             "exception approval",
             "exception ticket",
-            "exception owner",
+            "approved qa automation owner",
             "exception expiry",
             "exception execution method",
             "exception required evidence",
@@ -342,6 +392,27 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             "last validation time",
         ):
             self.assertIn(field, recovery)
+
+    def test_infrastructure_retry_requires_checkpointed_non_test_evidence(self) -> None:
+        implement = read("skills/implement/SKILL.md").lower()
+        remote = " ".join(
+            implement.split("4. run the **remote feedback loop**", maxsplit=1)[1]
+            .split("5. proceed only", maxsplit=1)[0]
+            .split()
+        )
+        fields = (
+            "checkpointed proof",
+            "profile/test never started",
+            "provider incident",
+            "test-started or ambiguous",
+            "p0",
+            "not ready",
+            "infrastructure retry",
+        )
+
+        for field in fields:
+            self.assertIn(field, remote)
+        self.assertLess(remote.index("checkpointed proof"), remote.index("infrastructure retry"))
 
     def test_tdd_seam_corrections_cannot_mutate_the_acceptance_contract(self) -> None:
         text = " ".join(read("skills/tdd/SKILL.md").lower().split())
