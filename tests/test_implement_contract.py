@@ -213,8 +213,40 @@ class ImplementSkillContractTests(unittest.TestCase):
 
         marketplace = json.loads(read(".claude-plugin/marketplace.json"))
         listing = marketplace["plugins"][0]
-        self.assertIn("Three orchestration workflows", listing["description"])
+        self.assertIn("QA-led", listing["description"])
         self.assertIn("implement", listing["keywords"])
+
+    def test_public_docs_position_qa_led_software_delivery(self) -> None:
+        readme = read("README.md")
+        upgrade = read("docs/upgrade-guide.md")
+
+        self.assertIn("QA-led software delivery", readme)
+        self.assertIn("not a test framework", readme.lower())
+        self.assertIn("exact-artifact", readme)
+        self.assertIn("Bug Case", readme)
+        for classification in (
+            "product-defect",
+            "test-defect",
+            "environment-defect",
+            "spec-ambiguity",
+            "duplicate",
+            "known-limitation",
+        ):
+            self.assertIn(classification, readme)
+        self.assertNotIn("**v0.6.3 migration:**", readme)
+        self.assertIn("**v0.6.3 migration:**", upgrade)
+        self.assertEqual(upgrade.count("**v0.5.0 migration:**"), 2)
+
+        metadata_descriptions = (
+            json.loads(read(".codex-plugin/plugin.json"))["description"],
+            json.loads(read(".claude-plugin/plugin.json"))["description"],
+            json.loads(read(".claude-plugin/marketplace.json"))["description"],
+            json.loads(read(".claude-plugin/marketplace.json"))["plugins"][0][
+                "description"
+            ],
+        )
+        for description in metadata_descriptions:
+            self.assertIn("QA-led", description)
 
     def test_every_skill_has_matching_frontmatter_name(self) -> None:
         skill_files = sorted((ROOT / "skills").glob("*/SKILL.md"))

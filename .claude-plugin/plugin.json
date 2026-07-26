@@ -1,7 +1,7 @@
 {
   "name": "harness-ship",
   "version": "0.6.3",
-  "description": "Idea → shipped, humans on the ends. A root-orchestrated dev + QA workflow for Claude Code: clarify → feasibility → spec → acceptance design → role-routed implementation → QA execution → acceptance.",
+  "description": "QA-led, evidence-driven software delivery for Claude Code: acceptance contracts before code, role-routed RD implementation, exact-artifact QA, and human release decisions.",
   "author": {
     "name": "haru3613",
     "url": "https://github.com/haru3613"

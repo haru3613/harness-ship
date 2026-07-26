@@ -15,7 +15,7 @@ class AcceptanceDesignContractTests(unittest.TestCase):
     """HS-QA-BUG/acceptance-v1: SC-001 traces to AC-1 and AC-7."""
 
     def assert_compatibility_policy(
-        self, version: str, testing_workflow: str, readme: str
+        self, version: str, testing_workflow: str, documentation: str
     ) -> None:
         major, minor, _patch = (int(part) for part in version.split("."))
         normalized = " ".join(testing_workflow.split())
@@ -28,14 +28,14 @@ class AcceptanceDesignContractTests(unittest.TestCase):
                 "one minor release",
             ):
                 self.assertNotIn(marker, normalized)
-            self.assertNotIn("**v0.6.0 migration:**", readme)
+            self.assertNotIn("**v0.6.0 migration:**", documentation)
             for command in (
                 "$harness-ship:acceptance-design",
                 "$harness-ship:testing-workflow",
                 "/harness-ship:acceptance-design",
                 "/harness-ship:testing-workflow",
             ):
-                self.assertIn(command, readme)
+                self.assertIn(command, documentation)
             return
 
         self.assertEqual((major, minor), (0, 6))
@@ -52,14 +52,14 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         self.assertIn("original or current stable spec", compatibility)
         self.assertIn("never infer expected behaviour from code", compatibility.lower())
         self.assertIn("stop", compatibility.lower())
-        self.assertIn("**v0.6.0 migration:**", readme)
+        self.assertIn("**v0.6.0 migration:**", documentation)
         for command in (
             "$harness-ship:acceptance-design",
             "$harness-ship:testing-workflow",
             "/harness-ship:acceptance-design",
             "/harness-ship:testing-workflow",
         ):
-            self.assertIn(command, readme)
+            self.assertIn(command, documentation)
 
     def test_acceptance_design_is_a_discoverable_skill(self) -> None:
         text = read("skills/acceptance-design/SKILL.md")
@@ -193,17 +193,19 @@ class AcceptanceDesignContractTests(unittest.TestCase):
 
     def test_versioned_compatibility_redirect_and_expiry(self) -> None:
         text = read("skills/testing-workflow/SKILL.md")
-        readme = read("README.md")
+        docs = read("README.md") + "\n" + read("docs/upgrade-guide.md")
         version = json.loads(read(".codex-plugin/plugin.json"))["version"]
 
-        self.assert_compatibility_policy(version, text, readme)
+        self.assert_compatibility_policy(version, text, docs)
 
     def test_v07_policy_rejects_retained_alias_and_accepts_complete_removal(self) -> None:
         current_workflow = read("skills/testing-workflow/SKILL.md")
         current_readme = read("README.md")
+        current_upgrade = read("docs/upgrade-guide.md")
+        current_docs = current_readme + "\n" + current_upgrade
 
         with self.assertRaises(AssertionError):
-            self.assert_compatibility_policy("0.7.0", current_workflow, current_readme)
+            self.assert_compatibility_policy("0.7.0", current_workflow, current_docs)
 
         future_workflow = re.sub(
             r"## v0\.6 compatibility redirect.*?(?=## Stage 2)",
@@ -211,30 +213,33 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             current_workflow,
             flags=re.DOTALL,
         )
-        future_readme = re.sub(
+        future_upgrade = re.sub(
             r"\n\*\*v0\.6\.0 migration:\*\*.*?(?=\n\n)",
             "",
-            current_readme,
+            current_upgrade,
             flags=re.DOTALL,
         )
-        self.assert_compatibility_policy("0.7.0", future_workflow, future_readme)
+        future_docs = current_readme + "\n" + future_upgrade
+        self.assert_compatibility_policy("0.7.0", future_workflow, future_docs)
 
     def test_v07_allows_normal_direct_skill_commands(self) -> None:
         current_workflow = read("skills/testing-workflow/SKILL.md")
         current_readme = read("README.md")
+        current_upgrade = read("docs/upgrade-guide.md")
         future_workflow = re.sub(
             r"## v0\.6 compatibility redirect.*?(?=## Stage 2)",
             "",
             current_workflow,
             flags=re.DOTALL,
         )
-        future_readme = re.sub(
+        future_upgrade = re.sub(
             r"\n\*\*v0\.6\.0 migration:\*\*.*?(?=\n\n)",
             "",
-            current_readme,
+            current_upgrade,
             flags=re.DOTALL,
         )
-        self.assert_compatibility_policy("0.7.0", future_workflow, future_readme)
+        future_docs = current_readme + "\n" + future_upgrade
+        self.assert_compatibility_policy("0.7.0", future_workflow, future_docs)
 
     def test_setup_lists_acceptance_design_as_a_config_consumer(self) -> None:
         setup = " ".join(read("skills/setup/SKILL.md").lower().split())

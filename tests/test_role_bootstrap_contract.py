@@ -148,17 +148,18 @@ class RoleBootstrapContractTests(unittest.TestCase):
 
     def test_v063_requires_reconciliation_migration_and_describes_host_supply(self) -> None:
         readme = normalized("README.md")
+        upgrade = normalized("docs/upgrade-guide.md")
         versions = {
             json.loads(read(path))["version"]
             for path in (".codex-plugin/plugin.json", ".claude-plugin/plugin.json")
         }
 
         self.assertEqual(versions, {"0.6.3"})
-        self.assertEqual(readme.count("**v0.6.3 migration:**"), 2)
-        self.assertIn("every config v1 project must run", readme)
-        self.assertIn("preserves an exact valid binding", readme)
-        self.assertIn("collision", readme)
-        self.assertIn("profile removal", readme)
+        self.assertEqual(upgrade.count("**v0.6.3 migration:**"), 2)
+        self.assertIn("every config v1 project must run", upgrade)
+        self.assertIn("preserves an exact valid binding", upgrade)
+        self.assertIn("collision", upgrade)
+        self.assertIn("profile removal", upgrade)
         self.assertIn("codex installation supplies skills only", readme)
         self.assertIn("it does not supply an independent verifier", readme)
         self.assertIn("claude plugin agent", readme)
