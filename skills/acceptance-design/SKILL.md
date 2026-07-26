@@ -11,6 +11,10 @@ description: >-
 Design the behavioural contract that implementation and QA share. This is a **design only** skill:
 it translates the current stable spec without inferring expected behaviour from implementation.
 
+**Prerequisite:** read the project's `## harness-ship` config in `AGENTS.md` / `CLAUDE.md`,
+including the configured tracker/access path and forbidden tools. Run `setup` if the block is
+absent; publishing must use that configured path.
+
 ## Inputs
 
 Require the current stable spec and its stable acceptance criteria. If criteria are missing,

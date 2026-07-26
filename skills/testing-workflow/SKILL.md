@@ -50,6 +50,11 @@ Resume here only after the dev→QA handoff. Confirm the handoff names the appro
 the exact source commit and deployed artifact/environment revision under test; do not redesign
 scenarios to match what was built.
 
+For every scenario, read its approved **QA assurance profile** and execute each approved profile
+unchanged: preserve its integration/E2E layer, automation expectation, required evidence, and
+risk-specific probes. If the profile is missing, contradictory, or cannot be executed at the named
+artifact seam, return to `acceptance-design`; QA must not silently redesign it during execution.
+
 - **RD tier** (may already be covered — check the handoff's "what unit+contract tests cover"): unit +
   contract tests. Test the contract against the API schema; don't re-test at E2E what a contract test
   already pins.
@@ -87,6 +92,8 @@ this folder. It must:
 - Name the acceptance-contract revision and map every result through **SC-ID → AC-ID → ticket** —
   "done" = the thing they asked for works, not "some tests passed".
 - For failures, link the **evidence** (screenshot / video / trace) and say what the user would see.
+- Report the profile and evidence for every scenario, including the method/evidence required by its
+  approved QA assurance profile—not only failures.
 - State coverage **honestly** — what's automated, what was checked manually, what was NOT tested.
 - End with a one-line **verdict**: ready to accept / accept-with-caveats / not ready + why.
 

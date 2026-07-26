@@ -29,13 +29,6 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             ):
                 self.assertNotIn(marker, normalized)
             self.assertNotIn("**v0.6.0 migration:**", readme)
-            for command in (
-                "$harness-ship:acceptance-design",
-                "$harness-ship:testing-workflow",
-                "/harness-ship:acceptance-design",
-                "/harness-ship:testing-workflow",
-            ):
-                self.assertNotIn(command, readme)
             return
 
         self.assertEqual((major, minor), (0, 6))
@@ -66,6 +59,16 @@ class AcceptanceDesignContractTests(unittest.TestCase):
 
         self.assertRegex(text, r"(?m)^name:\s+acceptance-design$")
         self.assertIn("# acceptance-design", text)
+
+    def test_acceptance_design_uses_project_tracker_and_tool_policy(self) -> None:
+        skill = " ".join(read("skills/acceptance-design/SKILL.md").lower().split())
+        setup = " ".join(read("skills/setup/SKILL.md").lower().split())
+
+        self.assertIn("## harness-ship", skill)
+        self.assertIn("configured tracker", skill)
+        self.assertIn("forbidden tools", skill)
+        self.assertIn("run `setup` if", skill)
+        self.assertIn("`acceptance-design`", setup)
 
     def test_scenario_contract_is_versioned_traceable_and_qa_executable(self) -> None:
         text = " ".join(read("skills/acceptance-design/SKILL.md").split())
@@ -152,6 +155,17 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         self.assertIn("do not redesign", normalized)
         self.assertIn("integration + e2e", normalized)
 
+    def test_testing_workflow_consumes_assurance_profiles_without_redesign(self) -> None:
+        text = " ".join(read("skills/testing-workflow/SKILL.md").lower().split())
+
+        self.assertIn("qa assurance profile", text)
+        self.assertIn("execute each approved profile unchanged", text)
+        self.assertIn("automation expectation", text)
+        self.assertIn("required evidence", text)
+        self.assertIn("risk-specific probes", text)
+        self.assertIn("return to `acceptance-design`", text)
+        self.assertIn("report the profile and evidence for every scenario", text)
+
     def test_versioned_compatibility_redirect_and_expiry(self) -> None:
         text = read("skills/testing-workflow/SKILL.md")
         readme = read("README.md")
@@ -177,6 +191,11 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             "",
             current_readme,
             flags=re.DOTALL,
+        )
+        future_readme += (
+            "\nCanonical commands remain valid: "
+            "`$harness-ship:acceptance-design`, `$harness-ship:testing-workflow`, "
+            "`/harness-ship:acceptance-design`, `/harness-ship:testing-workflow`.\n"
         )
         self.assert_compatibility_policy("0.7.0", future_workflow, future_readme)
 
