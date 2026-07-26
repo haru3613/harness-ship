@@ -114,7 +114,8 @@ branches, or host agent profiles change.
 - **Test / lint / typecheck commands** — per your stack.
 - **Agent role profiles** — maps work nature to host-defined profiles and records each profile's
   definition source, mode/sandbox, model, effort, write scope, MCP/plugin boundary, and no-spawn
-  status. Setup never creates or overrides global agents.
+  status. Portable requirements are shared, while Codex and Claude Code keep separate live bindings.
+  Setup never creates or overrides global agents.
 - **Ready/claim and deployment paths** — separates ticket eligibility from an atomic owner/session
   claim, and records how QA obtains an exact-source deployment receipt for a non-production
   environment.

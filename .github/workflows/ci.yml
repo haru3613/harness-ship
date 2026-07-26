@@ -31,7 +31,15 @@ jobs:
 
       - name: Check changed-line whitespace
         env:
+          EVENT_NAME: ${{ github.event_name }}
           BASE_REF: ${{ github.base_ref || 'main' }}
+          BEFORE_SHA: ${{ github.event.before }}
         run: |
-          git fetch origin "$BASE_REF"
-          git diff --check "origin/$BASE_REF...HEAD"
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            git fetch origin "$BASE_REF"
+            git diff --check "origin/$BASE_REF...HEAD"
+          elif printf '%s' "$BEFORE_SHA" | grep -Eq '^0+$'; then
+            git show --check --format= HEAD
+          else
+            git diff --check "$BEFORE_SHA..HEAD"
+          fi

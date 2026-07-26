@@ -21,8 +21,8 @@ the load-bearing forks** (don't interrogate).
 
 ### 1. Detect (never ask what you can read)
 
-- **Stack + commands** — infer test / lint / typecheck from what's present:
-  - `package.json` scripts (`test`, `lint`, `typecheck`) → npm/pnpm/yarn per lockfile.
+- **Stack + commands** — infer test / lint / typecheck / build from what's present:
+  - `package.json` scripts (`test`, `lint`, `typecheck`, `build`) → npm/pnpm/yarn per lockfile.
   - `pyproject.toml` / `setup.cfg` (ruff, mypy, pytest) → `uv run` / `python -m` per config.
   - `pubspec.yaml` → `flutter analyze` / `flutter test`.
   - `go.mod` → `go vet ./...` / `go test ./...`.
@@ -46,10 +46,11 @@ the load-bearing forks** (don't interrogate).
   access method, artifact revision/source-SHA surface, URL, fixtures/accounts, and whether deploy is
   automatic or manual. Record `none/manual` honestly; `implement` then stops before QA until an
   external deployment receipt exists.
-- **Agent role profiles** — inspect the host runtime's existing agent registry and project/global
-  instructions. Record each useful profile's name, work nature, mode/sandbox, model, effort, write
-  scope, MCP/plugin access, authoritative definition source, and whether it may spawn children. Also
-  record root's thread/depth limit when exposed.
+- **Agent role profiles** — inspect the current host runtime's existing agent registry and
+  project/global instructions. Keep portable **Agent role requirements** separate from
+  host-specific bindings. Under the current host binding, record each useful profile's exact ID,
+  work nature, mode/sandbox, model, effort, write scope, MCP/plugin access, authoritative definition
+  source, and whether it may spawn children. Also record root's thread/depth limit when exposed.
   - Route by nature: narrow lookup, exploration, mechanical implementation, judgment-bearing
     implementation, plan verification, independent verification, and security review/execution.
   - Profiles must already exist in the host. **Do not create or override** global agents, model
@@ -58,6 +59,8 @@ the load-bearing forks** (don't interrogate).
     `unsupported`; do not claim they were verified.
   - Undefined generic/default workers do not satisfy a required role. A pre-defined independent
     verifier is mandatory; if it is missing, drifted, or unverifiable, `implement` is blocked.
+  - Codex and Claude Code bindings are separate. Update only the current host's binding and preserve
+    the other host section; never apply one host's profile IDs or model/effort values to the other.
 
 ### 2. Propose, then ask only the forks
 
@@ -69,6 +72,8 @@ questions a wrong guess would get wrong — typically at most ~3:
 - the **data-mutation gate** on/off, if cron/batch writes are unclear.
 - the **ready criteria** and atomic **claim transition**, if the tracker does not expose an obvious
   ready → claimed/in-progress path with owner/session identity;
+- the **claim recovery** policy (lease/heartbeat, receipt-backed resume, expired-claim takeover, and
+  release) when the tracker does not provide one;
 - the deployment/test environment path when no non-production target or artifact-source receipt is
   discoverable;
 - a missing required verifier/security profile. Do not ask about profiles that can be read from the
@@ -91,22 +96,36 @@ with the user. After this, every harness-ship workflow consumes it automatically
 - **Forbidden tools:** <e.g. `gh` CLI (policy) | none> — workflows must avoid these even when installed.
 - **Integration branch:** <e.g. `staging`> — feature PRs target this; never push to it directly. If the repo has only one branch, this equals the release branch below.
 - **Protected release branch:** <e.g. `main`> — human + release gate only; workflows never merge here.
-- **Test / lint / typecheck:** `<test cmd>` / `<lint cmd>` / `<typecheck cmd>` — write `none` for any the project lacks; workflows skip a `none` step instead of flagging it missing.
+- **Test / lint / typecheck / build:** `<test cmd>` / `<lint cmd>` / `<typecheck cmd>` / `<build cmd>` — write `none` for any the project lacks; workflows skip a `none` step instead of flagging it missing.
 - **Ready criteria:** <label / status / sprint that makes a ticket eligible, e.g. `ready-for-agent`>
 - **Claim transition:** <atomic assignment + claimed/in-progress state with root/session identity | single-root/manual claim policy>
+- **Claim recovery:** <lease + heartbeat interval; same-owner resume; receipt validation; expired-claim takeover; release policy>
 - **Deployment / test environment:** <environment + deploy/status access + exact source-SHA/artifact revision surface + URL/fixtures | manual/none>
 - **Agent orchestration:** root session owns planning, delegation, integration, external state, and final decision; children may not spawn.
-- **Agent role profiles:** host-defined and live-verified before dispatch.
+- **Agent role requirements:** portable policy; host bindings below must satisfy it.
+
+  | Work nature | Required capability boundary | Minimum effort class |
+  |---|---|---|
+  | narrow lookup | read-only, no MCP/plugins | low |
+  | exploration | read-only, no MCP/plugins | medium |
+  | mechanical implementation | bounded workspace write | medium |
+  | judgment implementation | bounded workspace write | medium |
+  | plan verification | read-only and independent | high |
+  | independent verification | no source edits and fresh context | high |
+  | security review | read-only trust-boundary analysis | highest configured |
+  | security implementation | bounded write, already-scoped security fix | highest configured |
+
+- **Agent role bindings — Codex:** `not-configured`, or one live row per requirement:
 
   | Work nature | Host / profile ID | Definition source | Mode / sandbox | Model | Effort | Write scope | MCP/plugins | May spawn |
   |---|---|---|---|---|---|---|---|---|
-  | narrow lookup | `profile-or-missing` | `<config path or registry ID>` | `read-only` | `<host value>` | `low` | `none` | `none` | `false` |
-  | exploration | `profile-or-missing` | `<config path or registry ID>` | `read-only` | `<host value>` | `medium` | `none` | `none` | `false` |
-  | mechanical implementation | `profile-or-missing` | `<config path or registry ID>` | `workspace-write` | `<host value>` | `medium` | bounded | `none` | `false` |
-  | judgment implementation | `profile-or-missing` | `<config path or registry ID>` | `workspace-write` | `<host value>` | `medium+` | bounded | `none` | `false` |
-  | plan verification | `profile-or-missing` | `<config path or registry ID>` | `read-only` | `<host value>` | `high` | `none` | `none` | `false` |
-  | independent verification | `<required profile>` | `<config path or registry ID>` | `verification-only` | `<host value>` | `high` | no source edits | `none` | `false` |
-  | security review / implementation | `profiles-or-missing` | `<config paths or registry IDs>` | `read-only/workspace-write` | `<host value>` | `<highest configured>` | bounded | `none` | `false` |
+  | `<requirement>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value or unsupported>` |
+
+- **Agent role bindings — Claude Code:** `not-configured`, or one live row per requirement:
+
+  | Work nature | Host / profile ID | Definition source | Mode / sandbox | Model | Effort | Write scope | MCP/plugins | May spawn |
+  |---|---|---|---|---|---|---|---|---|
+  | `<requirement>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value or unsupported>` |
 
 - **Delegation limits:** <host max direct children> / depth `<value>`; root-only spawning; serialize all write-capable children in one ticket worktree.
 - **Data-mutation safety gate:** <on | off> — on when the project has scheduled/batch DB writers.

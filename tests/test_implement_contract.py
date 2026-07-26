@@ -63,8 +63,17 @@ class ImplementSkillContractTests(unittest.TestCase):
             "cleanup",
             "implementation receipt",
             "deployment receipt",
+            "remote feedback loop",
+            "resume policy",
+            "heartbeat",
+            "takeover",
+            "release",
         ):
             self.assertIn(marker, text)
+
+        cleanup_position = text.index("worktree **cleanup**")
+        deployment_position = text.index("obtain a **deployment receipt**")
+        self.assertLess(cleanup_position, deployment_position)
 
     def test_setup_records_runtime_role_profiles_without_owning_them(self) -> None:
         text = read("skills/setup/SKILL.md").lower()
@@ -79,7 +88,14 @@ class ImplementSkillContractTests(unittest.TestCase):
         self.assertIn("unsupported", text)
         self.assertIn("ready criteria", text)
         self.assertIn("claim transition", text)
+        self.assertIn("claim recovery", text)
         self.assertIn("deployment / test environment", text)
+        self.assertIn("agent role requirements", text)
+        self.assertIn("agent role bindings — codex", text)
+        self.assertIn("agent role bindings — claude code", text)
+        self.assertIn("security review", text)
+        self.assertIn("security implementation", text)
+        self.assertIn("build", text)
         self.assertNotIn("<profile | missing>", text)
 
     def test_dev_workflow_delegates_stage_five_to_implement(self) -> None:
@@ -132,6 +148,7 @@ class ImplementSkillContractTests(unittest.TestCase):
 
         self.assertIn("python3 -m unittest discover -s tests -v", workflow)
         self.assertIn("jq empty", workflow)
+        self.assertIn("${{ github.event.before }}", workflow)
 
 
 if __name__ == "__main__":

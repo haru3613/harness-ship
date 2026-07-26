@@ -35,9 +35,10 @@ through a child prompt.
 ## Role-profile gate
 
 Dispatch only to a **pre-defined role profile** that exists in the host runtime and is mapped under
-`Agent role profiles`. Before the first dispatch, verify the live profile's name, mode/sandbox,
-model, effort, definition source, write authority, `may_spawn=false`, and capability boundary
-against the recorded mapping. A field the host cannot expose is `unsupported`, not assumed safe.
+the **current host's** `Agent role bindings`. Before the first dispatch, verify the live profile's
+name, mode/sandbox, model, effort, definition source, write authority, `may_spawn=false`, and
+capability boundary against both that binding and the portable `Agent role requirements`. A field
+the host cannot expose is `unsupported`, not assumed safe.
 
 - Do not create, override, or silently downgrade a role's model / effort / mode while implementing.
 - Do not use an undefined `generic`, `default`, or `worker` profile as a substitute.
@@ -54,7 +55,8 @@ against the recorded mapping. A field the host cannot expose is `unsupported`, n
 | implementation needing local judgment | bounded workspace write | medium or higher |
 | high-risk plan challenge | read-only, independent | high |
 | post-implementation verification | verification-only; no source edits | high |
-| security/trust-boundary review or fix | dedicated security read/write profile | highest configured |
+| security/trust-boundary review | dedicated read-only security profile | highest configured |
+| already-scoped security fix | dedicated bounded-write security profile | highest configured |
 
 Model families are not hard-coded here. `setup` records the host's deliberate assignment; this skill
 enforces it.
@@ -82,19 +84,28 @@ imagined tests versus disconnected implementation.
 
 Root:
 
-1. Resolve one frontier ticket that matches the configured **ready criteria**. Before creating a
-   worktree, atomically apply the configured **claim transition** with the root/session identity and
-   verify ownership. If the tracker cannot claim atomically, obey its recorded single-root/manual
-   policy; never run concurrent implement sessions against an unclaimed ticket.
-2. Load the approved spec, acceptance-contract revision, stable scenario/criterion IDs, test seams,
+1. Look first for a receipt-backed existing claim. Apply the configured **resume policy**: resume
+   only the same valid owner/session, or use **takeover** only after the recorded lease/heartbeat has
+   expired and the takeover rule succeeds. An active claim owned elsewhere stops this root.
+2. For new work, resolve one frontier ticket that matches the configured **ready criteria**.
+3. Load the approved spec, acceptance-contract revision, stable scenario/criterion IDs, test seams,
    and explicit out-of-scope list. A stale, missing, or behaviourally contradictory contract stops
    implementation and returns to `dev-workflow` Stage 3.
-3. Inspect `git worktree list`; create one repository-local worktree and feature branch from the
-   configured integration branch. Never reuse a merged branch or an active/dirty worktree.
-4. Record the exact integration-branch SHA and `git merge-base HEAD <integration-ref>` as the
+4. For new work only, atomically apply the configured **claim transition** with the root/session
+   identity, immediately persist the initial receipt, then re-read the ticket to verify ownership
+   and unchanged contract revision. **Release** a new claim if a terminal validation failure occurs
+   before the worktree exists. A receipt-backed resume revalidates its existing claim instead of
+   applying a second transition.
+5. Inspect `git worktree list`; resume the receipt's exact branch/worktree/HEAD or create one
+   repository-local worktree and feature branch from the configured integration branch.
+   Never reuse a merged branch or an active/dirty worktree.
+6. Record the exact integration-branch SHA and `git merge-base HEAD <integration-ref>` as the
    **fixed point**, plus the branch, worktree path, and starting `git status`.
-5. Run a narrow **baseline** at each approved seam and the cheapest configured static check.
+7. Run a narrow **baseline** at each approved seam and the cheapest configured static check.
    Pre-existing failures stop the ticket; record them without rewriting the contract.
+
+Refresh the claim **heartbeat** during long phases. Every implementation receipt records claim
+owner, lease/heartbeat, and the permitted resume/release/takeover action.
 
 ## Phase 1 — Plan and route by risk
 
@@ -155,16 +166,25 @@ Root alone:
 2. push the feature branch and open/update one PR targeting the integration branch;
 3. attach the contract revision, SC-ID → AC-ID trace, TDD receipts, fixed point, commit list, and
    verification results;
-4. wait for required review and CI on the **exact head SHA**—stale green checks do not count;
-5. merge only under the configured branch policy. Never autonomously merge a protected release
+4. run the **remote feedback loop** on the exact head SHA. Classify review change requests and CI
+   failures: route code/spec fixes through a bounded RED → GREEN slice, commit, rerun affected plus
+   full configured checks and two fresh review runs, push a new HEAD, and wait again. Behaviour
+   changes return to the acceptance gate. Retry unrelated infrastructure failures only within the
+   configured bound, then stop with evidence;
+5. proceed only when required review and CI are green on the new **exact head SHA**—stale green
+   checks do not count;
+6. merge only under the configured branch policy. Never autonomously merge a protected release
    branch or auto-merge a single-branch repository;
-6. obtain a **deployment receipt** for the configured non-production test environment: deployed
+7. update the tracker to development-complete/awaiting-deployment, verify no process/session uses
+   the clean merged feature worktree, then perform worktree **cleanup** immediately. If a later
+   local build is required, use a detached build-only worktree at the exact merged SHA and remove it
+   after artifact production;
+8. obtain a **deployment receipt** for the configured non-production test environment: deployed
    source SHA, artifact/environment revision, status, URL/access path, and fixtures. Verify the
    artifact was built from the merged source. If deployment is manual or unavailable, mark the
    ticket `awaiting deployment` and stop before QA until an external receipt supplies this evidence;
-7. update the tracker with PR/merge/deployment evidence and the development-complete or
-   awaiting-QA state—do not close acceptance early;
-8. verify no process/session uses the clean worktree, then perform worktree **cleanup**.
+9. update the tracker with PR/merge/deployment evidence and the awaiting-QA state—do not close
+   acceptance early.
 
 ## Stop and recovery
 
@@ -178,6 +198,7 @@ On interruption, leave the branch/worktree recoverable and write an **implementa
 the configured ticket/PR—not a transient scratch note:
 
 - ticket + acceptance-contract revision and SC-ID → AC-ID scope;
+- claim owner, lease/heartbeat, and allowed resume/release/takeover action;
 - fixed point, branch, worktree, current HEAD, and clean/dirty state;
 - completed/current/remaining slices and assigned role profiles;
 - RED/GREEN/regression/static/full-suite commands and results;
