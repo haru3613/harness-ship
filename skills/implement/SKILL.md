@@ -206,15 +206,17 @@ focused harness check, makes a clean checkpoint commit, and records the result i
 Children never commit.
 
 After that checkpoint commit, root runs the approved automation in its named integration or journey
-harness against the implementation PR's committed **exact HEAD before merge**. This automation is
+harness against the clean committed feature-branch HEAD before publication. This automation is
 not owned by `tdd`; preserve the approved QA seam, layer, fixtures, required evidence, and risk
-probes unchanged. When the PR opens, attach the recorded QA automation owner, profile, and exact-HEAD
-evidence to it.
+probes unchanged. When the PR opens, attach the recorded QA automation owner, profile, and
+pre-publication evidence to it.
 
-A manual exception may skip this pre-merge automation only after root verifies its recorded user
-approval, that the follow-up ticket exists and is open, its named owner, and its unexpired deadline.
-An incomplete, closed, or expired exception stops implementation and returns to
-`acceptance-design` through `dev-workflow` Stage 3 for a revised approved contract.
+A manual exception may skip this pre-publication automation only after root re-reads and verifies
+all approved exception fields: **current explicit user approval**, that the **follow-up ticket
+exists and is open**, its **named owner**, its **unexpired deadline**, the **exact-candidate
+execution method**, and the **required evidence**. An incomplete, closed, or expired exception
+stops implementation and returns to `acceptance-design` through `dev-workflow` Stage 3 for a revised
+approved contract.
 
 ## Phase 3 — Integrate, verify, and review
 
@@ -223,8 +225,11 @@ When all slices are integrated:
 1. require a clean working tree and inspect every commit plus `git diff <fixed-point>...HEAD`;
 2. run the **full configured suite** once, plus configured typecheck/lint/build steps (`none` skips);
 3. run every required approved P0 integration/E2E automation profile at the committed exact HEAD
-   and record its produced evidence; pre-merge PASS is required unless the validated manual
-   exception applies;
+   and record its produced evidence. **Immediately before this exception-based skip**, re-read and
+   verify all approved exception fields: **current explicit user approval**, that the **follow-up
+   ticket exists and is open**, its **named owner**, its **unexpired deadline**, the
+   **exact-candidate execution method**, and the **required evidence**. Any invalid field returns to
+   `acceptance-design` through `dev-workflow` Stage 3; otherwise pre-merge PASS is required;
 4. dispatch the mandatory independent-verification profile against the ticket, contract, exact
    diff, and commands; it may create test artifacts but must not edit source code;
 5. run `review` with two fresh child runs from the mapped verification profile, the fixed point,
@@ -253,14 +258,18 @@ Root alone:
    gate. Commit valid fixes and rerun affected plus full configured checks. Rerun the
    **independent outcome verifier** and two fresh review runs, push a new HEAD, and wait again. Retry unrelated
    infrastructure failures only within the configured bound, then stop with evidence;
-5. proceed only when required review and CI are green on the new **exact head SHA**—stale green
+5. proceed only when required review and CI are green on the new **exact PR head SHA**—stale green
    checks do not count. Required CI includes every approved P0 integration/E2E automation profile;
    rerun it after every new commit or rebase unless the validated manual exception applies. Before
-   every exception-based skip in this remote loop, re-read the current user approval, live
-   follow-up-ticket open state, named owner, and deadline; prior validation is not reusable;
+   every exception-based skip in this remote loop, re-read and verify all approved exception fields:
+   **current explicit user approval**, that the **follow-up ticket exists and is open**, its
+   **named owner**, its **unexpired deadline**, the **exact-candidate execution method**, and the
+   **required evidence**; prior validation is not reusable;
 6. after a fresh fencing check and pre-mutation checkpoint, merge only under the configured branch
-   policy. Immediately before merge, revalidate those same manual-exception fields when an
-   exception is being used. Any missing, closed, or expired state stops and returns to
+   policy. Immediately before merge, re-read and verify all approved exception fields when an
+   exception is being used: **current explicit user approval**, that the **follow-up ticket exists
+   and is open**, its **named owner**, its **unexpired deadline**, the **exact-candidate execution
+   method**, and the **required evidence**. Any invalid state stops and returns to
    `acceptance-design` through `dev-workflow` Stage 3. Never autonomously merge a protected release
    branch or auto-merge a single-branch repository. Checkpoint the observed merge SHA immediately;
 7. run the idempotent **post-merge reconciliation** path: revalidate fencing, update the tracker to

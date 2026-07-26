@@ -132,12 +132,24 @@ class AcceptanceDesignContractTests(unittest.TestCase):
 
     def test_p0_automation_has_premerge_ownership_and_independent_qa_execution(self) -> None:
         dev = " ".join(read("skills/dev-workflow/SKILL.md").lower().split())
-        implement = " ".join(read("skills/implement/SKILL.md").lower().split())
+        implement_source = read("skills/implement/SKILL.md").lower()
+        implement = " ".join(implement_source.split())
+        premerge = " ".join(
+            implement_source.split("### pre-merge p0 qa automation", maxsplit=1)[1]
+            .split("## phase 3", maxsplit=1)[0]
+            .split()
+        )
+        publish = " ".join(
+            implement_source.split("## phase 4", maxsplit=1)[1]
+            .split("## stop and recovery", maxsplit=1)[0]
+            .split()
+        )
         testing = " ".join(read("skills/testing-workflow/SKILL.md").lower().split())
         tdd = " ".join(read("skills/tdd/SKILL.md").lower().split())
 
         self.assertIn("qa automation owner", dev)
-        self.assertIn("implementation pr", dev)
+        self.assertIn("feature-branch head before publication", dev)
+        self.assertIn("exact pr head", dev)
         self.assertIn("before merge", dev)
         self.assertIn("approved p0 integration/e2e automation", dev)
         self.assertIn("qa automation owner", implement)
@@ -149,20 +161,47 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         self.assertIn("attach", implement)
         self.assertIn("exact head", implement)
         self.assertIn("before merge", implement)
+        self.assertIn("clean committed feature-branch head before publication", premerge)
+        self.assertNotIn("implementation pr's committed", premerge)
+        self.assertLess(publish.index("open/update one pr"), publish.index("required ci includes"))
+        self.assertIn("exact pr head", publish)
         self.assertIn("independently execute", testing)
         self.assertIn("exact handed-off artifact", testing)
         self.assertIn("unit and contract tests only", tdd)
 
     def test_manual_p0_exception_is_revalidated_at_every_remote_skip(self) -> None:
-        implement = " ".join(read("skills/implement/SKILL.md").lower().split())
+        implement = read("skills/implement/SKILL.md").lower()
+        premerge = " ".join(
+            implement.split("### pre-merge p0 qa automation", maxsplit=1)[1]
+            .split("## phase 3", maxsplit=1)[0]
+            .split()
+        )
+        integrate = " ".join(
+            implement.split("## phase 3", maxsplit=1)[1]
+            .split("## phase 4", maxsplit=1)[0]
+            .split()
+        )
+        publish = " ".join(
+            implement.split("## phase 4", maxsplit=1)[1]
+            .split("## stop and recovery", maxsplit=1)[0]
+            .split()
+        )
+        fields = (
+            "current explicit user approval",
+            "follow-up ticket exists and is open",
+            "named owner",
+            "unexpired deadline",
+            "exact-candidate execution method",
+            "required evidence",
+        )
 
-        self.assertIn("before every exception-based skip", implement)
-        self.assertIn("immediately before merge", implement)
-        self.assertIn("user approval", implement)
-        self.assertIn("ticket", implement)
-        self.assertIn("owner", implement)
-        self.assertIn("deadline", implement)
-        self.assertIn("stage 3", implement)
+        for phase in (premerge, integrate, publish):
+            for field in fields:
+                self.assertIn(field, phase)
+        self.assertIn("immediately before this exception-based skip", integrate)
+        self.assertIn("before every exception-based skip", publish)
+        self.assertIn("immediately before merge", publish)
+        self.assertIn("stage 3", publish)
 
     def test_manual_p0_exception_is_validated_and_reported(self) -> None:
         testing = " ".join(read("skills/testing-workflow/SKILL.md").lower().split())

@@ -107,8 +107,9 @@ implementation receipt so an interrupted ticket resumes from evidence rather tha
 For every approved P0 integration/E2E automation profile that has no approved manual exception,
 `implement` records a **QA automation owner** in the ticket/receipt before PR creation. That owner
 implements the approved P0 integration/E2E automation through the profile's named harness and runs
-it against the implementation PR's exact head before merge; when the PR opens, `implement` attaches
-the ownership and evidence to it. This is pre-merge QA automation work, not `tdd` work; `tdd`
+it locally against the clean committed feature-branch HEAD before publication. When the PR opens,
+`implement` attaches the ownership and pre-publication evidence, then requires the automation in CI
+on the exact PR HEAD before merge. This is pre-merge QA automation work, not `tdd` work; `tdd`
 remains responsible for RD's unit and contract coverage.
 
 No extra human gate is added here. Observable behaviour changes return to Stage 3; missing or
