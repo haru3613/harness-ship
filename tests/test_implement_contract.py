@@ -99,10 +99,34 @@ class ImplementSkillContractTests(unittest.TestCase):
         self.assertIn("before each external mutation", text)
         self.assertIn("after each external mutation", text)
         self.assertIn("does not repeat the operation blindly", text)
+        self.assertIn("conditional on the expected claim generation at its target", text)
+        self.assertIn("cas/etag/ref-lease enforcement", text)
+        self.assertIn("automatic mutation and takeover fail closed", text)
         self.assertLess(
             text.index("post-merge reconciliation", text.index("root alone:")),
             text.index("obtain a **deployment receipt**"),
         )
+
+    def test_write_capable_dispatch_is_checkpointed_before_it_starts(self) -> None:
+        text = " ".join(read("skills/implement/SKILL.md").lower().split())
+        phase = text.split("## phase 2 — execute tdd slices", maxsplit=1)[1].split(
+            "## phase 3 — integrate, verify, and review", maxsplit=1
+        )[0]
+
+        for field in (
+            "slice id",
+            "dispatch/idempotency id",
+            "verified role-definition digest",
+            "expected head",
+            "working-tree status",
+            "allowed files",
+            "`in-flight` state",
+            "host run identity",
+            "terminal result",
+        ):
+            self.assertIn(field, text)
+        self.assertLess(phase.index("pre-dispatch `in-flight` reservation"), phase.index("dispatches"))
+        self.assertIn("do not redispatch", text)
 
     def test_profiles_are_revalidated_for_every_dispatch(self) -> None:
         text = " ".join(read("skills/implement/SKILL.md").lower().split())
@@ -214,7 +238,7 @@ class ImplementSkillContractTests(unittest.TestCase):
         self.assertIn("jq empty", workflow)
         self.assertIn("${{ github.event.before }}", workflow)
         self.assertIn("git cat-file -e", workflow)
-        self.assertIn("git log --check head", workflow.lower())
+        self.assertIn("git log --check --format= head", workflow.lower())
 
 
 if __name__ == "__main__":

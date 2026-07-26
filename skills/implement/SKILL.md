@@ -128,7 +128,12 @@ owner, lease/heartbeat, claim-generation fencing token, and the permitted
 resume/release/takeover action. Immediately before every external mutation—including tracker
 changes, push, PR writes, merge, worktree cleanup, deployment, and artifact publication—re-read the
 claim and abort unless owner, lease, contract revision, and fencing token still match. A heartbeat
-does not replace this ownership check.
+does not replace this ownership check. The check alone is not a fence: each mutation must also be
+**conditional on the expected claim generation at its target**, or use an equivalent
+generation-scoped ref/resource plus CAS/ETag/ref-lease enforcement. When a provider cannot enforce
+that condition, atomically reserve the action in the claim store and prevent takeover through its
+completion; if neither mechanism is available, automatic mutation and takeover fail closed for a
+human-owned reconciliation. A stale root must be unable to mutate after a newer generation exists.
 
 ## Durable checkpoint protocol
 
@@ -143,6 +148,14 @@ Root durably checkpoints it:
 Use host idempotency keys when available. If a crash leaves an intent without a result, recovery
 first reconciles live external state and records the observation; it does not repeat the operation
 blindly. A checkpoint failure stops before the next mutation.
+
+Dispatches use the same write-ahead discipline. Before any child dispatch, checkpoint the slice ID,
+a root-generated dispatch/idempotency ID, verified role-definition digest, expected HEAD and
+working-tree status, allowed files, and `in-flight` state. Immediately after dispatch, checkpoint
+the host run identity; after completion, checkpoint its terminal result before accepting work. On
+resume, reconcile an `in-flight` dispatch with the host and worktree before starting another child.
+If the host cannot prove the prior writer terminal or absent, do not redispatch or permit takeover
+to write in that worktree.
 
 ## Phase 1 — Plan and route by risk
 
@@ -159,8 +172,9 @@ No child chooses its own role, risk tier, acceptance meaning, or next ticket.
 
 ## Phase 2 — Execute TDD slices
 
-For each behaviour slice, root dispatches the mapped mechanical or judgment-bearing executor with
-the dispatch contract above. The executor runs `tdd` at the approved public seam:
+For each behaviour slice, root first checkpoints the slice's pre-dispatch `in-flight` reservation
+under the durable checkpoint protocol, then dispatches the mapped mechanical or judgment-bearing
+executor with the dispatch contract above. The executor runs `tdd` at the approved public seam:
 
 1. demonstrate a valid **RED** caused by the missing behaviour;
 2. add the smallest **GREEN** implementation;
