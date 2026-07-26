@@ -569,6 +569,11 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             "expected target head",
             "observed merge sha/derivation",
             "pair-bound rd receipt",
+            "pair-bound p0 receipt",
+            "observed human merge receipt",
+            "merge action timestamp",
+            "actual-action snapshot",
+            "merge actor principal id",
             "pr automation/ci evidence",
             "handed-off source/artifact revision",
             "independent qa evidence",
@@ -591,11 +596,40 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             "merge derivation",
             "pair-bound rd receipt",
             "pair-bound p0 receipt",
+            "observed human merge receipt",
+            "merge action timestamp",
+            "actual-action snapshot",
+            "merge actor principal id",
         ):
             self.assertIn(field, stage6)
             self.assertIn(field, stage2)
         self.assertIn("mismatched or unrelated", stage2)
         self.assertIn("not ready", stage2)
+
+    def test_implement_produces_and_rebinds_the_pair_bound_rd_receipt(self) -> None:
+        implement = read("skills/implement/SKILL.md").lower()
+        phase3 = " ".join(
+            implement.split("## phase 3", maxsplit=1)[1]
+            .split("## phase 4", maxsplit=1)[0]
+            .split()
+        )
+        phase4 = " ".join(
+            implement.split("## phase 4", maxsplit=1)[1]
+            .split("## stop and recovery", maxsplit=1)[0]
+            .split()
+        )
+        recovery = " ".join(
+            implement.split("## stop and recovery", maxsplit=1)[1].split()
+        )
+
+        self.assertIn("pair-bound rd receipt", phase3)
+        self.assertIn("tdd/unit/contract", phase3)
+        self.assertIn("every fix commit invalidates", phase3)
+        self.assertIn("recreate", phase3)
+        self.assertIn("rebase", phase4)
+        self.assertIn("recreate the pair-bound rd receipt", phase4)
+        self.assertIn("before every push", phase4)
+        self.assertIn("pair-bound rd receipt", recovery)
 
     def test_initial_prepush_revalidates_live_exception_state(self) -> None:
         implement = read("skills/implement/SKILL.md").lower()
@@ -641,6 +675,12 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             "merge timestamp",
             "observed human merge receipt",
             "provider principal ids",
+            "provider-enforced merge check/queue",
+            "atomic reservation",
+            "through merge completion",
+            "pre-action snapshot cannot authorize a later merge",
+            "withhold authorization",
+            "fail before merge",
         ):
             self.assertIn(marker, premerge)
         self.assertLess(
@@ -657,6 +697,38 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             "actual-action snapshot",
         ):
             self.assertIn(marker, phase0)
+
+    def test_automated_merge_has_a_durable_authorization_receipt(self) -> None:
+        implement = read("skills/implement/SKILL.md").lower()
+        phase4 = " ".join(
+            implement.split("## phase 4", maxsplit=1)[1]
+            .split("## stop and recovery", maxsplit=1)[0]
+            .split()
+        )
+        recovery = " ".join(
+            implement.split("## stop and recovery", maxsplit=1)[1].split()
+        )
+
+        for marker in (
+            "automated merge authorization receipt",
+            "cas/ref-lease token",
+            "exact pr-head/target-head pair",
+        ):
+            self.assertIn(marker, phase4)
+            self.assertIn(marker, recovery)
+
+    def test_setup_records_identity_capabilities_and_manual_exception_fallback(self) -> None:
+        setup = " ".join(read("skills/setup/SKILL.md").lower().split())
+
+        for marker in (
+            "immutable principal-id capability",
+            "live assignee-read capability",
+            "merge-check/reservation capability",
+            "stable project-local principal id",
+            "manual p0 exceptions: disabled",
+            "automated-only p0",
+        ):
+            self.assertIn(marker, setup)
 
     def test_tdd_seam_corrections_cannot_mutate_the_acceptance_contract(self) -> None:
         text = " ".join(read("skills/tdd/SKILL.md").lower().split())

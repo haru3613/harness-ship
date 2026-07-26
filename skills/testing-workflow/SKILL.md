@@ -53,7 +53,9 @@ scenarios to match what was built.
 Require the handoff's **expected target HEAD**, **observed merge SHA**, **merge derivation**,
 **pair-bound RD receipt**, and **pair-bound P0 receipt**. Each receipt must name the same exact PR
 HEAD/target HEAD pair that produced the observed merge and handed-off artifact. A **mismatched or
-unrelated** receipt makes the handoff **Not ready**.
+unrelated** receipt makes the handoff **Not ready**. For a human merge, also require the
+**observed human merge receipt**, **merge action timestamp**, **actual-action snapshot**, and
+**merge actor principal ID** from the same pair.
 
 Owner records use an **immutable provider principal ID** plus a human-readable **display label**.
 Compare principal IDs; labels are informational and may change.

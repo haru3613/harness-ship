@@ -32,6 +32,12 @@
 | 3 | <…> | <SC-003> | <AC-3> | <ID> | <integration; probes…> | <runner> | ⚠️ | <trace> | <SHA> | <target SHA> | <merge SHA + derivation> | <RD receipt> | <CI run / exception receipt> | <source/artifact revision> | [trace](…) | [all evidence](…) | <probe → caveat> |
 | 4 | <…> | <SC-004> | <AC-4> | <ID> | <E2E; probes…> | <runner> | ❌ | <video + trace> | <SHA> | <target SHA> | <merge SHA + derivation> | <RD receipt> | <CI run> | <source/artifact revision> | [video](…) [trace](…) | [all evidence](…) | <probe → failure> |
 
+### Delivery-chain receipts
+
+| Scenario | Pair-bound P0 receipt | Observed human merge receipt | Merge action timestamp | Actual-action snapshot | Merge actor principal ID |
+|---|---|---|---|---|---|
+| <SC-001> | <receipt bound to PR/target pair> | <provider receipt / not applicable> | <timestamp / n/a> | <refs + exception snapshot / n/a> | <provider principal ID / n/a> |
+
 **Legend:** ✅ works as intended · ⚠️ works with a caveat (below) · ❌ broken
 
 ## Manual P0 exceptions

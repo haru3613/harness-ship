@@ -128,7 +128,9 @@ needs to know what to *verify*):
 - **The acceptance-contract revision**, approved scenario IDs, and each criterion to verify.
 - **The exact source commit and deployed artifact/environment revision** under test.
 - **The pair-bound delivery chain:** exact PR HEAD, expected target HEAD, observed merge SHA and
-  merge derivation, plus the pair-bound RD receipt and pair-bound P0 receipt.
+  merge derivation, plus the pair-bound RD receipt and pair-bound P0 receipt. For a human merge,
+  include the observed human merge receipt, merge action timestamp, actual-action snapshot, and
+  merge actor principal ID.
 - **How to reach it**: test URL / environment + fixtures/accounts + seed data.
 - **Known risks / edge cases** worth probing.
 - **The TDD receipt and what unit + contract tests cover** — so QA focuses on integration +

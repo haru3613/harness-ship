@@ -98,12 +98,13 @@ Root:
    changing **claim generation / fencing token**. An active claim owned elsewhere stops this root.
    Read the receipt's **workflow phase**, merge SHA, PR, and worktree-disposed state. If live
    evidence proves the PR merged, enter the dedicated **post-merge reconciliation** path. First
-   load the **pair-bound merge intent** and **authorization receipt**, verify the **actual merge
-   derivation** matches their exact PR-HEAD/target-HEAD pair, and reconcile the **applicable
-   exception state** at the merge action. For a human merge, require the **observed human merge
-   receipt**, provider **merge timestamp**, and **actual-action snapshot** of the pair, all exception
-   fields, and owner principal IDs. Missing or mismatched evidence must **fail closed** for **human
-   reconciliation** before tracker transition, cleanup, or deployment. Only then finish the
+   load the **pair-bound merge intent** and applicable authorization evidence: the automated merge
+   authorization receipt plus CAS/ref-lease token, or the provider enforcement/reservation plus
+   **observed human merge receipt**. Verify the **actual merge derivation** matches their exact
+   PR-HEAD/target-HEAD pair and reconcile the **applicable exception state** at the merge action.
+   For a human merge, require the provider **merge timestamp** and **actual-action snapshot** of the
+   pair, all exception fields, and owner principal IDs. Missing or mismatched evidence must **fail
+   closed** for **human reconciliation** before tracker transition, cleanup, or deployment. Only then finish the
    development-complete tracker transition, safely dispose the recorded feature worktree until
    `worktree-disposed=true`, and handle deployment. Do not reuse the merged branch.
    An `awaiting-deployment` **deployment-only resume** is allowed only after that disposal is
@@ -251,6 +252,9 @@ When all slices are integrated:
    infrastructure retry; a green retry alone is not PASS. Diagnose and fix the flake, then rerun at
    the new exact HEAD, or return through `dev-workflow` Stage 3 for the user to approve a complete
    manual exception.
+   After the full suite and P0 branch resolve, produce a **pair-bound RD receipt** from the
+   TDD/unit/contract receipts and results, binding them to the current exact HEAD and expected target
+   HEAD. Checkpoint it before review.
 4. dispatch the mandatory independent-verification profile against the ticket, contract, exact
    diff, and commands; it may create test artifacts but must not edit source code;
 5. run `review` with two fresh child runs from the mapped verification profile, the fixed point,
@@ -260,8 +264,9 @@ When all slices are integrated:
 Blocking verification/review findings return to a bounded executor or root. Behaviour fixes restart
 a RED → GREEN slice; standards-only fixes keep tests green. Commit fixes, rerun affected checks,
 the full configured gate when impact warrants it, and independent review until no blockers remain.
-Every fix commit invalidates the prior P0 exact-HEAD receipt; repeat step 3 at the new clean
-committed HEAD and checkpoint its replacement evidence before continuing to publication.
+Every fix commit invalidates the prior P0 exact-HEAD receipt and pair-bound RD receipt; repeat
+step 3 and recreate the pair-bound RD receipt at the new clean committed HEAD before continuing to
+publication.
 
 ## Phase 4 — Publish exact evidence
 
@@ -272,14 +277,16 @@ Root alone:
    any rebase or conflict resolution, require a clean tree and rerun the full configured gate,
    independent verification, and `review` against the new `fixed-point...HEAD` before publishing.
    Every rebase or conflict-resolution commit invalidates the prior P0 receipt: repeat Phase 3
-   step 3 at the new exact HEAD and checkpoint its replacement evidence. In every case, checkpoint
-   the expected target HEAD alongside every pre-publication P0/review evidence set;
+   step 3 at the new exact HEAD, recreate the pair-bound RD receipt, and checkpoint their replacement
+   evidence. In every case, checkpoint the expected target HEAD alongside every pre-publication
+   P0/review evidence set;
 2. before push, confirm the P0 receipt's HEAD matches the current HEAD. For an exception, **freshly
    re-read live exception state**—all **six fields**, the **approved exception owner**, the **live
    assignee**, and both **owner match** comparisons—and checkpoint the observed values and time; a
-   mismatch returns to Stage 3. Otherwise repeat Phase 3 step 3. Then apply the fencing check and
-   receipt write-ahead protocol, push the feature branch, and open/update one PR targeting the
-   integration branch;
+   mismatch returns to Stage 3. Otherwise repeat Phase 3 step 3. **Before every push**, require the
+   pair-bound RD receipt to match the current HEAD/expected-target pair; recreate it if stale. Then
+   apply the fencing check and receipt write-ahead protocol, push the feature branch, and open/update
+   one PR targeting the integration branch;
 3. attach the contract revision, SC-ID → AC-ID trace, TDD receipts, fixed point, commit list, and
    verification results;
 4. run the **remote feedback loop** on the exact head SHA. Classify review change requests and CI
@@ -287,8 +294,9 @@ Root alone:
    **standards-only** fixes keep tests green; requested contract changes return to the acceptance
    gate. Commit valid fixes and rerun affected plus full configured checks. Every such commit
    invalidates the P0 receipt: before the next push, repeat Phase 3 step 3 and checkpoint the new
-   exact HEAD, result, and evidence (or the freshly validated six-field exception). Then rerun the
-   **independent outcome verifier** and two fresh review runs, push a new HEAD, and wait again.
+   exact HEAD, result, and evidence (or the freshly validated six-field exception), and recreate the
+   pair-bound RD receipt. Then rerun the **independent outcome verifier** and two fresh review runs;
+   before every push, verify both receipts match the current pair, push a new HEAD, and wait again.
    Before any retry, require **checkpointed proof** that the approved **profile/test never started**
    or that a named **provider incident** caused the failure. Only then is an infrastructure retry
    permitted within the configured bound. Any **test-started or ambiguous** P0 failure is **Not
@@ -317,14 +325,20 @@ Root alone:
    owner equals the approved QA automation owner**. Any invalid state or owner mismatch stops and
    returns to `acceptance-design` through `dev-workflow` Stage 3.
 
-   Checkpoint the merge intent bound to that exact PR-HEAD/target-HEAD pair. Enforce it with
-   **CAS/ref-lease** where policy permits automation. For a protected or single-branch repository,
-   issue a short-lived human merge authorization bound to the pair; **pre-merge authorization is
-   not a merge receipt**. **At the actual human merge action**, re-fetch both refs and revalidate all
-   exception fields by immutable **provider principal IDs**, then capture the provider
-   **merge timestamp** and actual-action snapshot. The provider result becomes the **observed human
-   merge receipt**, bound to the pair, actor principal ID, exception snapshot, and observed merge
-   SHA. If that action-time check/receipt cannot be obtained, fail closed for human reconciliation.
+   Checkpoint the merge intent bound to that exact PR-HEAD/target-HEAD pair. Where policy permits
+   automation, create an **automated merge authorization receipt** containing the exact
+   PR-HEAD/target-HEAD pair and **CAS/ref-lease token**, then execute under that token.
+
+   For a protected or single-branch repository, require a **provider-enforced merge check/queue** or
+   cross-system **atomic reservation** that validates the exact pair and immutable owner IDs and
+   holds them stable **through merge completion**. A short-lived human authorization may reference
+   that enforcement, but **pre-merge authorization is not a merge receipt** and a **pre-action
+   snapshot cannot authorize a later merge**. **At the actual human merge action**, the provider
+   enforcement rechecks the pair and immutable **provider principal IDs**, captures the **merge
+   timestamp** and actual-action snapshot, and emits the **observed human merge receipt** bound to the pair, actor
+   principal ID, exception snapshot, and observed merge SHA. If no such atomic enforcement is
+   available, **withhold authorization** and **fail before merge**; post-merge detection is not a
+   substitute.
 
    Only after the applicable atomic or action-time check, merge only under the configured branch
    policy; never autonomously merge a protected release branch or auto-merge a single-branch
@@ -367,6 +381,11 @@ termination recovery relies on the checkpoint protocol above rather than an inte
 - each P0 profile, its QA automation owner, exact-HEAD result and produced evidence, plus the
   manual-exception six fields, observed live ticket assignee, owner-match result, and last
   validation time when an exception applies;
+- the pair-bound RD receipt and its TDD/unit/contract inputs;
 - the exact PR-HEAD/expected-target-HEAD pair for every P0/review/CI evidence set, plus the
   merge-intent enforcement and observed-derivation state;
+- when automated, the automated merge authorization receipt, exact PR-HEAD/target-HEAD pair, and
+  CAS/ref-lease token;
+- when human, the observed human merge receipt, merge timestamp, actor principal ID, actual-action
+  snapshot, provider enforcement/reservation identity, and exception snapshot;
 - blocker, next safe action, and any required human judgment.
