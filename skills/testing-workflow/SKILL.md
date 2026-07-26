@@ -81,15 +81,20 @@ the result **Not ready**; never infer PASS from an unknown capability.
 
 Before each scenario, revalidate that the ledger's source SHA, exact artifact/environment revision,
 and artifact provenance receipt still match the handoff. Record the SC-ID, AC-ID, QA layer/risk
-probe, method/command or manual steps, result, and durable evidence for every attempt, including
-PASS.
+probe, method/command or manual steps, **raw attempt outcome**, **scenario classification**, and
+durable evidence for every attempt, including PASS.
 
 Then:
 
 - **Run against a test environment**, never production. Seed test data on staging/local only —
   **never write fake/seed data into a production database.**
-- A bounded retry appends its complete **attempt history**. A failure followed by a green retry is
-  **retry-green** and must be reported as **FLAKY**, never rewritten as PASS.
+- A bounded retry appends its complete **attempt history**. Raw attempt outcomes are `PASS`, `FAIL`,
+  `BLOCKED`, or `NOT RUN`; the ledger template deterministically derives the scenario
+  classification. A raw `FAIL` followed by raw `PASS` for the same scenario and QA-RUN-ID is
+  **retry-green**; the reverse order is also inconsistent. In either case, the latest classification
+  is **FLAKY**, never rewritten as PASS.
+- A skipped, quarantined, unavailable, or `not-configured` attempt appends raw `NOT RUN` with the
+  reason and evidence; its latest scenario classification is **NOT TESTED**. Never omit it.
 - A **P0** journey that is flaky, skipped, or quarantined **cannot be quarantined** to clear the
   gate, **must not count as PASS**, and makes the verdict **Not ready**.
 - A non-P0 flaky check may be quarantined only with a linked QA-maintenance ticket; its current

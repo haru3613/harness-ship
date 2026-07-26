@@ -15,12 +15,24 @@
 
 ## Attempts
 
-Append one row per scenario attempt. A retry gets a new attempt number; it never replaces the
-original result.
+Append one row per scenario attempt or skipped/quarantined observation. A retry gets a new attempt
+number; it never replaces an earlier raw outcome or scenario classification.
 
-| Attempt | Previous attempt | Started at | Completed at | SC-ID | AC-ID | Ticket | Full source SHA | Exact artifact/environment revision | Artifact-provenance source / receipt | QA layer / risk probe | Method/command or manual steps | Result | Evidence | Notes |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| <1> | <none> | <timestamp> | <timestamp / in-progress> | <SC-002> | <AC-2> | <ID> | <SHA> | <artifact/env> | <source + receipt> | <integration / E2E / exploratory / non-functional> | <configured QA command or exact manual steps> | <PASS / FAIL / FLAKY / BLOCKED / NOT TESTED> | <durable screenshot/video/trace/log/assertion link> | <risk result> |
+| Attempt | Previous attempt | Started at | Completed at | SC-ID | AC-ID | Ticket | Full source SHA | Exact artifact/environment revision | Artifact-provenance source / receipt | QA layer / risk probe | Method/command or manual steps | Raw attempt outcome | Scenario classification (Result) | Evidence | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| <1> | <none> | <timestamp> | <timestamp / in-progress> | <SC-002> | <AC-2> | <ID> | <SHA> | <artifact/env> | <source + receipt> | <integration / E2E / exploratory / non-functional> | <configured QA command or exact manual steps> | <PASS / FAIL / BLOCKED / NOT RUN> | <PASS / FAIL / FLAKY / BLOCKED / NOT TESTED> | <durable screenshot/video/trace/log/assertion link> | <risk result> |
+
+Normalize each appended row deterministically:
+
+- An executed attempt records raw `PASS`, `FAIL`, or `BLOCKED`. A skipped, quarantined, or
+  unavailable attempt records raw `NOT RUN`; it is still an appended observation with evidence.
+- If the latest raw outcome is `NOT RUN`, the latest scenario classification is `NOT TESTED`. If it
+  is `BLOCKED`, the classification is `BLOCKED`.
+- When the same scenario on the same QA-RUN-ID has both raw `FAIL` and raw `PASS`, its latest
+  classification is `FLAKY`, regardless of order. Otherwise the latest executed `PASS` or `FAIL`
+  classifies as `PASS` or `FAIL`.
+- The acceptance report uses the latest scenario classification, never a raw attempt outcome, and
+  links every attempt that contributed to `FLAKY`, `BLOCKED`, or `NOT TESTED`.
 
 Every attempt inherits and records the ledger's full source SHA, exact artifact/environment
 revision, artifact-provenance source, and provenance receipt. If any value changes, start a new

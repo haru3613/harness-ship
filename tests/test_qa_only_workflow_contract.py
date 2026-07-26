@@ -111,6 +111,21 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
         )
         self.assertNotIn("each approved seam", phase0)
 
+        phase3 = section(implement_raw, "## Phase 3", "## Phase 4")
+        self.assertIn("rd-owned independent verification", phase3)
+        self.assertRegex(
+            phase3,
+            r"(do not|must not|never).{0,120}(run|invoke|consume).{0,100}qa.{0,80}(command|job)",
+        )
+
+        phase4 = section(implement_raw, "## Phase 4")
+        self.assertIn("rd-owned ci", phase4)
+        self.assertIn("ownership violation", phase4)
+        self.assertRegex(
+            phase4,
+            r"(do not|must not|never).{0,120}(run|trigger|consume).{0,100}qa.{0,80}(command|job)",
+        )
+
     def test_reusable_qa_handoff_template_has_required_fields(self) -> None:
         template = " ".join(
             read("skills/testing-workflow/qa-handoff-template.md").lower().split()
@@ -153,6 +168,9 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
             "previous attempt",
             "append-only",
             "resume",
+            "raw attempt outcome",
+            "scenario classification",
+            "not run",
         ):
             self.assertIn(marker, ledger)
         self.assertIn("never overwrite", ledger)
@@ -166,7 +184,8 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
             "exact artifact/environment revision",
             "artifact-provenance source",
             "method/command or manual steps",
-            "result",
+            "raw attempt outcome",
+            "scenario classification",
             "evidence",
         ):
             self.assertIn(field, attempt_header)
@@ -187,6 +206,13 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
         ):
             self.assertIn(marker, workflow)
         self.assertRegex(workflow, r"retry-green.{0,100}flaky")
+        self.assertIn("raw attempt outcome", stage3)
+        self.assertIn("scenario classification", stage3)
+        self.assertIn("not run", stage3)
+        self.assertRegex(
+            stage3,
+            r"fail.{0,160}pass.{0,160}flaky",
+        )
         self.assertIn("every valid handoff's qa candidate artifact", stage3)
         self.assertIn("pr smoke gate", stage3)
         self.assertIn("rd-owned", stage3)
@@ -215,7 +241,7 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
         report_rows = [line for line in report.splitlines() if line.startswith("| ")]
         result_cells = [row.split("|")[9].strip() for row in report_rows[1:]]
         for result in result_cells:
-            self.assertRegex(result, r"^(✅ PASS|⚠️ FLAKY|❌ (FAIL|NOT TESTED))$")
+            self.assertRegex(result, r"^(✅ PASS|⚠️ FLAKY|❌ (FAIL|BLOCKED|NOT TESTED))$")
         self.assertNotIn("CAVEAT", result_cells)
         self.assertNotIn("⚠️ Accept with caveats", report)
         self.assertNotIn("(⚠️)", report)
@@ -277,6 +303,12 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
             "byte-for-byte unchanged",
         ):
             self.assertIn(marker, migration)
+        self.assertIn("count", migration)
+        self.assertRegex(
+            migration,
+            r"more than one.{0,120}(stop|do not write|do not mutate)",
+        )
+        self.assertIn("require explicit reconciliation", migration)
 
     def test_dev_handoff_uses_template_and_keeps_rd_summary_informational(self) -> None:
         dev = read("skills/dev-workflow/SKILL.md")

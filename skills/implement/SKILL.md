@@ -208,8 +208,10 @@ When all slices are integrated:
    integration, P0, or full-suite command before the dev→QA handoff. An applicable
    `not-configured` RD command is reported as missing, never replaced with a QA command or inferred
    PASS;
-3. dispatch the mandatory independent-verification profile against the ticket, contract, exact
-   diff, and commands; it may create test artifacts but must not edit source code;
+3. dispatch the mandatory **RD-owned independent verification** profile against the ticket,
+   contract, exact diff, and the configured RD verification-gate commands. It may create RD
+   verification artifacts but must not edit source code. It must not run or consume any QA
+   integration, P0, or full-suite command or job before the dev→QA handoff;
 4. run `review` with two fresh child runs from the mapped verification profile, the fixed point,
    originating ticket/spec/contract, repository standards, and data-mutation/security gates that
    apply.
@@ -231,14 +233,17 @@ Root alone:
    open/update one PR targeting the integration branch;
 3. attach the contract revision, SC-ID → AC-ID trace, TDD receipts, fixed point, commit list, and
    verification results;
-4. run the **remote feedback loop** on the exact head SHA. Classify review change requests and CI
+4. run the **remote feedback loop** on the exact head SHA. Before handoff, only **RD-owned CI** jobs
+   that invoke the configured RD verification gate may run or count as evidence. Triggering a QA
+   integration, P0, or full-suite job here is an **ownership violation**: stop, and do not trigger or
+   consume any QA command or job as merge evidence. Classify review change requests and RD-owned CI
    failures before editing: approved-behaviour defects use a bounded RED → GREEN slice;
    **standards-only** fixes keep tests green; requested contract changes return to the acceptance
    gate. Commit valid fixes and rerun affected plus the full RD verification gate. Rerun the
    **independent outcome verifier** and two fresh review runs, push a new HEAD, and wait again. Retry unrelated
    infrastructure failures only within the configured bound, then stop with evidence;
-5. proceed only when required review and CI are green on the new **exact head SHA**—stale green
-   checks do not count;
+5. proceed only when required review and RD-owned CI are green on the new **exact head SHA**—stale
+   green checks and QA-owned jobs do not count;
 6. after a fresh fencing check and pre-mutation checkpoint, merge only under the configured branch
    policy. Never autonomously merge a protected release branch or auto-merge a single-branch
    repository. Checkpoint the observed merge SHA immediately;

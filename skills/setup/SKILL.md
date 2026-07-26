@@ -153,8 +153,10 @@ with the user. After this, every harness-ship workflow consumes it automatically
 
 ## Legacy configuration migration
 
-Treat a `## harness-ship` block without `Config version` as **legacy v0**. Upgrade exactly one
-`## harness-ship` block in place; never append a second block.
+Count exact `## harness-ship` headings before writing. If there is more than one existing block,
+stop and do not write or mutate any block; require explicit reconciliation of the duplicate active
+configuration. When the count is exactly one `## harness-ship` block and it has no `Config version`,
+treat it as **legacy v0** and upgrade that block in place; never append a second block.
 
 - Preserve every known user choice and host binding. Split a legacy generic test command only when
   current scripts/paths prove its owner and seam; otherwise copy its prior field name and verbatim
