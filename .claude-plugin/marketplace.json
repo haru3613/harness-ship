@@ -9,11 +9,12 @@
     {
       "name": "harness-ship",
       "source": "./",
-      "description": "Three orchestration workflows (dev, implement, and testing) plus the self-contained blocks they need. The root session routes bounded work to pre-defined role profiles while humans pilot five judgment gates.",
+      "description": "Three orchestration workflows (dev, implement, and testing) plus eight self-contained blocks, including separate acceptance design. The root session routes bounded work to pre-defined role profiles while humans pilot five judgment gates.",
       "category": "engineering",
       "keywords": [
         "workflow",
         "dev-workflow",
+        "acceptance-design",
         "implement",
         "subagents",
         "testing",

@@ -9,10 +9,10 @@ description: >-
 
 # setup
 
-A one-time step so `dev-workflow`, `implement`, `testing-workflow`, `spec`, `tickets`, `tdd`, and
-`review` run against this project's **real** specifics instead of generic defaults. Detect what you
-can, ask only the forks a wrong guess would get wrong, and write the result where the workflows
-look.
+A one-time step so `dev-workflow`, `acceptance-design`, `implement`, `testing-workflow`, `spec`,
+`tickets`, `tdd`, and `review` run against this project's **real** specifics instead of generic
+defaults. Detect what you can, ask only the forks a wrong guess would get wrong, and write the
+result where the workflows look.
 
 Follow the same discipline the workflows preach: **answer the 90% with stated assumptions, ask only
 the load-bearing forks** (don't interrogate).

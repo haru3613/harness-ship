@@ -36,8 +36,10 @@ A long, numbered list — "As an <actor>, I want <feature>, so that <benefit>." 
 
 ## Acceptance criteria
 Stable AC-IDs with externally observable outcomes. Cover success, rejection/failure, and important
-negative behaviour. Do not write Given/When/Then here — `testing-workflow` turns these criteria into
-the acceptance contract.
+negative behaviour. **Approved AC-IDs are immutable** and never reused: when an approved criterion's
+meaning changes, the changed criterion receives a new AC-ID and the spec must retain the superseded
+criterion so historical references remain unambiguous. Do not write Given/When/Then here —
+`acceptance-design` turns these criteria into the acceptance contract.
 
 ## Implementation decisions
 Modules to build/modify, interfaces, architectural calls, schema changes, API contracts.
@@ -53,4 +55,4 @@ What this spec deliberately does not cover.
 ```
 
 Keep it about behaviour and decisions, not a task list — acceptance-scenario design is
-`testing-workflow`'s job and task breakdown is `tickets`' job.
+`acceptance-design`'s job and task breakdown is `tickets`' job.

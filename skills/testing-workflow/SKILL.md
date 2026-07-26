@@ -1,19 +1,19 @@
 ---
 name: testing-workflow
 description: >-
-  Design a feature's acceptance scenarios before implementation, then QA it after the dev handoff —
-  split ownership (RD: unit+contract; QA: integration+E2E), run tests on a test environment, gate
-  against fake-green suites, and produce a plain-language acceptance report the user can sign off.
-  Use during dev-workflow acceptance design, after a dev→QA handoff, or when someone says
-  /testing-workflow, "QA this", "write e2e tests", "is this ready to ship?".
+  Execute an approved acceptance contract after the dev handoff — split ownership (RD:
+  unit+contract; QA: integration+E2E), run tests on a test environment, gate against fake-green
+  suites, and produce a plain-language acceptance report the user can sign off. Use after a dev→QA
+  handoff, or when someone says /testing-workflow, "QA this", "write e2e tests", or "is this ready
+  to ship?".
 ---
 
 # testing-workflow
 
 QA is the role closest to the user. Tests written from the **user's path through the product** catch
-the bugs unit tests structurally can't. This workflow runs in two passes: Stage 1 designs the
-acceptance contract before implementation; Stages 2–6 execute it after the dev→QA handoff and
-produce a report the user can actually read and accept.
+the bugs unit tests structurally can't. This workflow executes the **approved acceptance contract**
+after the dev→QA handoff and produces a report the user can actually read and accept. Scenario
+ownership belongs to `acceptance-design`; this workflow must not author or redesign those scenarios.
 
 **Prerequisite:** read the project's `## harness-ship` config (test env, test/lint commands, tracker)
 in `AGENTS.md` / `CLAUDE.md`; run `setup` if it is absent.
@@ -32,22 +32,17 @@ flaky — reach for E2E only where a journey crosses the whole stack.
 
 ---
 
-## Stage 1 — Journeys → scenarios (design only)
+## v0.6 compatibility redirect
 
-Before implementation, derive journeys from the current spec's **acceptance criteria**, not from
-implementation or imagination. Give the set an identifier `<spec-id>/acceptance-vN`. Output
-**platform-neutral scenarios**, each with a stable SC-ID mapped to a stable AC-ID, tagged by surface
-— `[UI]` / `[APP]` / `[API/contract]` — and written Given/When/Then plus a **negative** assertion
-(the "but it must NOT…"). Produce a **P0/P1 matrix**: P0 = core value / money / auth / the flow that
-must never break (automate first); P1 = important but degradable.
+For one minor release, v0.6, redirect either legacy entry state to **`acceptance-design`**:
 
-Publish the scenario set alongside the spec and stop. Do not implement or generate runner code in
-this pass. User approval covers the spec criteria and scenario set together. They become the
-acceptance contract; a behaviour change requires a spec update, an incremented contract revision,
-and re-approval before implementation continues.
+- a pre-implementation `testing-workflow` call; or
+- a call where implementation already exists but there is no approved acceptance contract.
 
-If implementation already exists and no approved contract was created, derive it from the original
-spec now and get approval before Stage 2; never reverse-engineer the expected behaviour from the code.
+Use the original or current stable spec and never infer expected behaviour from code. Stop when
+`acceptance-design` reaches its approval gate. Do not begin QA execution, route tests, or continue
+to Stage 2. This redirect expires after one minor release; new workflow guidance should call
+`acceptance-design` directly.
 
 ## Stage 2 — Route approved scenarios by ownership
 

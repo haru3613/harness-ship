@@ -10,7 +10,7 @@ Codex and Claude Code. You pilot five judgment gates; AI runs everything between
 
 ## What's inside
 
-One bootstrap skill, three orchestration skills, plus seven self-contained blocks they drive. No
+One bootstrap skill, three orchestration skills, plus eight self-contained blocks they drive. No
 external plugin dependencies — everything needed is in this repo.
 
 | Skill | Role |
@@ -18,10 +18,11 @@ external plugin dependencies — everything needed is in this repo.
 | **`setup`** | one-time: detect the project's stack/tracker/branches and write the config the workflows read |
 | **`dev-workflow`** | idea → clarify → feasibility → spec → acceptance contract → tickets → implement → QA handoff |
 | **`implement`** | root-orchestrated, role-routed ticket delivery → TDD slices → review → exact-SHA PR/CI evidence |
-| **`testing-workflow`** | scenarios before implementation → tests after handoff → gate → acceptance report |
+| **`testing-workflow`** | approved scenarios after handoff → QA execution → gate → acceptance report |
 | `clarify` | bounded requirement clarification — only load-bearing questions, defaults become assumptions |
 | `spike` | time-boxed throwaway prototype that returns a feasible / not / needs-more verdict |
 | `spec` | synthesize the conversation into a spec/PRD with explicit AC at the highest test seam |
+| `acceptance-design` | current stable spec → versioned, traceable Given/When/Then acceptance contract |
 | `tickets` | break an approved spec + acceptance contract into vertical-slice tracer-bullet tickets |
 | `tdd` | implement one ticket through evidence-backed RED → GREEN behaviour slices at approved seams |
 | `review` | dual-axis code review (Standards × Spec) with an optional data-mutation safety gate |
@@ -77,6 +78,10 @@ Start a new Codex session after installing or upgrading so Codex loads the refre
 host's pre-defined agent role profiles. Later plugin updates do not require setup unless the stack,
 tracker, branches, or host agent profiles change.
 
+**v0.6.0 migration:** call `$harness-ship:acceptance-design` for pre-implementation scenario design.
+`$harness-ship:testing-workflow` redirects legacy pre-implementation and missing-contract calls
+there for this minor release and otherwise starts only after the dev→QA handoff.
+
 ### Claude Code
 
 First install:
@@ -99,13 +104,21 @@ Restart Claude Code after installing or upgrading, then run `/setup` once per pr
 host's pre-defined agent role profiles. Later plugin updates do not require setup unless the stack,
 tracker, branches, or host agent profiles change.
 
+**v0.6.0 migration:** call `/harness-ship:acceptance-design` for pre-implementation scenario
+design. `/harness-ship:testing-workflow` redirects legacy pre-implementation and missing-contract
+calls there for this minor release and otherwise starts only after the dev→QA handoff.
+
+Canonical direct commands are not compatibility aliases and remain after the v0.6 redirect expires:
+Codex uses `$harness-ship:acceptance-design` and `$harness-ship:testing-workflow`; Claude Code uses
+`/harness-ship:acceptance-design` and `/harness-ship:testing-workflow`.
+
 `setup` detects your stack, issue tracker, branch topology and test commands, asks only the few
 forks it can't infer, and writes a `## harness-ship` config block into your `AGENTS.md` (or
 `CLAUDE.md`). Every workflow reads that block, so nothing runs on generic guesses.
 
-Then invoke the platform's `dev-workflow`, `implement`, `tdd`, or `testing-workflow` skill — or just
-describe a feature and the skills trigger themselves. Re-run `setup` any time the stack, tracker,
-branches, or host agent profiles change.
+Then invoke the platform's `dev-workflow`, `acceptance-design`, `implement`, `tdd`, or
+`testing-workflow` skill — or just describe a feature and the skills trigger themselves. Re-run
+`setup` any time the stack, tracker, branches, or host agent profiles change.
 
 ## What `setup` configures
 
