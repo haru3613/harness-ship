@@ -13,6 +13,7 @@
     "dev-workflow",
     "acceptance-design",
     "testing-workflow",
+    "bug-workflow",
     "qa",
     "spec",
     "tickets",

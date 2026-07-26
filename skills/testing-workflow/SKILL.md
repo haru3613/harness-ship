@@ -163,5 +163,8 @@ This report is dev-workflow's gate 5. Hand it to the user.
 
 ## Stage 6 — Bug loopback
 
-Any confirmed failure → **`diagnose`** (red-capable repro first, then falsifiable hypotheses), then
-file it back into `dev-workflow` as a new ticket with a regression test at the seam. Loop closed.
+For every QA **non-pass** (`FAIL`, `FLAKY`, `BLOCKED`, or `NOT TESTED`), run **`bug-workflow`** and
+link the ledger evidence to one stable BUG-ID. Classify before routing: only a `product-defect`
+enters **`diagnose`** for a red-capable repro and falsifiable hypotheses. Test defects, environment
+defects, spec ambiguities, duplicates, and known limitations follow their distinct Bug Case routes.
+Handoffs and later retests append to the same Bug Case rather than replacing it.
