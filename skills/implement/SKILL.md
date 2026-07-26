@@ -38,9 +38,11 @@ Dispatch only to a **pre-defined role profile** that exists in the host runtime 
 the **current host's** `Agent role bindings`. **Immediately before every dispatch**, verify the live
 profile's name, mode/sandbox, model, effort, definition source, write authority, `may_spawn=false`,
 and capability boundary against both that binding and the portable `Agent role requirements`.
-Record an immutable digest of the verified definition and binding in the receipt; a later dispatch
-must match that digest or stop for re-approval. A field the host cannot expose is `unsupported`, not
-assumed safe.
+For each dispatch reservation, record an immutable digest keyed by its dispatch ID and selected
+role requirement/binding. Launch and recovery must match the live profile to that dispatch-scoped
+digest or stop for re-approval. Sequential dispatches may legitimately select different mapped
+profiles; require digest equality across dispatches only when they select the same approved
+binding. A field the host cannot expose is `unsupported`, not assumed safe.
 
 - Do not create, override, or silently downgrade a role's model / effort / mode while implementing.
 - Do not use an undefined `generic`, `default`, or `worker` profile as a substitute.

@@ -132,8 +132,10 @@ class ImplementSkillContractTests(unittest.TestCase):
         text = " ".join(read("skills/implement/SKILL.md").lower().split())
 
         self.assertIn("immediately before every dispatch", text)
-        self.assertIn("immutable digest", text)
-        self.assertIn("must match that digest", text)
+        self.assertIn("immutable digest keyed by its dispatch id and selected role", text)
+        self.assertIn("dispatch-scoped digest", text)
+        self.assertIn("sequential dispatches may legitimately select different mapped profiles", text)
+        self.assertIn("only when they select the same approved binding", text)
 
     def test_worktrees_use_the_repository_local_nested_location(self) -> None:
         text = " ".join(read("skills/implement/SKILL.md").lower().split())
