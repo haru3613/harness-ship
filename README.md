@@ -113,8 +113,11 @@ branches, or host agent profiles change.
 - **Branch topology** — integration vs protected release branch (workflows never merge the release branch); collapses to one branch when the repo has only `main`.
 - **Test / lint / typecheck commands** — per your stack.
 - **Agent role profiles** — maps work nature to host-defined profiles and records each profile's
-  mode/sandbox, model, effort, write scope, and MCP/plugin boundary. Setup never creates or
-  overrides global agents.
+  definition source, mode/sandbox, model, effort, write scope, MCP/plugin boundary, and no-spawn
+  status. Setup never creates or overrides global agents.
+- **Ready/claim and deployment paths** — separates ticket eligibility from an atomic owner/session
+  claim, and records how QA obtains an exact-source deployment receipt for a non-production
+  environment.
 - **Data-mutation safety gate** — turns on `review`'s cron/batch-write BLOCK gate when the project
   has scheduled jobs that write the database (abort guard before the write loop, sparse-input test,
   failure alerting). Off unless detected.

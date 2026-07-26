@@ -98,8 +98,9 @@ decision; bounded work is delegated only to the host's pre-defined role profiles
 `implement` pins the exact base/fixed point, creates one repository-local worktree and PR, drives
 approved behaviour slices through `tdd`, integrates clean GREEN checkpoint commits, runs
 independent verification plus fixed-point `review`, and waits for required CI on the exact head SHA
-before policy-allowed merge and cleanup. It also writes a durable implementation receipt so an
-interrupted ticket resumes from evidence rather than conversation.
+before policy-allowed merge. It then captures the deployed source/artifact revision for the
+configured non-production environment before QA handoff and cleanup. It also writes a durable
+implementation receipt so an interrupted ticket resumes from evidence rather than conversation.
 
 No extra human gate is added here. Observable behaviour changes return to Stage 3; missing or
 drifted required role profiles, invalid baselines/REDs, unavailable independent verification, and

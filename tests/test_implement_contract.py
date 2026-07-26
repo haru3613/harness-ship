@@ -36,12 +36,15 @@ class ImplementSkillContractTests(unittest.TestCase):
         for field in (
             "bounded deliverable",
             "allowed files",
+            "exact worktree path",
+            "working directory",
             "constraints",
             "verification",
         ):
             self.assertIn(field, text)
         self.assertIn("one writer", text)
         self.assertIn("overlapping", text)
+        self.assertIn("serialize all write-capable", text)
 
     def test_implementation_closes_the_delivery_loop(self) -> None:
         text = read("skills/implement/SKILL.md").lower()
@@ -55,9 +58,11 @@ class ImplementSkillContractTests(unittest.TestCase):
             "full configured suite",
             "review",
             "exact head sha",
+            "recompute the fixed point",
             "tracker",
             "cleanup",
             "implementation receipt",
+            "deployment receipt",
         ):
             self.assertIn(marker, text)
 
@@ -69,6 +74,13 @@ class ImplementSkillContractTests(unittest.TestCase):
         self.assertIn("mode", text)
         self.assertIn("effort", text)
         self.assertRegex(text, r"do not (create|override)")
+        self.assertIn("definition source", text)
+        self.assertIn("may spawn", text)
+        self.assertIn("unsupported", text)
+        self.assertIn("ready criteria", text)
+        self.assertIn("claim transition", text)
+        self.assertIn("deployment / test environment", text)
+        self.assertNotIn("<profile | missing>", text)
 
     def test_dev_workflow_delegates_stage_five_to_implement(self) -> None:
         text = read("skills/dev-workflow/SKILL.md")
@@ -87,6 +99,8 @@ class ImplementSkillContractTests(unittest.TestCase):
         self.assertRegex(text, r"fixed[- ]point\.\.\.head")
         self.assertIn("originating", text)
         self.assertIn("commit list", text)
+        self.assertIn("two fresh child runs", text)
+        self.assertIn("blocked", text)
 
     def test_readme_and_manifests_advertise_the_new_minor_version(self) -> None:
         readme = read("README.md")
@@ -99,6 +113,11 @@ class ImplementSkillContractTests(unittest.TestCase):
             payload = json.loads(read(manifest))
             self.assertEqual(payload["version"], "0.5.0")
 
+        marketplace = json.loads(read(".claude-plugin/marketplace.json"))
+        listing = marketplace["plugins"][0]
+        self.assertIn("Three orchestration workflows", listing["description"])
+        self.assertIn("implement", listing["keywords"])
+
     def test_every_skill_has_matching_frontmatter_name(self) -> None:
         skill_files = sorted((ROOT / "skills").glob("*/SKILL.md"))
         self.assertEqual(len(skill_files), 11)
@@ -107,6 +126,12 @@ class ImplementSkillContractTests(unittest.TestCase):
             match = re.search(r"(?m)^name:\s+([a-z0-9-]+)$", skill_file.read_text())
             self.assertIsNotNone(match, skill_file)
             self.assertEqual(match.group(1), skill_file.parent.name)
+
+    def test_contract_suite_is_wired_into_ci(self) -> None:
+        workflow = read(".github/workflows/ci.yml")
+
+        self.assertIn("python3 -m unittest discover -s tests -v", workflow)
+        self.assertIn("jq empty", workflow)
 
 
 if __name__ == "__main__":

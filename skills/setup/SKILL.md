@@ -42,17 +42,22 @@ the load-bearing forks** (don't interrogate).
   in the code → the `review` safety gate should be **on**.
 - **UI convention** — a `docs/design/` mocks directory or an existing design-system/tokens file →
   front-end-first applies.
+- **Deployment / test environment** — infer the non-production environment, deployment/status
+  access method, artifact revision/source-SHA surface, URL, fixtures/accounts, and whether deploy is
+  automatic or manual. Record `none/manual` honestly; `implement` then stops before QA until an
+  external deployment receipt exists.
 - **Agent role profiles** — inspect the host runtime's existing agent registry and project/global
   instructions. Record each useful profile's name, work nature, mode/sandbox, model, effort, write
-  scope, MCP/plugin access, and whether it may spawn children. Also record root's thread/depth limit
-  when exposed.
+  scope, MCP/plugin access, authoritative definition source, and whether it may spawn children. Also
+  record root's thread/depth limit when exposed.
   - Route by nature: narrow lookup, exploration, mechanical implementation, judgment-bearing
     implementation, plan verification, independent verification, and security review/execution.
   - Profiles must already exist in the host. **Do not create or override** global agents, model
     assignments, effort, mode, permissions, or MCP/plugin access during project setup.
-  - Undefined generic/default workers do not satisfy a required role. If no suitable profile exists,
-    record it as `missing`; `implement` keeps safe work in root or stops when independence/security
-    is required.
+  - Persist `may_spawn=false` for every leaf profile. Record fields the host cannot expose as
+    `unsupported`; do not claim they were verified.
+  - Undefined generic/default workers do not satisfy a required role. A pre-defined independent
+    verifier is mandatory; if it is missing, drifted, or unverifiable, `implement` is blocked.
 
 ### 2. Propose, then ask only the forks
 
@@ -62,8 +67,12 @@ questions a wrong guess would get wrong — typically at most ~3:
   (skip if only one branch exists — they're the same);
 - the **tracker system and its access method**, if ambiguous — and whether issues/PRs are split;
 - the **data-mutation gate** on/off, if cron/batch writes are unclear.
-- a missing **required role profile**, only when it prevents independent verification or a
-  risk-mandated security boundary. Do not ask about profiles that can be read from the host config.
+- the **ready criteria** and atomic **claim transition**, if the tracker does not expose an obvious
+  ready → claimed/in-progress path with owner/session identity;
+- the deployment/test environment path when no non-production target or artifact-source receipt is
+  discoverable;
+- a missing required verifier/security profile. Do not ask about profiles that can be read from the
+  host config.
 
 Everything with a safe default → state the default, don't ask.
 
@@ -83,21 +92,23 @@ with the user. After this, every harness-ship workflow consumes it automatically
 - **Integration branch:** <e.g. `staging`> — feature PRs target this; never push to it directly. If the repo has only one branch, this equals the release branch below.
 - **Protected release branch:** <e.g. `main`> — human + release gate only; workflows never merge here.
 - **Test / lint / typecheck:** `<test cmd>` / `<lint cmd>` / `<typecheck cmd>` — write `none` for any the project lacks; workflows skip a `none` step instead of flagging it missing.
-- **Agent-ready signal:** <label / Jira status / sprint per tracker, e.g. `ready-for-agent` label | `In Progress` status | none>
+- **Ready criteria:** <label / status / sprint that makes a ticket eligible, e.g. `ready-for-agent`>
+- **Claim transition:** <atomic assignment + claimed/in-progress state with root/session identity | single-root/manual claim policy>
+- **Deployment / test environment:** <environment + deploy/status access + exact source-SHA/artifact revision surface + URL/fixtures | manual/none>
 - **Agent orchestration:** root session owns planning, delegation, integration, external state, and final decision; children may not spawn.
 - **Agent role profiles:** host-defined and live-verified before dispatch.
 
-  | Work nature | Profile | Mode / sandbox | Model | Effort | Write scope | MCP/plugins |
-  |---|---|---|---|---|---|---|
-  | narrow lookup | `<profile | missing>` | `<read-only>` | `<host value>` | `<low>` | `none` | `none` |
-  | exploration | `<profile | missing>` | `<read-only>` | `<host value>` | `<medium>` | `none` | `none` |
-  | mechanical implementation | `<profile | missing>` | `<workspace-write>` | `<host value>` | `<medium>` | bounded | `none` |
-  | judgment implementation | `<profile | missing>` | `<workspace-write>` | `<host value>` | `<medium+>` | bounded | `none` |
-  | plan verification | `<profile | missing>` | `<read-only>` | `<host value>` | `<high>` | `none` | `none` |
-  | independent verification | `<profile | missing>` | `<verification-only>` | `<host value>` | `<high>` | no source edits | `none` |
-  | security review / implementation | `<profiles | missing>` | `<read-only / workspace-write>` | `<host value>` | `<highest configured>` | bounded | `none` |
+  | Work nature | Host / profile ID | Definition source | Mode / sandbox | Model | Effort | Write scope | MCP/plugins | May spawn |
+  |---|---|---|---|---|---|---|---|---|
+  | narrow lookup | `profile-or-missing` | `<config path or registry ID>` | `read-only` | `<host value>` | `low` | `none` | `none` | `false` |
+  | exploration | `profile-or-missing` | `<config path or registry ID>` | `read-only` | `<host value>` | `medium` | `none` | `none` | `false` |
+  | mechanical implementation | `profile-or-missing` | `<config path or registry ID>` | `workspace-write` | `<host value>` | `medium` | bounded | `none` | `false` |
+  | judgment implementation | `profile-or-missing` | `<config path or registry ID>` | `workspace-write` | `<host value>` | `medium+` | bounded | `none` | `false` |
+  | plan verification | `profile-or-missing` | `<config path or registry ID>` | `read-only` | `<host value>` | `high` | `none` | `none` | `false` |
+  | independent verification | `<required profile>` | `<config path or registry ID>` | `verification-only` | `<host value>` | `high` | no source edits | `none` | `false` |
+  | security review / implementation | `profiles-or-missing` | `<config paths or registry IDs>` | `read-only/workspace-write` | `<host value>` | `<highest configured>` | bounded | `none` | `false` |
 
-- **Delegation limits:** <host max direct children> / depth `<value>`; root-only spawning; one writer per overlapping file/worktree region.
+- **Delegation limits:** <host max direct children> / depth `<value>`; root-only spawning; serialize all write-capable children in one ticket worktree.
 - **Data-mutation safety gate:** <on | off> — on when the project has scheduled/batch DB writers.
 - **UI convention:** <front-end-first mocks under `docs/design/` | none>
 
@@ -106,4 +117,5 @@ with the user. After this, every harness-ship workflow consumes it automatically
 ## Idempotent
 
 Re-running `setup` re-detects and updates the existing `## harness-ship` block rather than
-duplicating it. Safe to run again after the stack, tracker, or branch topology changes.
+duplicating it. Safe to run again after the stack, tracker, branch topology, deployment path, or
+host role definitions change.

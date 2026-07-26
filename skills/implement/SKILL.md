@@ -36,12 +36,14 @@ through a child prompt.
 
 Dispatch only to a **pre-defined role profile** that exists in the host runtime and is mapped under
 `Agent role profiles`. Before the first dispatch, verify the live profile's name, mode/sandbox,
-model, effort, write authority, and capability boundary against the recorded mapping.
+model, effort, definition source, write authority, `may_spawn=false`, and capability boundary
+against the recorded mapping. A field the host cannot expose is `unsupported`, not assumed safe.
 
 - Do not create, override, or silently downgrade a role's model / effort / mode while implementing.
 - Do not use an undefined `generic`, `default`, or `worker` profile as a substitute.
 - If a mapped profile is missing or has drifted, keep safe work in root and report the mismatch.
-  Stop when independent verification or a required security boundary cannot be preserved.
+  Stop when independent verification or a required security boundary cannot be preserved. A
+  pre-defined independent-verification profile is mandatory for `implement`.
 - Profile names are host-specific; route by **work nature**, not by memorized names:
 
 | Work nature | Required boundary | Typical effort |
@@ -63,22 +65,27 @@ Every child receives exactly one task with:
 
 1. a **bounded deliverable**;
 2. **allowed files** or an explicit read-only scope;
-3. the ticket, acceptance-contract revision, SC-ID → AC-ID mapping, and approved seam it needs;
-4. behavioural and operational **constraints**, including forbidden tools;
-5. a concrete **verification** command or evidence request;
-6. an instruction not to spawn agents, commit, push, mutate tracker/PR state, or expand scope.
+3. the **exact worktree path** and command **working directory**; all returned paths must resolve
+   beneath that worktree;
+4. the ticket, acceptance-contract revision, SC-ID → AC-ID mapping, and approved seam it needs;
+5. behavioural and operational **constraints**, including forbidden tools;
+6. a concrete **verification** command or evidence request;
+7. an instruction not to spawn agents, commit, push, mutate tracker/PR state, or expand scope.
 
-Use **one writer** for any file set or worktree region. Parallelize read-only investigation and
-truly disjoint write slices only; never assign overlapping files or tightly coupled behaviour to
-multiple writers. One executor owns both RED and GREEN for its vertical behaviour slice so TDD does
-not split into imagined tests versus disconnected implementation.
+Use **one writer** for any file set or worktree region. **Serialize all write-capable** children in
+the ticket worktree—even when their planned files are disjoint—so root can inspect and checkpoint a
+clean slice without another child's uncommitted changes. Parallelize read-only investigation only.
+One executor owns both RED and GREEN for its vertical behaviour slice so TDD does not split into
+imagined tests versus disconnected implementation.
 
 ## Phase 0 — Resolve the work and pin the fixed point
 
 Root:
 
-1. Resolve one frontier ticket whose blockers are complete and mark it with the configured
-   agent-ready/in-progress signal.
+1. Resolve one frontier ticket that matches the configured **ready criteria**. Before creating a
+   worktree, atomically apply the configured **claim transition** with the root/session identity and
+   verify ownership. If the tracker cannot claim atomically, obey its recorded single-root/manual
+   policy; never run concurrent implement sessions against an unclaimed ticket.
 2. Load the approved spec, acceptance-contract revision, stable scenario/criterion IDs, test seams,
    and explicit out-of-scope list. A stale, missing, or behaviourally contradictory contract stops
    implementation and returns to `dev-workflow` Stage 3.
@@ -127,10 +134,11 @@ When all slices are integrated:
 
 1. require a clean working tree and inspect every commit plus `git diff <fixed-point>...HEAD`;
 2. run the **full configured suite** once, plus configured typecheck/lint/build steps (`none` skips);
-3. dispatch an independent mapped verification profile against the ticket, contract, exact diff,
-   and commands; it may create test artifacts but must not edit source code;
-4. run `review` with the fixed point, originating ticket/spec/contract, repository standards, and
-   data-mutation/security gates that apply.
+3. dispatch the mandatory independent-verification profile against the ticket, contract, exact
+   diff, and commands; it may create test artifacts but must not edit source code;
+4. run `review` with two fresh child runs from the mapped verification profile, the fixed point,
+   originating ticket/spec/contract, repository standards, and data-mutation/security gates that
+   apply.
 
 Blocking verification/review findings return to a bounded executor or root. Behaviour fixes restart
 a RED → GREEN slice; standards-only fixes keep tests green. Commit fixes, rerun affected checks,
@@ -140,23 +148,31 @@ the full configured gate when impact warrants it, and independent review until n
 
 Root alone:
 
-1. fetch/rebase safely if the integration branch advanced; rerun affected checks after conflict
-   resolution;
+1. fetch the integration branch. If it advanced, rebase safely, **recompute the fixed point** from
+   the new integration head, and treat the prior review/verification evidence as superseded. After
+   any rebase or conflict resolution, require a clean tree and rerun the full configured gate,
+   independent verification, and `review` against the new `fixed-point...HEAD` before publishing;
 2. push the feature branch and open/update one PR targeting the integration branch;
 3. attach the contract revision, SC-ID → AC-ID trace, TDD receipts, fixed point, commit list, and
    verification results;
 4. wait for required review and CI on the **exact head SHA**—stale green checks do not count;
 5. merge only under the configured branch policy. Never autonomously merge a protected release
    branch or auto-merge a single-branch repository;
-6. update the tracker with PR/merge evidence and final ticket state;
-7. verify no process/session uses the clean worktree, then perform worktree **cleanup**.
+6. obtain a **deployment receipt** for the configured non-production test environment: deployed
+   source SHA, artifact/environment revision, status, URL/access path, and fixtures. Verify the
+   artifact was built from the merged source. If deployment is manual or unavailable, mark the
+   ticket `awaiting deployment` and stop before QA until an external receipt supplies this evidence;
+7. update the tracker with PR/merge/deployment evidence and the development-complete or
+   awaiting-QA state—do not close acceptance early;
+8. verify no process/session uses the clean worktree, then perform worktree **cleanup**.
 
 ## Stop and recovery
 
 Stop without guessing on: missing/drifted required profiles, dirty or active worktrees, invalid
 fixed point, stale acceptance contract, unrelated red baseline, invalid RED, scope/behaviour drift,
-overlapping writers, unavailable independent/security verification, merge conflicts that change
-behaviour, failed required CI, or protected-branch authorization.
+overlapping writers, failed atomic claim, unavailable independent/security verification, merge
+conflicts that change behaviour, failed required CI, missing deployment receipt, or protected-branch
+authorization.
 
 On interruption, leave the branch/worktree recoverable and write an **implementation receipt** to
 the configured ticket/PR—not a transient scratch note:
@@ -165,6 +181,5 @@ the configured ticket/PR—not a transient scratch note:
 - fixed point, branch, worktree, current HEAD, and clean/dirty state;
 - completed/current/remaining slices and assigned role profiles;
 - RED/GREEN/regression/static/full-suite commands and results;
-- review/CI state at the exact head SHA;
+- review/CI state at the exact head SHA and any deployment/artifact receipt;
 - blocker, next safe action, and any required human judgment.
-

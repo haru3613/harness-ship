@@ -42,11 +42,11 @@ change or guess the Spec axis.
 
 Report each axis separately. A finding on one axis never cancels a finding on the other.
 
-When the host exposes mapped independent-verification profiles, the root orchestrator dispatches
-Standards and Spec as two bounded, read-only reviews of the same fixed-point diff and sources. The
-reviewers do not communicate or rerank each other. If those profiles are unavailable, root may run
-both axes sequentially, but must report that independent review was unavailable; a project/risk
-policy that requires independence remains blocked.
+The root orchestrator dispatches Standards and Spec as **two fresh child runs** of the mapped,
+pre-defined independent-verification profile. They receive the same fixed-point diff and sources,
+but do not communicate or rerank each other; the same profile may be instantiated twice. If the
+profile is missing, drifted, or cannot be live-verified, review is **blocked**—root-run analysis
+cannot be presented as independent review.
 
 ## Optional: data-mutation safety gate
 
@@ -68,5 +68,5 @@ failure it causes, and a one-line fix. If nothing blocks, say so plainly — don
 Blocking findings must be fixed and re-reviewed; non-blocking may be deferred but must be listed.
 
 Include the fixed point, reviewed HEAD, commit count, originating work item/contract revision, and
-whether each axis was independent or root-run. After any fix, require a clean committed tree and
-rerun the affected axis against the new HEAD.
+the profile/run identity for each independent axis. After any fix, require a clean committed tree
+and rerun the affected axis in a fresh child against the new HEAD.
