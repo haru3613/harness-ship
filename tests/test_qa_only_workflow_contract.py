@@ -85,7 +85,8 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
 
     def test_rd_workflows_never_consume_qa_commands_before_handoff(self) -> None:
         tdd = " ".join(read("skills/tdd/SKILL.md").lower().split())
-        implement = " ".join(read("skills/implement/SKILL.md").lower().split())
+        implement_raw = read("skills/implement/SKILL.md")
+        implement = " ".join(implement_raw.lower().split())
 
         for workflow in (tdd, implement):
             self.assertIn("rd unit", workflow)
@@ -96,6 +97,19 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
             )
         self.assertNotIn("repository's test commands", tdd)
         self.assertNotIn("full configured suite", implement)
+
+        phase0 = section(
+            implement_raw,
+            "## Phase 0 — Resolve the work and pin the fixed point",
+            "## Durable checkpoint protocol",
+        )
+        self.assertIn("rd unit", phase0)
+        self.assertIn("rd api-contract", phase0)
+        self.assertRegex(
+            phase0,
+            r"(do not|never).{0,100}(run|execute|consume).{0,100}qa.{0,60}command",
+        )
+        self.assertNotIn("each approved seam", phase0)
 
     def test_reusable_qa_handoff_template_has_required_fields(self) -> None:
         template = " ".join(

@@ -122,8 +122,12 @@ Root:
    worktree.
 6. Record the exact integration-branch SHA and `git merge-base HEAD <integration-ref>` as the
    **fixed point**, plus the branch, worktree path, and starting `git status`.
-7. Run a narrow **baseline** at each approved seam and the cheapest configured static check.
-   Pre-existing failures stop the ticket; record them without rewriting the contract.
+7. Run a narrow **baseline** using only the applicable configured **RD unit** and
+   **RD API-contract** commands at approved RD seams, plus the cheapest configured static check.
+   Do not run or consume any QA integration, P0, or full-suite command before the dev→QA handoff.
+   An applicable `not-configured` RD command is reported as missing; it is never replaced with a QA
+   command or inferred PASS. Pre-existing failures stop the ticket; record them without rewriting
+   the contract.
 
 Refresh the claim **heartbeat** during long phases. Every implementation receipt records claim
 owner, lease/heartbeat, claim-generation fencing token, and the permitted
