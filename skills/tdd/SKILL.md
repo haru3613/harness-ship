@@ -11,8 +11,8 @@ description: >-
 # tdd
 
 Turn an approved ticket into working code through small **RED → GREEN** cycles. TDD owns RD's unit
-and contract tests. It does not replace `testing-workflow`: QA still owns integration and E2E
-execution after handoff.
+and contract tests only. It does not implement or own approved P0 integration/E2E automation and
+does not replace `testing-workflow`: QA still owns integration and E2E execution.
 
 ## Inputs — inherit the approved contract
 
@@ -23,10 +23,13 @@ Before editing code, read:
 - the test seams and interfaces chosen in the spec,
 - the repository's test commands and conventions.
 
-Do not ask the user to approve the seams again. They were settled with the spec and acceptance
-contract. If implementation reveals a different seam but does not change observable behaviour,
-record the test-decision correction on the ticket. If it changes expected behaviour, stop and return
-to `dev-workflow` Stage 3 for a revised acceptance contract.
+Do not ask the user to approve an unchanged seam again. Distinguish an **internal implementation
+test seam** used only by RD's unit/contract harness from the **acceptance-contract QA-executable
+seam**. An internal correction that leaves the approved QA seam and observable behaviour unchanged
+is a test-decision correction recorded on the ticket. Any change to the acceptance-contract
+QA-executable seam, QA assurance profile, fixture/data needs, priority, or observable behaviour
+always requires a new contract revision and `dev-workflow` Stage 3 re-approval; stop TDD and return
+to `acceptance-design`.
 
 For a bug-loopback ticket, the confirmed reproduction and regression criterion are the contract
 when no new product behaviour is being introduced.

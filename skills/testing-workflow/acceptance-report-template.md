@@ -34,6 +34,15 @@
 
 **Legend:** ✅ works as intended · ⚠️ works with a caveat (below) · ❌ broken
 
+## Manual P0 exceptions
+
+> Include one row for every manual P0 exception. Use `none` only when the approved contract has no
+> manual P0 exception.
+
+| Scenario | Exception approval | Exception ticket | Exception owner | Exception expiry | Exception evaluation |
+|---|---|---|---|---|---|
+| <SC-001 / none> | <user approval record> | <open ticket link> | <name> | <deadline> | <valid / incomplete / closed / expired> |
+
 ## What failed / caveats
 
 > For each ⚠️ / ❌: what the **user** would experience, not the stack trace.
@@ -52,10 +61,10 @@
 
 ## Sign-off
 
-- [ ] User or authorized human stakeholder accepts the ✅ journeys as done.
+- [ ] Only the user accepts the ✅ journeys as done.
 - [ ] Caveats (⚠️) are acknowledged and ticketed.
 - [ ] Blocking failures (❌) return to dev-workflow before release.
 
 Automation cannot sign this gate.
 
-Accepted by (user / authorized human): __________   Date: __________
+Accepted by (user): __________   Date: __________

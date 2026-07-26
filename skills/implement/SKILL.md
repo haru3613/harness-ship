@@ -194,15 +194,32 @@ mutating anything else.
 If implementation discovers a required observable behaviour change, stop and return to the
 acceptance-contract gate. Standards-only refactoring keeps tests green; it does not invent a RED.
 
+### Pre-merge P0 QA automation
+
+After the RD TDD slices, root records a named **QA automation owner** for every approved P0
+integration/E2E profile. Unless the approved contract carries a still-valid manual exception, that
+owner implements the approved automation in its named integration or journey harness and runs it
+against the implementation PR's committed **exact HEAD before merge**. This automation is not
+owned by `tdd`; use the compatible configured write role for implementation and preserve the
+approved QA seam, layer, fixtures, required evidence, and risk probes unchanged.
+
+A manual exception may skip this pre-merge automation only after root verifies its recorded user
+approval, that the follow-up ticket exists and is open, its named owner, and its unexpired deadline.
+An incomplete, closed, or expired exception stops implementation and returns to
+`acceptance-design` through `dev-workflow` Stage 3 for a revised approved contract.
+
 ## Phase 3 — Integrate, verify, and review
 
 When all slices are integrated:
 
 1. require a clean working tree and inspect every commit plus `git diff <fixed-point>...HEAD`;
 2. run the **full configured suite** once, plus configured typecheck/lint/build steps (`none` skips);
-3. dispatch the mandatory independent-verification profile against the ticket, contract, exact
+3. run every required approved P0 integration/E2E automation profile at the committed exact HEAD
+   and record its produced evidence; pre-merge PASS is required unless the validated manual
+   exception applies;
+4. dispatch the mandatory independent-verification profile against the ticket, contract, exact
    diff, and commands; it may create test artifacts but must not edit source code;
-4. run `review` with two fresh child runs from the mapped verification profile, the fixed point,
+5. run `review` with two fresh child runs from the mapped verification profile, the fixed point,
    originating ticket/spec/contract, repository standards, and data-mutation/security gates that
    apply.
 
@@ -229,7 +246,8 @@ Root alone:
    **independent outcome verifier** and two fresh review runs, push a new HEAD, and wait again. Retry unrelated
    infrastructure failures only within the configured bound, then stop with evidence;
 5. proceed only when required review and CI are green on the new **exact head SHA**—stale green
-   checks do not count;
+   checks do not count. Required CI includes every approved P0 integration/E2E automation profile;
+   rerun it after every new commit or rebase unless the validated manual exception applies;
 6. after a fresh fencing check and pre-mutation checkpoint, merge only under the configured branch
    policy. Never autonomously merge a protected release branch or auto-merge a single-branch
    repository. Checkpoint the observed merge SHA immediately;

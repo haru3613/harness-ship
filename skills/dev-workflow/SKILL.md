@@ -104,6 +104,12 @@ before policy-allowed merge. It performs cleanup immediately after merge. It the
 deployment evidence for the configured non-production environment before QA handoff and writes a durable
 implementation receipt so an interrupted ticket resumes from evidence rather than conversation.
 
+For every approved P0 integration/E2E automation profile that has no approved manual exception,
+`implement` assigns a **QA automation owner** on the implementation PR. That owner implements the
+approved P0 integration/E2E automation through the profile's named harness and runs it against the
+implementation PR's exact head before merge. This is pre-merge QA automation work, not `tdd` work;
+`tdd` remains responsible for RD's unit and contract coverage.
+
 No extra human gate is added here. Observable behaviour changes return to Stage 3; missing or
 drifted required role profiles, invalid baselines/REDs, unavailable independent verification, and
 protected-branch decisions stop safely under `implement`'s rules.

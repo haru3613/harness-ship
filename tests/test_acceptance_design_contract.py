@@ -130,6 +130,62 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         self.assertIn("accept with caveats", testing)
         self.assertIn("exact candidate artifact", testing)
 
+    def test_p0_automation_has_premerge_ownership_and_independent_qa_execution(self) -> None:
+        dev = " ".join(read("skills/dev-workflow/SKILL.md").lower().split())
+        implement = " ".join(read("skills/implement/SKILL.md").lower().split())
+        testing = " ".join(read("skills/testing-workflow/SKILL.md").lower().split())
+        tdd = " ".join(read("skills/tdd/SKILL.md").lower().split())
+
+        self.assertIn("qa automation owner", dev)
+        self.assertIn("implementation pr", dev)
+        self.assertIn("before merge", dev)
+        self.assertIn("approved p0 integration/e2e automation", dev)
+        self.assertIn("qa automation owner", implement)
+        self.assertIn("approved p0 integration/e2e", implement)
+        self.assertIn("exact head", implement)
+        self.assertIn("before merge", implement)
+        self.assertIn("independently execute", testing)
+        self.assertIn("exact handed-off artifact", testing)
+        self.assertIn("unit and contract tests only", tdd)
+
+    def test_manual_p0_exception_is_validated_and_reported(self) -> None:
+        testing = " ".join(read("skills/testing-workflow/SKILL.md").lower().split())
+        template = " ".join(
+            read("skills/testing-workflow/acceptance-report-template.md").lower().split()
+        )
+
+        for marker in (
+            "user approval",
+            "follow-up ticket exists and is open",
+            "named owner",
+            "unexpired deadline",
+            "not ready",
+            "return to `acceptance-design` through `dev-workflow` stage 3",
+        ):
+            self.assertIn(marker, testing)
+        for field in (
+            "exception approval",
+            "exception ticket",
+            "exception owner",
+            "exception expiry",
+            "exception evaluation",
+        ):
+            self.assertIn(field, template)
+
+    def test_tdd_seam_corrections_cannot_mutate_the_acceptance_contract(self) -> None:
+        text = " ".join(read("skills/tdd/SKILL.md").lower().split())
+
+        self.assertIn("internal implementation test seam", text)
+        self.assertIn("acceptance-contract qa-executable seam", text)
+        for field in (
+            "qa assurance profile",
+            "fixture/data needs",
+            "priority",
+        ):
+            self.assertIn(field, text)
+        self.assertIn("always requires a new contract revision", text)
+        self.assertIn("stage 3 re-approval", text)
+
     def test_acceptance_design_stops_before_implementation_or_qa_execution(self) -> None:
         text = " ".join(read("skills/acceptance-design/SKILL.md").lower().split())
 
@@ -230,7 +286,8 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             self.assertIn(field, template)
         self.assertIn("every scenario", template)
         self.assertNotIn("evidence links open", template)
-        self.assertIn("user or authorized human stakeholder", template)
+        self.assertIn("only the user", template)
+        self.assertNotIn("authorized human", template)
         self.assertIn("automation cannot sign", template)
 
     def test_versioned_compatibility_redirect_and_expiry(self) -> None:
