@@ -39,9 +39,9 @@
 > Include one row for every manual P0 exception. Use `none` only when the approved contract has no
 > manual P0 exception.
 
-| Scenario | Exception approval | Exception ticket | Exception owner | Exception expiry | Exception evaluation |
-|---|---|---|---|---|---|
-| <SC-001 / none> | <user approval record> | <open ticket link> | <name> | <deadline> | <valid / incomplete / closed / expired> |
+| Scenario | Exception approval | Exception ticket | Exception owner | Exception expiry | Exception execution method | Exception required evidence | Exception produced evidence | Exception evaluation |
+|---|---|---|---|---|---|---|---|---|
+| <SC-001 / none> | <user approval record> | <open ticket link> | <name> | <deadline> | <exact-candidate method> | <required artifact/trace> | <produced artifact/trace> | <valid / incomplete / closed / expired> |
 
 ## What failed / caveats
 

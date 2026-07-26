@@ -48,10 +48,11 @@ Every scenario must contain:
 - a **QA assurance profile** naming the intended integration or E2E layer, automation expectation,
   required evidence, and risk-specific probes.
 
-Every **P0 assurance profile** expects the scenario to be automated on every PR. If that is not
-currently possible, record a manual P0 exception with explicit user approval, a follow-up ticket,
-owner, expiry, exact-candidate execution method, and required evidence. The exception caps the
-acceptance verdict at **Accept with caveats** until its automation ticket closes.
+Every **P0 assurance profile** expects the scenario to be automated on every PR and records a
+**QA automation owner**. If automation is not currently possible, record a manual P0 exception with
+explicit user approval, a follow-up ticket, expiry, exact-candidate execution method, and required
+evidence; the QA automation owner is also the owner of that follow-up ticket. The exception caps
+the acceptance verdict at **Accept with caveats** until its automation ticket closes.
 
 Show the complete set as a P0/P1 matrix so omissions and priority are reviewable. Map every stable
 SC-ID to at least one stable AC-ID, and map every in-scope AC-ID to at least one scenario. Do not

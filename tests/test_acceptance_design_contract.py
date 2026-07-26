@@ -122,6 +122,7 @@ class AcceptanceDesignContractTests(unittest.TestCase):
 
         self.assertIn("p0 assurance profile", design)
         self.assertIn("automated on every pr", design)
+        self.assertIn("qa automation owner", design)
         self.assertIn("explicit user approval", design)
         self.assertIn("follow-up ticket", design)
         self.assertIn("expiry", design)
@@ -148,6 +149,7 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         tdd = " ".join(read("skills/tdd/SKILL.md").lower().split())
 
         self.assertIn("qa automation owner", dev)
+        self.assertIn("every approved p0", dev)
         self.assertIn("feature-branch head before publication", dev)
         self.assertIn("exact pr head", dev)
         self.assertIn("before merge", dev)
@@ -168,6 +170,30 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         self.assertIn("independently execute", testing)
         self.assertIn("exact handed-off artifact", testing)
         self.assertIn("unit and contract tests only", tdd)
+
+    def test_p0_prepublication_evidence_tracks_every_local_head(self) -> None:
+        implement = read("skills/implement/SKILL.md").lower()
+        integrate = " ".join(
+            implement.split("## phase 3", maxsplit=1)[1]
+            .split("## phase 4", maxsplit=1)[0]
+            .split()
+        )
+        publish = " ".join(
+            implement.split("## phase 4", maxsplit=1)[1]
+            .split("## stop and recovery", maxsplit=1)[0]
+            .split()
+        )
+
+        self.assertIn("without a manual exception", integrate)
+        self.assertIn("when a manual exception is requested", integrate)
+        self.assertIn("record the skip", integrate)
+        self.assertNotIn("unless the validated manual exception applies", integrate)
+        self.assertIn("every fix commit invalidates", integrate)
+        self.assertIn("repeat step 3", integrate)
+        self.assertIn("rebase or conflict-resolution commit invalidates", publish)
+        self.assertIn("repeat phase 3 step 3", publish)
+        self.assertIn("before push", publish)
+        self.assertIn("receipt's head matches the current head", publish)
 
     def test_manual_p0_exception_is_revalidated_at_every_remote_skip(self) -> None:
         implement = read("skills/implement/SKILL.md").lower()
@@ -204,28 +230,62 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         self.assertIn("stage 3", publish)
 
     def test_manual_p0_exception_is_validated_and_reported(self) -> None:
-        testing = " ".join(read("skills/testing-workflow/SKILL.md").lower().split())
-        template = " ".join(
-            read("skills/testing-workflow/acceptance-report-template.md").lower().split()
+        testing = read("skills/testing-workflow/SKILL.md").lower()
+        stage2 = " ".join(
+            testing.split("## stage 2", maxsplit=1)[1]
+            .split("## stage 3", maxsplit=1)[0]
+            .split()
+        )
+        stage3 = " ".join(
+            testing.split("## stage 3", maxsplit=1)[1]
+            .split("## stage 4", maxsplit=1)[0]
+            .split()
+        )
+        template_source = read(
+            "skills/testing-workflow/acceptance-report-template.md"
+        ).lower()
+        exceptions = " ".join(
+            template_source.split("## manual p0 exceptions", maxsplit=1)[1]
+            .split("## what failed", maxsplit=1)[0]
+            .split()
         )
 
-        for marker in (
-            "user approval",
+        fields = (
+            "current explicit user approval",
             "follow-up ticket exists and is open",
             "named owner",
             "unexpired deadline",
-            "not ready",
-            "return to `acceptance-design` through `dev-workflow` stage 3",
-        ):
-            self.assertIn(marker, testing)
+            "exact-candidate execution method",
+            "required evidence",
+        )
+        for phase in (stage2, stage3):
+            for field in fields:
+                self.assertIn(field, phase)
+            self.assertIn("not ready", phase)
         for field in (
             "exception approval",
             "exception ticket",
             "exception owner",
             "exception expiry",
+            "exception execution method",
+            "exception required evidence",
+            "exception produced evidence",
             "exception evaluation",
         ):
-            self.assertIn(field, template)
+            self.assertIn(field, exceptions)
+
+    def test_p0_flakes_cannot_bypass_the_exception_gate(self) -> None:
+        testing = read("skills/testing-workflow/SKILL.md").lower()
+        stage3 = " ".join(
+            testing.split("## stage 3", maxsplit=1)[1]
+            .split("## stage 4", maxsplit=1)[0]
+            .split()
+        )
+
+        self.assertIn("non-p0 only", stage3)
+        self.assertIn("p0 flaky", stage3)
+        self.assertIn("not ready", stage3)
+        self.assertIn("stage 3", stage3)
 
     def test_tdd_seam_corrections_cannot_mutate_the_acceptance_contract(self) -> None:
         text = " ".join(read("skills/tdd/SKILL.md").lower().split())

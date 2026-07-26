@@ -224,12 +224,15 @@ When all slices are integrated:
 
 1. require a clean working tree and inspect every commit plus `git diff <fixed-point>...HEAD`;
 2. run the **full configured suite** once, plus configured typecheck/lint/build steps (`none` skips);
-3. run every required approved P0 integration/E2E automation profile at the committed exact HEAD
-   and record its produced evidence. **Immediately before this exception-based skip**, re-read and
-   verify all approved exception fields: **current explicit user approval**, that the **follow-up
-   ticket exists and is open**, its **named owner**, its **unexpired deadline**, the
-   **exact-candidate execution method**, and the **required evidence**. Any invalid field returns to
-   `acceptance-design` through `dev-workflow` Stage 3; otherwise pre-merge PASS is required;
+3. resolve each approved P0 integration/E2E profile through exactly one branch:
+   - **Without a manual exception:** run it at the committed exact HEAD, checkpoint that HEAD plus
+     its result and produced evidence, and require PASS.
+   - **When a manual exception is requested:** immediately before this exception-based skip,
+     re-read and verify all approved exception fields: **current explicit user approval**, that the
+     **follow-up ticket exists and is open**, its **named owner**, its **unexpired deadline**, the
+     **exact-candidate execution method**, and the **required evidence**. If all fields are valid,
+     record the skip, exact HEAD, and validation evidence; any invalid field returns to
+     `acceptance-design` through `dev-workflow` Stage 3.
 4. dispatch the mandatory independent-verification profile against the ticket, contract, exact
    diff, and commands; it may create test artifacts but must not edit source code;
 5. run `review` with two fresh child runs from the mapped verification profile, the fixed point,
@@ -239,6 +242,8 @@ When all slices are integrated:
 Blocking verification/review findings return to a bounded executor or root. Behaviour fixes restart
 a RED → GREEN slice; standards-only fixes keep tests green. Commit fixes, rerun affected checks,
 the full configured gate when impact warrants it, and independent review until no blockers remain.
+Every fix commit invalidates the prior P0 exact-HEAD receipt; repeat step 3 at the new clean
+committed HEAD and checkpoint its replacement evidence before continuing to publication.
 
 ## Phase 4 — Publish exact evidence
 
@@ -247,9 +252,12 @@ Root alone:
 1. fetch the integration branch. If it advanced, rebase safely, **recompute the fixed point** from
    the new integration head, and treat the prior review/verification evidence as superseded. After
    any rebase or conflict resolution, require a clean tree and rerun the full configured gate,
-   independent verification, and `review` against the new `fixed-point...HEAD` before publishing;
-2. apply the fencing check and receipt write-ahead protocol, then push the feature branch and
-   open/update one PR targeting the integration branch;
+   independent verification, and `review` against the new `fixed-point...HEAD` before publishing.
+   Every rebase or conflict-resolution commit invalidates the prior P0 receipt: repeat Phase 3
+   step 3 at the new exact HEAD and checkpoint its replacement evidence;
+2. before push, confirm the P0 receipt's HEAD matches the current HEAD and every exception validation
+   is current; otherwise repeat Phase 3 step 3. Then apply the fencing check and receipt write-ahead
+   protocol, push the feature branch, and open/update one PR targeting the integration branch;
 3. attach the contract revision, SC-ID → AC-ID trace, TDD receipts, fixed point, commit list, and
    verification results;
 4. run the **remote feedback loop** on the exact head SHA. Classify review change requests and CI

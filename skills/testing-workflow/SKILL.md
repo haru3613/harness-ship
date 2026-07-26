@@ -55,12 +55,12 @@ unchanged: preserve its integration/E2E layer, automation expectation, required 
 risk-specific probes. If the profile is missing, contradictory, or cannot be executed at the named
 artifact seam, return to `acceptance-design`; QA must not silently redesign it during execution.
 
-For every manual P0 exception, validate the recorded **user approval**, that the **follow-up ticket
-exists and is open**, its **named owner**, and its **unexpired deadline**. An incomplete exception,
-a closed ticket, or an expired deadline makes the handoff **Not ready**: do not execute the
-exception, and return to `acceptance-design` through `dev-workflow` Stage 3 for a revised approved
-contract. Preserve the approval, ticket, owner, expiry, and this evaluation in the acceptance
-report.
+For every manual P0 exception, validate its **current explicit user approval**, that the
+**follow-up ticket exists and is open**, its **named owner**, its **unexpired deadline**, the
+**exact-candidate execution method**, and the **required evidence**. Any incomplete, closed, or
+expired exception makes the handoff **Not ready**: do not execute it, and return to
+`acceptance-design` through `dev-workflow` Stage 3 for a revised approved contract. Preserve all six
+fields and this evaluation in the acceptance report.
 
 - **RD tier** (may already be covered — check the handoff's "what unit+contract tests cover"): unit +
   contract tests. Test the contract against the API schema; don't re-test at E2E what a contract test
@@ -82,13 +82,16 @@ check. Then:
 - **Independently execute the exact handed-off artifact.** Pre-merge automation evidence on the
   implementation PR is a prerequisite, not a substitute for QA rerunning the approved profile
   against the exact source and artifact/environment revision named in the handoff.
-- Before running a manual P0 exception, repeat the Stage 2 validity check; if its approval, open
-  ticket, owner, or deadline is no longer valid, stop with **Not ready** and return through
-  `dev-workflow` Stage 3.
+- Before running a manual P0 exception, freshly validate its **current explicit user approval**,
+  that the **follow-up ticket exists and is open**, its **named owner**, its **unexpired deadline**,
+  the **exact-candidate execution method**, and the **required evidence**. Any invalid field is
+  **Not ready** and returns through `dev-workflow` Stage 3.
 - **Run against a test environment**, never production. Seed test data on staging/local only —
   **never write fake/seed data into a production database.**
-- **Flaky → quarantine** (skip + a linked issue), never delete; add a retry policy so one flaky test
-  can't red the whole run. Fix quarantined tests as their own tickets.
+- **Flaky quarantine is non-P0 only** (skip + a linked issue), never delete; add a retry policy so
+  one flaky non-P0 test cannot red the whole run. A **P0 flaky** result is **Not ready** and must not
+  be skipped: return through `dev-workflow` Stage 3 if the user chooses to approve a complete manual
+  P0 exception; otherwise fix and rerun it. Fix quarantined non-P0 tests as their own tickets.
 - **CI layering**: automated P0 profiles run on every PR; the full suite runs **nightly /
   pre-release**. A user-approved manual P0 exception must run against the exact candidate artifact
   and attach its required evidence; it cannot produce **Ready to accept**, only **Accept with
