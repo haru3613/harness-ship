@@ -233,6 +233,10 @@ When all slices are integrated:
      **exact-candidate execution method**, and the **required evidence**. If all fields are valid,
      record the skip, exact HEAD, and validation evidence; any invalid field returns to
      `acceptance-design` through `dev-workflow` Stage 3.
+   A **P0 flaky** result is **Not ready**. It must not be quarantined or accepted through an
+   infrastructure retry; a green retry alone is not PASS. Diagnose and fix the flake, then rerun at
+   the new exact HEAD, or return through `dev-workflow` Stage 3 for the user to approve a complete
+   manual exception.
 4. dispatch the mandatory independent-verification profile against the ticket, contract, exact
    diff, and commands; it may create test artifacts but must not edit source code;
 5. run `review` with two fresh child runs from the mapped verification profile, the fixed point,
@@ -263,9 +267,13 @@ Root alone:
 4. run the **remote feedback loop** on the exact head SHA. Classify review change requests and CI
    failures before editing: approved-behaviour defects use a bounded RED → GREEN slice;
    **standards-only** fixes keep tests green; requested contract changes return to the acceptance
-   gate. Commit valid fixes and rerun affected plus full configured checks. Rerun the
-   **independent outcome verifier** and two fresh review runs, push a new HEAD, and wait again. Retry unrelated
-   infrastructure failures only within the configured bound, then stop with evidence;
+   gate. Commit valid fixes and rerun affected plus full configured checks. Every such commit
+   invalidates the P0 receipt: before the next push, repeat Phase 3 step 3 and checkpoint the new
+   exact HEAD, result, and evidence (or the freshly validated six-field exception). Then rerun the
+   **independent outcome verifier** and two fresh review runs, push a new HEAD, and wait again.
+   Retry unrelated infrastructure failures only within the configured bound. A **P0 flaky** result
+   is **Not ready** and must not be quarantined or treated as an infrastructure retry; diagnose and
+   fix it, or return through `dev-workflow` Stage 3 for a complete manual exception;
 5. proceed only when required review and CI are green on the new **exact PR head SHA**—stale green
    checks do not count. Required CI includes every approved P0 integration/E2E automation profile;
    rerun it after every new commit or rebase unless the validated manual exception applies. Before
@@ -314,4 +322,6 @@ termination recovery relies on the checkpoint protocol above rather than an inte
 - completed/current/remaining slices and assigned role profiles;
 - RED/GREEN/regression/static/full-suite commands and results;
 - review/CI state at the exact head SHA and any deployment/artifact receipt;
+- each P0 profile, its QA automation owner, exact-HEAD result and produced evidence, plus the
+  manual-exception six fields and their last validation time when an exception applies;
 - blocker, next safe action, and any required human judgment.

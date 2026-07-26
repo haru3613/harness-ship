@@ -195,6 +195,29 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         self.assertIn("before push", publish)
         self.assertIn("receipt's head matches the current head", publish)
 
+    def test_remote_feedback_refreshes_p0_before_each_push(self) -> None:
+        implement = read("skills/implement/SKILL.md").lower()
+        remote = " ".join(
+            implement.split("4. run the **remote feedback loop**", maxsplit=1)[1]
+            .split("5. proceed only", maxsplit=1)[0]
+            .split()
+        )
+
+        for marker in (
+            "commit valid fixes",
+            "repeat phase 3 step 3",
+            "checkpoint the new exact head",
+            "push a new head",
+        ):
+            self.assertIn(marker, remote)
+        commit_index = remote.index("commit valid fixes")
+        refresh_index = remote.index("repeat phase 3 step 3")
+        checkpoint_index = remote.index("checkpoint the new exact head")
+        push_index = remote.index("push a new head")
+        self.assertLess(commit_index, refresh_index)
+        self.assertLess(refresh_index, checkpoint_index)
+        self.assertLess(checkpoint_index, push_index)
+
     def test_manual_p0_exception_is_revalidated_at_every_remote_skip(self) -> None:
         implement = read("skills/implement/SKILL.md").lower()
         premerge = " ".join(
@@ -276,9 +299,20 @@ class AcceptanceDesignContractTests(unittest.TestCase):
 
     def test_p0_flakes_cannot_bypass_the_exception_gate(self) -> None:
         testing = read("skills/testing-workflow/SKILL.md").lower()
+        implement = read("skills/implement/SKILL.md").lower()
         stage3 = " ".join(
             testing.split("## stage 3", maxsplit=1)[1]
             .split("## stage 4", maxsplit=1)[0]
+            .split()
+        )
+        integrate = " ".join(
+            implement.split("## phase 3", maxsplit=1)[1]
+            .split("## phase 4", maxsplit=1)[0]
+            .split()
+        )
+        remote = " ".join(
+            implement.split("4. run the **remote feedback loop**", maxsplit=1)[1]
+            .split("5. proceed only", maxsplit=1)[0]
             .split()
         )
 
@@ -286,6 +320,28 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         self.assertIn("p0 flaky", stage3)
         self.assertIn("not ready", stage3)
         self.assertIn("stage 3", stage3)
+        for phase in (integrate, remote):
+            self.assertIn("p0 flaky", phase)
+            self.assertIn("not ready", phase)
+            self.assertIn("must not be quarantined", phase)
+            self.assertIn("infrastructure retry", phase)
+            self.assertIn("stage 3", phase)
+
+    def test_p0_state_is_durable_in_the_recovery_receipt(self) -> None:
+        implement = read("skills/implement/SKILL.md").lower()
+        recovery = " ".join(
+            implement.split("## stop and recovery", maxsplit=1)[1].split()
+        )
+
+        for field in (
+            "p0 profile",
+            "qa automation owner",
+            "exact-head result",
+            "produced evidence",
+            "manual-exception six fields",
+            "last validation time",
+        ):
+            self.assertIn(field, recovery)
 
     def test_tdd_seam_corrections_cannot_mutate_the_acceptance_contract(self) -> None:
         text = " ".join(read("skills/tdd/SKILL.md").lower().split())
