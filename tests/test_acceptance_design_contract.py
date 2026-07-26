@@ -29,6 +29,13 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             ):
                 self.assertNotIn(marker, normalized)
             self.assertNotIn("**v0.6.0 migration:**", readme)
+            for command in (
+                "$harness-ship:acceptance-design",
+                "$harness-ship:testing-workflow",
+                "/harness-ship:acceptance-design",
+                "/harness-ship:testing-workflow",
+            ):
+                self.assertIn(command, readme)
             return
 
         self.assertEqual((major, minor), (0, 6))
@@ -99,11 +106,17 @@ class AcceptanceDesignContractTests(unittest.TestCase):
 
     def test_approved_identifiers_are_immutable_and_never_reused(self) -> None:
         text = " ".join(read("skills/acceptance-design/SKILL.md").lower().split())
+        spec = " ".join(read("skills/spec/SKILL.md").lower().split())
 
         self.assertIn("approved sc-id and ac-id values are immutable", text)
         self.assertIn("never renumber or reuse", text)
         self.assertIn("changed semantic scenario gets a new sc-id", text)
-        self.assertIn("old revision and references remain valid", text)
+        self.assertIn("changed semantic criterion gets a new ac-id", text)
+        self.assertIn("retire the superseded criterion", text)
+        self.assertIn("old sc-id → ac-id references remain valid", text)
+        self.assertIn("approved ac-ids are immutable", spec)
+        self.assertIn("changed criterion receives a new ac-id", spec)
+        self.assertIn("retain the superseded criterion", spec)
 
     def test_acceptance_contract_uses_the_configured_tracker_path(self) -> None:
         text = " ".join(read("skills/acceptance-design/SKILL.md").lower().split())
@@ -221,11 +234,6 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             current_readme,
             flags=re.DOTALL,
         )
-        future_readme += (
-            "\nUse `$harness-ship:acceptance-design` or "
-            "`/harness-ship:acceptance-design` directly.\n"
-        )
-
         self.assert_compatibility_policy("0.7.0", future_workflow, future_readme)
 
     def test_setup_lists_acceptance_design_as_a_config_consumer(self) -> None:

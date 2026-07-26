@@ -22,8 +22,9 @@ ambiguous, or not externally observable, return to `spec`; do not invent the pro
 Do not require a separate spec-approval gate: `dev-workflow` presents the spec criteria and scenario
 set together at its acceptance-contract gate, where the user approves them. **Approved SC-ID and
 AC-ID values are immutable**: never renumber or reuse them. If observable meaning changes, the
-changed semantic scenario gets a new SC-ID in the new revision; retire the superseded scenario
-without erasing it so the old revision and references remain valid.
+changed semantic scenario gets a new SC-ID and the changed semantic criterion gets a new AC-ID in
+the corresponding new spec/contract revision. Retire the superseded scenario and retire the
+superseded criterion without erasing either one so old SC-ID → AC-ID references remain valid.
 
 ## Produce the acceptance contract
 

@@ -108,6 +108,10 @@ tracker, branches, or host agent profiles change.
 design. `/harness-ship:testing-workflow` redirects legacy pre-implementation and missing-contract
 calls there for this minor release and otherwise starts only after the dev→QA handoff.
 
+Canonical direct commands are not compatibility aliases and remain after the v0.6 redirect expires:
+Codex uses `$harness-ship:acceptance-design` and `$harness-ship:testing-workflow`; Claude Code uses
+`/harness-ship:acceptance-design` and `/harness-ship:testing-workflow`.
+
 `setup` detects your stack, issue tracker, branch topology and test commands, asks only the few
 forks it can't infer, and writes a `## harness-ship` config block into your `AGENTS.md` (or
 `CLAUDE.md`). Every workflow reads that block, so nothing runs on generic guesses.
