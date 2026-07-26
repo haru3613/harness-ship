@@ -92,6 +92,21 @@ class RoleBindingRuntimeTests(unittest.TestCase):
         self.assertFalse(ambiguous["mutation"])
         self.assertEqual(ambiguous["bindings"], original["bindings"])
         self.assertEqual(ambiguous["global_settings"], original["global_settings"])
+        self.assertEqual(len(ambiguous["candidates"]), 2)
+        for descriptor in ambiguous["candidates"]:
+            self.assertEqual(
+                set(descriptor),
+                {"profile_id", "definition_source", "boundary_digest"},
+            )
+        self.assertEqual(
+            len(
+                {
+                    descriptor["boundary_digest"]
+                    for descriptor in ambiguous["candidates"]
+                }
+            ),
+            2,
+        )
 
         document["candidates"] = []
         missing = self.contract.resolve_document(document)
@@ -139,24 +154,66 @@ class RoleBindingRuntimeTests(unittest.TestCase):
                     ("missing", "fail"),
                 )
 
-    def test_arbitrary_codex_identity_is_never_selected_or_preserved(self) -> None:
+    def test_work_nature_is_required_and_other_purposes_fail_closed(self) -> None:
+        for name in ("claude.json", "codex.json"):
+            raw = fixture(name)["candidates"][0]
+            self.assertEqual(
+                raw["profile"]["work_nature"], "independent verification"
+            )
+
+            missing = deepcopy(raw)
+            del missing["profile"]["work_nature"]
+            if missing["source_kind"] == "host-record":
+                missing["source"] = canonical_record(missing["profile"])
+            document = self.document(name)
+            document["candidates"] = [missing]
+            self.assertEqual(
+                self.contract.resolve_document(document)["status"], "missing"
+            )
+
+            other = deepcopy(raw)
+            other["profile"]["work_nature"] = "code implementation"
+            if other["source_kind"] == "host-record":
+                other["source"] = canonical_record(other["profile"])
+            document["candidates"] = [other]
+            self.assertEqual(
+                self.contract.resolve_document(document)["status"], "missing"
+            )
+
+    def test_custom_codex_identity_requires_independent_role_and_explicit_binding(
+        self,
+    ) -> None:
         document = self.document("codex.json")
         candidate = document["candidates"][0]
         candidate["profile"]["profile_id"] = "Codex/arbitrary-purpose"
         candidate["profile"]["definition_source"] = (
             "host-registry://codex/arbitrary-purpose"
         )
+        candidate["profile"]["work_nature"] = "deployment"
         candidate["source"] = canonical_record(candidate["profile"])
 
         self.assertEqual(
             self.contract.resolve_document(document)["status"], "missing"
         )
 
+        candidate["profile"]["profile_id"] = "Codex/custom-independent-verifier"
+        candidate["profile"]["definition_source"] = (
+            "host-registry://codex/custom-independent-verifier"
+        )
+        candidate["profile"]["work_nature"] = "independent verification"
+        candidate["source"] = canonical_record(candidate["profile"])
         materialized = self.contract.build_candidate(**candidate)
         document["bindings"]["codex"] = deepcopy(materialized["binding"])
-        stale = self.contract.resolve_document(document)
-        self.assertEqual(stale["status"], "stale-invalid")
-        self.assertFalse(stale["mutation"])
+        preserved = self.contract.resolve_document(document)
+        self.assertEqual(preserved["status"], "preserved")
+        self.assertFalse(preserved["mutation"])
+
+        packet = {
+            "persisted": materialized["binding"],
+            "live": deepcopy(candidate),
+            "launch_plan": deepcopy(candidate),
+        }
+        self.assertEqual(self.contract.preflight_document(packet)["status"], "pass")
 
     def test_invalid_existing_binding_is_actionable_and_never_replaced(self) -> None:
         for name, host, other_host in (

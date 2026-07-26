@@ -23,6 +23,7 @@ PROFILE_FIELDS = {
     "mode_sandbox",
     "model",
     "effort",
+    "work_nature",
     "write_scope",
     "may_spawn",
     "fresh_context",
@@ -43,6 +44,7 @@ STRING_FIELDS = {
     "mode_sandbox",
     "model",
     "effort",
+    "work_nature",
     "write_scope",
 }
 BOOL_FIELDS = {"may_spawn", "fresh_context"}
@@ -69,6 +71,7 @@ HOST_BOUNDARIES = {
 }
 CODEX_DEFAULT_PROFILE_ID = "Codex/verifier"
 CODEX_DEFAULT_DEFINITION_SOURCE = "host-registry://codex/verifier"
+INDEPENDENT_VERIFICATION = "independent verification"
 GOLDEN_PROFILE = {
     "host": "codex",
     "profile_id": "Codex/驗證器",
@@ -79,6 +82,7 @@ GOLDEN_PROFILE = {
     "mode_sandbox": "read-only",
     "model": "模型-α",
     "effort": "high",
+    "work_nature": "independent verification",
     "write_scope": "none",
     "may_spawn": False,
     "fresh_context": True,
@@ -86,7 +90,7 @@ GOLDEN_PROFILE = {
     "mcp_plugins": [],
 }
 GOLDEN_BOUNDARY_DIGEST = (
-    "sha256:f4305cf8ef26a3b166db90deefe5be38caeb91aecadfb20a69a28f8f396b2f4f"
+    "sha256:9e9718f585676a035ee6394dd212788acb2a6cdcf1486c1049099b8a8ae42a9a"
 )
 
 
@@ -137,6 +141,8 @@ def validate_profile(profile: Mapping[str, Any]) -> Dict[str, Any]:
         result[field] = _validate_string_array(profile[field], field)
     if result["host"] not in HOSTS:
         raise ContractError("host must be codex or claude-code")
+    if result["work_nature"] != INDEPENDENT_VERIFICATION:
+        raise ContractError("work_nature must be independent verification")
     if not SHA256_RE.fullmatch(result["authoritative_definition_digest"]):
         raise ContractError("authoritative_definition_digest must be lowercase sha256")
     return {key: result[key] for key in profile}
@@ -227,6 +233,7 @@ def _validate_source_semantics(
         if (
             profile["model"] != fields["model"]
             or profile["effort"] != fields["effort"]
+            or profile["work_nature"] != INDEPENDENT_VERIFICATION
             or profile["effective_tools_capabilities"] != sorted(fields["tools"])
             or profile["may_spawn"]
             or not profile["fresh_context"]
@@ -324,6 +331,7 @@ def _safe_materialized_candidate(candidate: Mapping[str, Any], host: str) -> boo
         or binding["mode_sandbox"] != boundary["mode_sandbox"]
         or binding["write_scope"] != boundary["write_scope"]
         or binding["effort"].lower() not in HIGH_OR_HIGHER
+        or binding["work_nature"] != INDEPENDENT_VERIFICATION
         or binding["effective_tools_capabilities"]
         != boundary["effective_tools_capabilities"]
     ):
@@ -337,8 +345,7 @@ def _safe_materialized_candidate(candidate: Mapping[str, Any], host: str) -> boo
         )
     return (
         candidate["source_kind"] == "host-record"
-        and binding["profile_id"] == CODEX_DEFAULT_PROFILE_ID
-        and binding["definition_source"] == CODEX_DEFAULT_DEFINITION_SOURCE
+        and binding["definition_source"].startswith("host-registry://codex/")
     )
 
 
@@ -418,7 +425,14 @@ def resolve_document(document: Mapping[str, Any]) -> Dict[str, Any]:
             "mutation": False,
             "bindings": result_bindings,
             "global_settings": result_global,
-            "candidates": [candidate["binding"]["profile_id"] for candidate in valid],
+            "candidates": [
+                {
+                    "profile_id": candidate["binding"]["profile_id"],
+                    "definition_source": candidate["binding"]["definition_source"],
+                    "boundary_digest": candidate["binding"]["boundary_digest"],
+                }
+                for candidate in valid
+            ],
         }
     return {
         "status": "missing",
