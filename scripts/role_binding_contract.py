@@ -817,6 +817,8 @@ def _legacy_binding_matches(binding: Mapping[str, Any], cells: List[str]) -> boo
     plugins = [] if plugins_text == "none" else plugins_text.split(", ")
     if fresh_text not in {"true", "false"} or spawn_text not in {"true", "false"}:
         return False
+    if model not in {binding["model"], binding["effective_model"]}:
+        return False
     legacy_profile = {
         "host": host,
         "profile_id": profile_id,
@@ -862,7 +864,7 @@ def _legacy_binding_matches(binding: Mapping[str, Any], cells: List[str]) -> boo
         definition_source,
         expected_definition_digest,
         binding["mode_sandbox"],
-        binding["model"],
+        model,
         binding["effort"],
         binding["write_scope"],
         ", ".join(binding["effective_tools_capabilities"])
