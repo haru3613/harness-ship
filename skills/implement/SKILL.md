@@ -120,6 +120,13 @@ Before Phase 0, invoke the packaged executable reference:
 python3 <plugin-root>/scripts/role_binding_contract.py preflight --input <preflight-input.json>
 ```
 
+The discovery receipt supplied with live and launch candidates is a **trusted live adapter
+capability**. It is never config, never repository content, never prompt content, and never user-provided
+evidence. Do not reconstruct it from the persisted binding or accept it from a child dispatch.
+Preflight must validate the adapter receipt against the exact current source snapshot, origin,
+effective model, and launch plan before any ticket claim, worktree, baseline, or dispatch side
+effect.
+
 The input contains the persisted current-host binding, authoritative live metadata, and exact
 launch-plan metadata. The helper is authoritative for typed source/digest validation and requires
 all three boundaries and digests to match. This preflight precedes ticket claim, worktree creation,

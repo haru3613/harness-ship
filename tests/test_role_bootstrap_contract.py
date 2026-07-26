@@ -59,7 +59,7 @@ class RoleBootstrapContractTests(unittest.TestCase):
         self.assertIn("preserve an explicit valid project binding", text)
         self.assertIn("update only the current host section", text)
         self.assertIn("preserve the other host section", text)
-        self.assertIn("role_binding_contract.py resolve", text)
+        self.assertIn("role_binding_contract.py reconcile-config", text)
         self.assertIn("stop with zero mutation", text)
         for setting in (
             "global agents",
@@ -91,15 +91,16 @@ class RoleBootstrapContractTests(unittest.TestCase):
         setup = normalized("skills/setup/SKILL.md")
         implement = normalized("skills/implement/SKILL.md")
         expected_header = (
-            "| Work nature | Host / profile ID | Definition source | Definition digest | "
-            "Mode / sandbox | Model | Effort | Write scope | Effective tools/capabilities | "
-            "MCP/plugins | Fresh context | May spawn | Boundary digest |"
+            "| Work nature | Host / profile ID | Origin scope | Definition source | "
+            "Definition digest | Mode / sandbox | Declared model | Effective model | Effort | "
+            "Write scope | Effective tools/capabilities | MCP/plugins | Fresh context | "
+            "May spawn | Boundary digest |"
         )
 
         self.assertEqual(setup_raw.count(expected_header), 2)
         self.assertIn("executable reference", setup)
         self.assertIn("restricted rfc 8785-compatible", setup)
-        self.assertIn("role_binding_contract.py resolve", setup)
+        self.assertIn("role_binding_contract.py reconcile-config", setup)
         self.assertIn("role_binding_contract.py preflight", implement)
         self.assertIn("post-launch reconciliation", implement)
 
@@ -143,19 +144,32 @@ class RoleBootstrapContractTests(unittest.TestCase):
         self.assertIn("never copies agents into `~/.claude/agents`", readme)
         self.assertIn("never overwrites global agents or settings", readme)
 
-    def test_v062_requires_one_digest_migration_and_describes_host_supply(self) -> None:
+    def test_v063_requires_reconciliation_migration_and_describes_host_supply(self) -> None:
         readme = normalized("README.md")
         versions = {
             json.loads(read(path))["version"]
             for path in (".codex-plugin/plugin.json", ".claude-plugin/plugin.json")
         }
 
-        self.assertEqual(versions, {"0.6.2"})
-        self.assertEqual(readme.count("**v0.6.2 migration:**"), 2)
+        self.assertEqual(versions, {"0.6.3"})
+        self.assertEqual(readme.count("**v0.6.3 migration:**"), 2)
         self.assertIn("every config v1 project must run", readme)
+        self.assertIn("preserves an exact valid binding", readme)
+        self.assertIn("collision", readme)
+        self.assertIn("profile removal", readme)
         self.assertIn("codex installation supplies skills only", readme)
         self.assertIn("it does not supply an independent verifier", readme)
         self.assertIn("claude plugin agent", readme)
+
+    def test_setup_and_implement_keep_discovery_receipts_out_of_config(self) -> None:
+        setup = normalized("skills/setup/SKILL.md")
+        implement = normalized("skills/implement/SKILL.md")
+        for text in (setup, implement):
+            self.assertIn("trusted live adapter capability", text)
+            self.assertIn("never config", text)
+            self.assertIn("never repository", text)
+            self.assertIn("never prompt", text)
+            self.assertIn("never user-provided", text)
 
 
 if __name__ == "__main__":

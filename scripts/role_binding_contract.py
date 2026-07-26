@@ -47,6 +47,7 @@ DISCOVERY_RECEIPT_FIELDS = {
     "host_default",
 }
 DOCUMENT_FIELDS = {"current_host", "bindings", "candidates", "global_settings"}
+CONFIG_RECONCILE_FIELDS = {"config_text", "current_host", "candidates"}
 HOSTS = {"codex", "claude-code"}
 HOST_ORIGIN_SCOPES = {
     "codex": {"builtin", "project", "user"},
@@ -95,6 +96,18 @@ CLAUDE_CUSTOM_PROFILE_RE = re.compile(
     r"Claude/(project|user)/([A-Za-z0-9][A-Za-z0-9._-]*)"
 )
 INDEPENDENT_VERIFICATION = "independent verification"
+LEGACY_TABLE_HEADER = (
+    "| Work nature | Host / profile ID | Definition source | Definition digest | "
+    "Mode / sandbox | Model | Effort | Write scope | Effective tools/capabilities | "
+    "MCP/plugins | Fresh context | May spawn | Boundary digest |"
+)
+EXPANDED_TABLE_HEADER = (
+    "| Work nature | Host / profile ID | Origin scope | Definition source | "
+    "Definition digest | Mode / sandbox | Declared model | Effective model | Effort | "
+    "Write scope | Effective tools/capabilities | MCP/plugins | Fresh context | "
+    "May spawn | Boundary digest |"
+)
+EXPANDED_TABLE_SEPARATOR = "|" + "---|" * 15
 GOLDEN_PROFILE = {
     "host": "codex",
     "origin_scope": "builtin",
@@ -614,6 +627,368 @@ def resolve_document(document: Mapping[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _config_result(
+    original: Any, status: str, actionable: str, **extra: Any
+) -> Dict[str, Any]:
+    result = {
+        "status": status,
+        "mutation": False,
+        "config_text": original,
+        "actionable": actionable,
+    }
+    result.update(extra)
+    return result
+
+
+def _table_cells(line: str, expected_count: int) -> List[str]:
+    stripped = line.strip()
+    if not stripped.startswith("|") or not stripped.endswith("|"):
+        raise ContractError("malformed role binding table row")
+    cells = [cell.strip() for cell in stripped[1:-1].split("|")]
+    if len(cells) != expected_count or any(not cell for cell in cells):
+        raise ContractError("malformed role binding table row")
+    return cells
+
+
+def _config_json_cell(value: Any) -> str:
+    rendered = json.dumps(
+        value,
+        ensure_ascii=True,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    )
+    return rendered.replace("|", "\\u007c")
+
+
+def _serialize_binding_section(host: str, binding: Mapping[str, Any]) -> str:
+    validated = validate_binding(binding)
+    label = "Codex" if host == "codex" else "Claude Code"
+    values = [
+        validated["work_nature"],
+        validated["profile_id"],
+        validated["origin_scope"],
+        validated["definition_source"],
+        validated["authoritative_definition_digest"],
+        validated["mode_sandbox"],
+        validated["model"],
+        validated["effective_model"],
+        validated["effort"],
+        validated["write_scope"],
+        validated["effective_tools_capabilities"],
+        validated["mcp_plugins"],
+        validated["fresh_context"],
+        validated["may_spawn"],
+        validated["boundary_digest"],
+    ]
+    row = "  | " + " | ".join(_config_json_cell(value) for value in values) + " |"
+    return (
+        f"- **Agent role bindings — {label}:**\n\n"
+        f"  {EXPANDED_TABLE_HEADER}\n"
+        f"  {EXPANDED_TABLE_SEPARATOR}\n"
+        f"{row}\n"
+    )
+
+
+def _decode_config_cell(cell: str) -> Any:
+    try:
+        return _strict_json_loads(cell)
+    except (json.JSONDecodeError, ContractError) as error:
+        raise ContractError(f"malformed canonical role binding cell: {error}") from error
+
+
+def _parse_expanded_binding(lines: List[str], host: str) -> Dict[str, Any]:
+    if len(lines) != 5 or lines[1] != "":
+        raise ContractError("expanded role binding table must contain exactly one row")
+    if lines[2].strip() != EXPANDED_TABLE_HEADER:
+        raise ContractError("malformed expanded role binding header")
+    if lines[3].strip() != EXPANDED_TABLE_SEPARATOR:
+        raise ContractError("malformed expanded role binding separator")
+    cells = [_decode_config_cell(cell) for cell in _table_cells(lines[4], 15)]
+    (
+        work_nature,
+        profile_id,
+        origin_scope,
+        definition_source,
+        definition_digest,
+        mode_sandbox,
+        model,
+        effective_model,
+        effort,
+        write_scope,
+        tools,
+        mcp_plugins,
+        fresh_context,
+        may_spawn,
+        digest,
+    ) = cells
+    binding = {
+        "host": host,
+        "origin_scope": origin_scope,
+        "profile_id": profile_id,
+        "definition_source": definition_source,
+        "authoritative_definition_digest": definition_digest,
+        "mode_sandbox": mode_sandbox,
+        "model": model,
+        "effective_model": effective_model,
+        "effort": effort,
+        "work_nature": work_nature,
+        "write_scope": write_scope,
+        "may_spawn": may_spawn,
+        "fresh_context": fresh_context,
+        "effective_tools_capabilities": tools,
+        "mcp_plugins": mcp_plugins,
+        "boundary_digest": digest,
+    }
+    return validate_binding(binding)
+
+
+def _legacy_cell(cell: str) -> str:
+    if len(cell) >= 2 and cell[0] == "`" and cell[-1] == "`":
+        return cell[1:-1]
+    return cell
+
+
+def _legacy_binding_matches(binding: Mapping[str, Any], cells: List[str]) -> bool:
+    values = [_legacy_cell(cell) for cell in cells]
+    (
+        work_nature,
+        profile_id,
+        definition_source,
+        definition_digest,
+        mode_sandbox,
+        model,
+        effort,
+        write_scope,
+        tools_text,
+        plugins_text,
+        fresh_text,
+        spawn_text,
+        digest,
+    ) = values
+    host = binding["host"]
+    if host == "codex":
+        match = CODEX_PROFILE_RE.fullmatch(profile_id)
+        if (
+            match is None
+            or definition_source != f"host-registry://codex/{match.group(1)}"
+        ):
+            return False
+    else:
+        path = Path(definition_source)
+        if (
+            binding["origin_scope"] != "plugin"
+            or profile_id != CLAUDE_PROFILE_ID
+            or not path.is_absolute()
+            or ".." in path.parts
+            or path.parts[-2:]
+            != ("agents", "harness-ship-independent-verifier.md")
+        ):
+            return False
+    tools = [] if tools_text == "none" else tools_text.split(", ")
+    plugins = [] if plugins_text == "none" else plugins_text.split(", ")
+    if fresh_text not in {"true", "false"} or spawn_text not in {"true", "false"}:
+        return False
+    legacy_profile = {
+        "host": host,
+        "profile_id": profile_id,
+        "definition_source": definition_source,
+        "authoritative_definition_digest": definition_digest,
+        "mode_sandbox": mode_sandbox,
+        "model": model,
+        "effort": effort,
+        "work_nature": work_nature,
+        "write_scope": write_scope,
+        "may_spawn": spawn_text == "true",
+        "fresh_context": fresh_text == "true",
+        "effective_tools_capabilities": tools,
+        "mcp_plugins": plugins,
+    }
+    legacy_source_profile = dict(legacy_profile)
+    del legacy_source_profile["authoritative_definition_digest"]
+    if host == "codex":
+        legacy_source_bytes = json.dumps(
+            legacy_source_profile,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+        expected_definition_digest = (
+            "sha256:" + hashlib.sha256(legacy_source_bytes).hexdigest()
+        )
+    else:
+        expected_definition_digest = binding["authoritative_definition_digest"]
+    expected_boundary_digest = "sha256:" + hashlib.sha256(
+        json.dumps(
+            legacy_profile,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+    ).hexdigest()
+    expected = [
+        binding["work_nature"],
+        binding["profile_id"],
+        definition_source,
+        expected_definition_digest,
+        binding["mode_sandbox"],
+        binding["model"],
+        binding["effort"],
+        binding["write_scope"],
+        ", ".join(binding["effective_tools_capabilities"])
+        if binding["effective_tools_capabilities"]
+        else "none",
+        ", ".join(binding["mcp_plugins"]) if binding["mcp_plugins"] else "none",
+        str(binding["fresh_context"]).lower(),
+        str(binding["may_spawn"]).lower(),
+        expected_boundary_digest,
+    ]
+    return values == expected
+
+
+def _parse_legacy_binding(
+    lines: List[str], candidates: List[Mapping[str, Any]], host: str
+) -> Dict[str, Any]:
+    if len(lines) != 5 or lines[1] != "":
+        raise ContractError("legacy role binding table must contain exactly one row")
+    if lines[2].strip() != LEGACY_TABLE_HEADER:
+        raise ContractError("malformed legacy role binding header")
+    separator = _table_cells(lines[3], 13)
+    if separator != ["---"] * 13:
+        raise ContractError("malformed legacy role binding separator")
+    cells = _table_cells(lines[4], 13)
+    matches = []
+    for candidate in candidates:
+        try:
+            materialized = _materialize_candidate(candidate)
+        except (ContractError, OSError, UnicodeError):
+            continue
+        if (
+            materialized["binding"]["host"] == host
+            and _legacy_binding_matches(materialized["binding"], cells)
+        ):
+            matches.append(materialized["binding"])
+    if len(matches) != 1:
+        raise ContractError(
+            "legacy role binding is stale or does not match exactly one trusted candidate"
+        )
+    return matches[0]
+
+
+def reconcile_config_text(
+    config_text: Any,
+    current_host: str,
+    candidates: List[Mapping[str, Any]],
+) -> Dict[str, Any]:
+    """Reconcile a Config v1 current-host binding from raw persisted text only."""
+    original = config_text
+    if isinstance(config_text, bytes):
+        try:
+            config_text = config_text.decode("utf-8")
+        except UnicodeDecodeError:
+            return _config_result(
+                original, "invalid-config", "Config input must be exact UTF-8."
+            )
+    if type(config_text) is not str:
+        return _config_result(
+            original, "invalid-config", "Config input must be exact UTF-8 text."
+        )
+    if current_host not in HOSTS or type(candidates) is not list:
+        return _config_result(
+            original,
+            "invalid-config",
+            "Current host and trusted live candidate array are required.",
+        )
+    try:
+        headings = list(
+            re.finditer(r"(?m)^## harness-ship[ \t]*$", config_text)
+        )
+        if len(headings) != 1:
+            raise ContractError("expected exactly one ## harness-ship block")
+        block_start = headings[0].start()
+        next_heading = re.search(
+            r"(?m)^## (?!harness-ship(?:[ \t]*$)).*$",
+            config_text[headings[0].end() :],
+        )
+        block_end = (
+            headings[0].end() + next_heading.start()
+            if next_heading
+            else len(config_text)
+        )
+        block = config_text[block_start:block_end]
+        versions = re.findall(
+            r"(?m)^- \*\*Config version:\*\* `([^`]+)`[ \t]*$", block
+        )
+        if versions != ["1"]:
+            raise ContractError("unsupported or malformed Config version")
+        label = "Codex" if current_host == "codex" else "Claude Code"
+        marker = f"- **Agent role bindings — {label}:**"
+        marker_matches = list(re.finditer(rf"(?m)^{re.escape(marker)}.*$", block))
+        if len(marker_matches) != 1:
+            raise ContractError("expected exactly one current-host role section")
+        marker_match = marker_matches[0]
+        payload_start = block_start + marker_match.start()
+        after_marker = block[marker_match.end() :]
+        next_field = re.search(r"(?m)^- \*\*[^\n]+$", after_marker)
+        payload_end = (
+            block_start + marker_match.end() + next_field.start()
+            if next_field
+            else block_end
+        )
+        payload = config_text[payload_start:payload_end].rstrip("\n")
+        lines = payload.splitlines()
+        legacy = False
+        if lines == [f"{marker} `not-configured`"]:
+            explicit = None
+        else:
+            legacy = len(lines) >= 3 and lines[2].strip() == LEGACY_TABLE_HEADER
+            explicit = (
+                _parse_legacy_binding(lines, candidates, current_host)
+                if legacy
+                else _parse_expanded_binding(lines, current_host)
+            )
+        other_host = "claude-code" if current_host == "codex" else "codex"
+        resolved = resolve_document(
+            {
+                "current_host": current_host,
+                "bindings": {current_host: explicit, other_host: None},
+                "candidates": candidates,
+                "global_settings": {},
+            }
+        )
+        if resolved["status"] not in {"selected", "preserved"}:
+            return _config_result(
+                original,
+                resolved["status"],
+                resolved.get(
+                    "actionable",
+                    "Reconcile the current-host verifier candidates explicitly.",
+                ),
+                candidates=resolved.get("candidates", []),
+            )
+        if resolved["status"] == "preserved" and not legacy:
+            return {
+                "status": "preserved",
+                "mutation": False,
+                "config_text": original,
+            }
+        replacement = _serialize_binding_section(
+            current_host, resolved["bindings"][current_host]
+        )
+        reconciled = (
+            config_text[:payload_start] + replacement + config_text[payload_end:]
+        )
+        return {
+            "status": "migrated" if legacy else "selected",
+            "mutation": reconciled != config_text,
+            "config_text": reconciled,
+        }
+    except (ContractError, KeyError, TypeError, OSError, UnicodeError) as error:
+        return _config_result(original, "invalid-config", str(error))
+
+
 def _candidate_digest(candidate: Mapping[str, Any]) -> str:
     validated = _materialize_candidate(candidate)
     return validated["binding"]["boundary_digest"]
@@ -730,7 +1105,7 @@ def _emit(payload: Mapping[str, Any]) -> None:
 def main(argv: List[str] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
-    for command in ("resolve", "preflight", "post-launch"):
+    for command in ("resolve", "reconcile-config", "preflight", "post-launch"):
         command_parser = subparsers.add_parser(command)
         command_parser.add_argument("--input", required=True)
     agent_parser = subparsers.add_parser("validate-agent")
@@ -749,6 +1124,22 @@ def main(argv: List[str] = None) -> int:
             result = resolve_document(_load_json(args.input))
             _emit(result)
             return 0 if result["status"] in {"preserved", "selected"} else 2
+        if args.command == "reconcile-config":
+            document = _load_json(args.input)
+            _require_exact_keys(
+                document, CONFIG_RECONCILE_FIELDS, "config reconcile document"
+            )
+            result = reconcile_config_text(
+                document["config_text"],
+                document["current_host"],
+                document["candidates"],
+            )
+            _emit(result)
+            return 0 if result["status"] in {
+                "preserved",
+                "selected",
+                "migrated",
+            } else 2
         if args.command == "preflight":
             result = preflight_document(_load_json(args.input))
         else:

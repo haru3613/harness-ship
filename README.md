@@ -85,9 +85,11 @@ creates or overwrites global agents or settings.
 `$harness-ship:testing-workflow` redirects legacy pre-implementation and missing-contract calls
 there for this minor release and otherwise starts only after the dev→QA handoff.
 
-**v0.6.2 migration:** every Config v1 project must run `$harness-ship:setup` once to add and verify
-the executable role Boundary digest. After this migration, rerun setup when release notes require a
-migration or when the stack, tracker, branches, or live host profiles change.
+**v0.6.3 migration:** every Config v1 project must run `$harness-ship:setup` once after install or
+upgrade. Raw-text reconciliation upgrades the legacy binding row, preserves an exact valid binding
+across plugin relocation, and changes only the current-host payload. Re-run setup after a profile
+change or profile removal. A collision, stale source, ambiguous default, or drift stops unchanged;
+repair or explicitly choose the safe live profile, then rerun setup.
 
 ### Claude Code
 
@@ -118,9 +120,11 @@ after validating the effective live boundary. Harness Ship never copies agents i
 design. `/harness-ship:testing-workflow` redirects legacy pre-implementation and missing-contract
 calls there for this minor release and otherwise starts only after the dev→QA handoff.
 
-**v0.6.2 migration:** every Config v1 project must run `/harness-ship:setup` once to add and verify
-the executable role Boundary digest. After this migration, rerun setup when release notes require a
-migration or when the stack, tracker, branches, or live host profiles change.
+**v0.6.3 migration:** every Config v1 project must run `/harness-ship:setup` once after install or
+upgrade. Raw-text reconciliation upgrades the legacy binding row, preserves an exact valid binding
+across plugin relocation, and changes only the current-host payload. Re-run setup after a profile
+change or profile removal. A collision, stale source, ambiguous default, or drift stops unchanged;
+repair or explicitly choose the safe live profile, then rerun setup.
 
 Canonical direct commands are not compatibility aliases and remain after the v0.6 redirect expires:
 Codex uses `$harness-ship:acceptance-design` and `$harness-ship:testing-workflow`; Claude Code uses
