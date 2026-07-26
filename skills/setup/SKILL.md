@@ -72,8 +72,9 @@ questions a wrong guess would get wrong — typically at most ~3:
 - the **data-mutation gate** on/off, if cron/batch writes are unclear.
 - the **ready criteria** and atomic **claim transition**, if the tracker does not expose an obvious
   ready → claimed/in-progress path with owner/session identity;
-- the **claim recovery** policy (lease/heartbeat, receipt-backed resume, expired-claim takeover, and
-  release) when the tracker does not provide one;
+- the **claim recovery** policy (atomic claim + initial recovery receipt, lease/heartbeat,
+  generation/fencing token, write-ahead checkpoints, receipt-backed resume, expired-claim takeover,
+  and release) when the tracker does not provide one;
 - the deployment/test environment path when no non-production target or artifact-source receipt is
   discoverable;
 - a missing required verifier/security profile. Do not ask about profiles that can be read from the
@@ -98,8 +99,8 @@ with the user. After this, every harness-ship workflow consumes it automatically
 - **Protected release branch:** <e.g. `main`> — human + release gate only; workflows never merge here.
 - **Test / lint / typecheck / build:** `<test cmd>` / `<lint cmd>` / `<typecheck cmd>` / `<build cmd>` — write `none` for any the project lacks; workflows skip a `none` step instead of flagging it missing.
 - **Ready criteria:** <label / status / sprint that makes a ticket eligible, e.g. `ready-for-agent`>
-- **Claim transition:** <atomic assignment + claimed/in-progress state with root/session identity | single-root/manual claim policy>
-- **Claim recovery:** <lease + heartbeat interval; same-owner resume; receipt validation; expired-claim takeover; release policy>
+- **Claim transition:** <atomic assignment + claimed/in-progress state with root/session identity, fencing generation, and initial recovery receipt | single-root/manual claim policy>
+- **Claim recovery:** <lease + heartbeat interval; ownership/fencing checks before mutations; write-ahead checkpoints; live-state reconciliation; same-owner resume; receipt validation; expired-claim takeover; release policy>
 - **Remote CI infrastructure retry:** <attempt limit + backoff | none> — applies only to unrelated infrastructure failures, never code/test failures.
 - **Deployment / test environment:** <environment + deploy/status access + exact source-SHA/artifact revision surface + URL/fixtures | manual/none>
 - **Agent orchestration:** root session owns planning, delegation, integration, external state, and final decision; children may not spawn.

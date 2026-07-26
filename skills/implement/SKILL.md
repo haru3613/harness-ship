@@ -35,10 +35,14 @@ through a child prompt.
 ## Role-profile gate
 
 Dispatch only to a **pre-defined role profile** that exists in the host runtime and is mapped under
-the **current host's** `Agent role bindings`. Before the first dispatch, verify the live profile's
-name, mode/sandbox, model, effort, definition source, write authority, `may_spawn=false`, and
-capability boundary against both that binding and the portable `Agent role requirements`. A field
-the host cannot expose is `unsupported`, not assumed safe.
+the **current host's** `Agent role bindings`. **Immediately before every dispatch**, verify the live
+profile's name, mode/sandbox, model, effort, definition source, write authority, `may_spawn=false`,
+and capability boundary against both that binding and the portable `Agent role requirements`.
+For each dispatch reservation, record an immutable digest keyed by its dispatch ID and selected
+role requirement/binding. Launch and recovery must match the live profile to that dispatch-scoped
+digest or stop for re-approval. Sequential dispatches may legitimately select different mapped
+profiles; require digest equality across dispatches only when they select the same approved
+binding. A field the host cannot expose is `unsupported`, not assumed safe.
 
 - Do not create, override, or silently downgrade a role's model / effort / mode while implementing.
 - Do not use an undefined `generic`, `default`, or `worker` profile as a substitute.
@@ -84,31 +88,76 @@ imagined tests versus disconnected implementation.
 
 Root:
 
-1. Look first for a receipt-backed existing claim. Apply the configured **resume policy**: resume
+1. Look first for a receipt-backed existing claim. Reconcile the receipt with live tracker, branch,
+   PR, merge, worktree, CI, deployment, and artifact evidence before choosing a phase; live
+   external evidence may advance recovery but must never be silently overwritten by stale receipt
+   state. Persist the reconciled checkpoint before continuing. Apply the configured **resume
+   policy**: resume
    only the same valid owner/session, or use **takeover** only after the recorded lease/heartbeat has
-   expired and the takeover rule succeeds. An active claim owned elsewhere stops this root. Read the
-   receipt's **workflow phase**, merge SHA, PR, and worktree-disposed state. An
-   `awaiting-deployment` **deployment-only resume** validates the merged SHA and jumps directly to
-   Phase 4 deployment handling; do not create or resume a feature worktree.
+   expired and the takeover rule succeeds. Every successful claim/takeover issues a monotonically
+   changing **claim generation / fencing token**. An active claim owned elsewhere stops this root.
+   Read the receipt's **workflow phase**, merge SHA, PR, and worktree-disposed state. If live
+   evidence proves the PR merged, enter the dedicated **post-merge reconciliation** path: finish the
+   development-complete tracker transition, safely dispose the recorded feature worktree until
+   `worktree-disposed=true`, and only then handle deployment. Do not reuse the merged branch.
+   An `awaiting-deployment` **deployment-only resume** is allowed only after that disposal is
+   confirmed; validate the merged SHA and jump directly to Phase 4 deployment handling without
+   creating or resuming a feature worktree.
 2. For new work, resolve one frontier ticket that matches the configured **ready criteria**.
 3. Load the approved spec, acceptance-contract revision, stable scenario/criterion IDs, test seams,
    and explicit out-of-scope list. A stale, missing, or behaviourally contradictory contract stops
    implementation and returns to `dev-workflow` Stage 3.
 4. For new work only, atomically apply the configured **claim transition** with the root/session
-   identity, immediately persist the initial receipt, then re-read the ticket to verify ownership
-   and unchanged contract revision. **Release** a new claim if a terminal validation failure occurs
-   before the worktree exists. A receipt-backed resume revalidates its existing claim instead of
-   applying a second transition.
+   identity, claim-generation fencing token, and the minimal initial recovery receipt (or an atomic
+   pointer to it) in the same operation—there must be no claimed-without-receipt window. Then re-read
+   the ticket to verify ownership, generation, and unchanged contract revision. **Release** a new
+   claim if a terminal validation failure occurs before the worktree exists. A receipt-backed resume
+   revalidates its existing claim instead of applying a second transition.
 5. Inspect `git worktree list`; resume the receipt's exact branch/worktree/HEAD or create one
-   repository-local worktree and feature branch from the configured integration branch.
-   Never reuse a merged branch or an active/dirty worktree.
+   at **`<repo-root>/.worktrees/<task-slug>`** with a new feature branch from the configured
+   integration branch. Before the first nested worktree, ensure `.worktrees/` is ignored, preferably
+   in repository-local `.git/info/exclude` when it should not be committed. Build-only worktrees
+   also live under `.worktrees/` and use detached HEAD at the exact source SHA. Never create sibling
+   worktrees, reuse a merged branch, duplicate an unfinished task/branch, or reuse an active/dirty
+   worktree.
 6. Record the exact integration-branch SHA and `git merge-base HEAD <integration-ref>` as the
    **fixed point**, plus the branch, worktree path, and starting `git status`.
 7. Run a narrow **baseline** at each approved seam and the cheapest configured static check.
    Pre-existing failures stop the ticket; record them without rewriting the contract.
 
 Refresh the claim **heartbeat** during long phases. Every implementation receipt records claim
-owner, lease/heartbeat, and the permitted resume/release/takeover action.
+owner, lease/heartbeat, claim-generation fencing token, and the permitted
+resume/release/takeover action. Immediately before every external mutation—including tracker
+changes, push, PR writes, merge, worktree cleanup, deployment, and artifact publication—re-read the
+claim and abort unless owner, lease, contract revision, and fencing token still match. A heartbeat
+does not replace this ownership check. The check alone is not a fence: each mutation must also be
+**conditional on the expected claim generation at its target**, or use an equivalent
+generation-scoped ref/resource plus CAS/ETag/ref-lease enforcement. When a provider cannot enforce
+that condition, atomically reserve the action in the claim store and prevent takeover through its
+completion; if neither mechanism is available, automatic mutation and takeover fail closed for a
+human-owned reconciliation. A stale root must be unable to mutate after a newer generation exists.
+
+## Durable checkpoint protocol
+
+The configured implementation receipt is a write-ahead recovery ledger, not an end-of-run report.
+Root durably checkpoints it:
+
+- after every accepted slice, clean commit, and workflow-phase transition;
+- before each external mutation with the intended idempotent action and fencing token;
+- after each external mutation with its observed tracker/PR/SHA/deployment result; and
+- after merge, tracker transition, worktree disposal, and entry into `awaiting-deployment`.
+
+Use host idempotency keys when available. If a crash leaves an intent without a result, recovery
+first reconciles live external state and records the observation; it does not repeat the operation
+blindly. A checkpoint failure stops before the next mutation.
+
+Dispatches use the same write-ahead discipline. Before any child dispatch, checkpoint the slice ID,
+a root-generated dispatch/idempotency ID, verified role-definition digest, expected HEAD and
+working-tree status, allowed files, and `in-flight` state. Immediately after dispatch, checkpoint
+the host run identity; after completion, checkpoint its terminal result before accepting work. On
+resume, reconcile an `in-flight` dispatch with the host and worktree before starting another child.
+If the host cannot prove the prior writer terminal or absent, do not redispatch or permit takeover
+to write in that worktree.
 
 ## Phase 1 — Plan and route by risk
 
@@ -125,8 +174,9 @@ No child chooses its own role, risk tier, acceptance meaning, or next ticket.
 
 ## Phase 2 — Execute TDD slices
 
-For each behaviour slice, root dispatches the mapped mechanical or judgment-bearing executor with
-the dispatch contract above. The executor runs `tdd` at the approved public seam:
+For each behaviour slice, root first checkpoints the slice's pre-dispatch `in-flight` reservation
+under the durable checkpoint protocol, then dispatches the mapped mechanical or judgment-bearing
+executor with the dispatch contract above. The executor runs `tdd` at the approved public seam:
 
 1. demonstrate a valid **RED** caused by the missing behaviour;
 2. add the smallest **GREEN** implementation;
@@ -138,6 +188,8 @@ implementation-coupled tests, invalid REDs, speculative behaviour, or unexplaine
 After each accepted slice, run the focused test and a proportionate **typecheck** / lint check, then
 make a clean checkpoint commit. Committing GREEN checkpoints ensures review sees the actual
 `fixed-point...HEAD` change; children never commit on root's behalf.
+Durably checkpoint the receipt after the accepted slice and its commit before dispatching or
+mutating anything else.
 
 If implementation discovers a required observable behaviour change, stop and return to the
 acceptance-contract gate. Standards-only refactoring keeps tests green; it does not invent a RED.
@@ -166,7 +218,8 @@ Root alone:
    the new integration head, and treat the prior review/verification evidence as superseded. After
    any rebase or conflict resolution, require a clean tree and rerun the full configured gate,
    independent verification, and `review` against the new `fixed-point...HEAD` before publishing;
-2. push the feature branch and open/update one PR targeting the integration branch;
+2. apply the fencing check and receipt write-ahead protocol, then push the feature branch and
+   open/update one PR targeting the integration branch;
 3. attach the contract revision, SC-ID → AC-ID trace, TDD receipts, fixed point, commit list, and
    verification results;
 4. run the **remote feedback loop** on the exact head SHA. Classify review change requests and CI
@@ -177,12 +230,16 @@ Root alone:
    infrastructure failures only within the configured bound, then stop with evidence;
 5. proceed only when required review and CI are green on the new **exact head SHA**—stale green
    checks do not count;
-6. merge only under the configured branch policy. Never autonomously merge a protected release
-   branch or auto-merge a single-branch repository;
-7. update the tracker to development-complete/awaiting-deployment, verify no process/session uses
-   the clean merged feature worktree, then perform worktree **cleanup** immediately. If a later
-   local build is required, use a detached build-only worktree at the exact merged SHA and remove it
-   after artifact production;
+6. after a fresh fencing check and pre-mutation checkpoint, merge only under the configured branch
+   policy. Never autonomously merge a protected release branch or auto-merge a single-branch
+   repository. Checkpoint the observed merge SHA immediately;
+7. run the idempotent **post-merge reconciliation** path: revalidate fencing, update the tracker to
+   development-complete/awaiting-deployment, verify no process/session uses the clean merged feature
+   worktree, then perform worktree **cleanup** immediately and checkpoint
+   `worktree-disposed=true`. If cleanup is temporarily unsafe, retain the post-merge phase and retry
+   disposal on resume; do not skip it or recreate/reuse the merged branch. If a later local build is
+   required, use a detached build-only worktree under `<repo-root>/.worktrees/` at the exact merged
+   SHA and remove it after artifact production;
 8. obtain a **deployment receipt** for the configured non-production test environment: deployed
    source SHA, artifact/environment revision, status, URL/access path, and fixtures. Verify the
    artifact was built from the merged source. If deployment is manual or unavailable, mark the
@@ -198,11 +255,13 @@ overlapping writers, failed atomic claim, unavailable independent/security verif
 conflicts that change behaviour, failed required CI, missing deployment receipt, or protected-branch
 authorization.
 
-On interruption, leave the branch/worktree recoverable and write an **implementation receipt** to
-the configured ticket/PR—not a transient scratch note:
+On a handled interruption, leave the branch/worktree recoverable and update the already-durable
+**implementation receipt** in the configured ticket/PR—not a transient scratch note. Hard
+termination recovery relies on the checkpoint protocol above rather than an interruption handler:
 
 - ticket + acceptance-contract revision and SC-ID → AC-ID scope;
-- claim owner, lease/heartbeat, and allowed resume/release/takeover action;
+- claim owner, lease/heartbeat, claim-generation fencing token, role-definition digests, and allowed
+  resume/release/takeover action;
 - workflow phase, PR, merge SHA, deployment state, and whether the feature worktree was disposed;
 - fixed point, branch, worktree, current HEAD, and clean/dirty state;
 - completed/current/remaining slices and assigned role profiles;

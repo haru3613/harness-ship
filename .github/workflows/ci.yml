@@ -39,7 +39,7 @@ jobs:
             git fetch origin "$BASE_REF"
             git diff --check "origin/$BASE_REF...HEAD"
           elif printf '%s' "$BEFORE_SHA" | grep -Eq '^0+$'; then
-            git show --check --format= HEAD
+            git log --check --format= HEAD
           else
             if ! git cat-file -e "$BEFORE_SHA^{commit}" 2>/dev/null; then
               git fetch --no-tags origin "$BEFORE_SHA" || true
@@ -47,6 +47,6 @@ jobs:
             if git cat-file -e "$BEFORE_SHA^{commit}" 2>/dev/null; then
               git diff --check "$BEFORE_SHA..HEAD"
             else
-              git show --check --format= HEAD
+              git log --check --format= HEAD
             fi
           fi
