@@ -100,6 +100,7 @@ class AcceptanceDesignContractTests(unittest.TestCase):
 
     def test_any_approved_contract_content_change_increments_revision(self) -> None:
         text = " ".join(read("skills/acceptance-design/SKILL.md").lower().split())
+        dev = " ".join(read("skills/dev-workflow/SKILL.md").lower().split())
 
         self.assertIn("any approved contract content changes", text)
         for field in (
@@ -111,6 +112,23 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         ):
             self.assertIn(field, text)
         self.assertIn("preserve stable sc-id and ac-id", text)
+        self.assertIn("contract revision still follows", text)
+        self.assertIn("every approved contract-content change", dev)
+        self.assertIn("returns to stage 3", dev)
+
+    def test_p0_profiles_are_per_pr_or_explicit_human_exceptions(self) -> None:
+        design = " ".join(read("skills/acceptance-design/SKILL.md").lower().split())
+        testing = " ".join(read("skills/testing-workflow/SKILL.md").lower().split())
+
+        self.assertIn("p0 assurance profile", design)
+        self.assertIn("automated on every pr", design)
+        self.assertIn("explicit user approval", design)
+        self.assertIn("follow-up ticket", design)
+        self.assertIn("expiry", design)
+        self.assertIn("automated p0 profiles run on every pr", testing)
+        self.assertIn("manual p0 exception", testing)
+        self.assertIn("accept with caveats", testing)
+        self.assertIn("exact candidate artifact", testing)
 
     def test_acceptance_design_stops_before_implementation_or_qa_execution(self) -> None:
         text = " ".join(read("skills/acceptance-design/SKILL.md").lower().split())
@@ -212,6 +230,8 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             self.assertIn(field, template)
         self.assertIn("every scenario", template)
         self.assertNotIn("evidence links open", template)
+        self.assertIn("user or authorized human stakeholder", template)
+        self.assertIn("automation cannot sign", template)
 
     def test_versioned_compatibility_redirect_and_expiry(self) -> None:
         text = read("skills/testing-workflow/SKILL.md")

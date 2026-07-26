@@ -52,8 +52,10 @@
 
 ## Sign-off
 
-- [ ] Reviewer accepts the ✅ journeys as done.
+- [ ] User or authorized human stakeholder accepts the ✅ journeys as done.
 - [ ] Caveats (⚠️) are acknowledged and ticketed.
 - [ ] Blocking failures (❌) return to dev-workflow before release.
 
-Accepted by: __________   Date: __________
+Automation cannot sign this gate.
+
+Accepted by (user / authorized human): __________   Date: __________

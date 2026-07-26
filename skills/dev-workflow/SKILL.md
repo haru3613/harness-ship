@@ -79,8 +79,9 @@ scenario set alongside the spec.
 
 **Stop after scenario design. Do not implement or generate test-runner code yet. Gate:** the user
 confirms the spec criteria and scenarios describe the right behaviour. Together they become the
-approved acceptance contract, identified by contract revision and stable scenario IDs; any later
-behaviour change returns here for re-approval and a new revision.
+approved acceptance contract, identified by contract revision and stable scenario IDs. Every
+approved contract-content change after that—including behaviour, priority, surface/seam, fixtures,
+or the QA assurance profile—returns to Stage 3 for re-approval and a new revision.
 
 ## Stage 4 — Tickets
 

@@ -21,7 +21,9 @@ Require the current stable spec and its stable acceptance criteria. If criteria 
 ambiguous, or not externally observable, return to `spec`; do not invent the product decision here.
 Do not require a separate spec-approval gate: `dev-workflow` presents the spec criteria and scenario
 set together at its acceptance-contract gate, where the user approves them. If an approved
-acceptance contract already exists, preserve its identifiers unless observable behaviour changes.
+acceptance contract already exists, preserve stable SC-ID and AC-ID values unless observable
+behaviour changes; the contract revision still follows the rule below for every approved content
+change.
 
 ## Produce the acceptance contract
 
@@ -45,6 +47,11 @@ Every scenario must contain:
   `none`;
 - a **QA assurance profile** naming the intended integration or E2E layer, automation expectation,
   required evidence, and risk-specific probes.
+
+Every **P0 assurance profile** expects the scenario to be automated on every PR. If that is not
+currently possible, record a manual P0 exception with explicit user approval, a follow-up ticket,
+owner, expiry, exact-candidate execution method, and required evidence. The exception caps the
+acceptance verdict at **Accept with caveats** until its automation ticket closes.
 
 Show the complete set as a P0/P1 matrix so omissions and priority are reviewable. Map every stable
 SC-ID to at least one stable AC-ID, and map every in-scope AC-ID to at least one scenario. Do not

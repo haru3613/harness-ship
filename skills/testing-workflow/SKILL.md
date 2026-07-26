@@ -76,7 +76,10 @@ check. Then:
   **never write fake/seed data into a production database.**
 - **Flaky → quarantine** (skip + a linked issue), never delete; add a retry policy so one flaky test
   can't red the whole run. Fix quarantined tests as their own tickets.
-- **CI layering**: P0 journeys run on **every PR**; the full suite runs **nightly / pre-release**.
+- **CI layering**: automated P0 profiles run on every PR; the full suite runs **nightly /
+  pre-release**. A user-approved manual P0 exception must run against the exact candidate artifact
+  and attach its required evidence; it cannot produce **Ready to accept**, only **Accept with
+  caveats** at best, until the follow-up automation ticket closes. Never infer PASS from absent CI.
   E2E is too slow to run whole on every push.
 
 ## Stage 4 — Anti-fake-green gate
