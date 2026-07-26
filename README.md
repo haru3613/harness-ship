@@ -38,29 +38,58 @@ Never sail past a gate autonomously. Between gates, don't stall for permission.
 
 ## Install
 
+This repository is currently private. Collaborators must authenticate GitHub HTTPS access before
+either plugin manager can clone it:
+
+```sh
+gh auth login       # skip when `gh auth status` is already green
+gh auth setup-git
+```
+
+If the repository becomes public, this authentication step is no longer required. Users without
+access to the private repository cannot install the plugin, even when a GitHub Release exists.
+
 ### Codex
+
+First install:
 
 ```sh
 codex plugin marketplace add haru3613/harness-ship --ref main
 codex plugin add harness-ship@harness-ship
 ```
 
-Start a new Codex session, then invoke `$harness-ship:setup` once per project. To update:
+If marketplace installation reports `could not read Username for 'https://github.com'`, run
+`gh auth setup-git`, verify that
+`git ls-remote https://github.com/haru3613/harness-ship.git refs/heads/main` succeeds, then retry.
+
+Update an existing install:
 
 ```sh
 codex plugin marketplace upgrade harness-ship
 codex plugin add harness-ship@harness-ship
 ```
 
-Start a new session after upgrading so Codex loads the refreshed skills.
+Start a new Codex session after installing or upgrading so Codex loads the refreshed skills. Invoke
+`$harness-ship:setup` once per project; a plugin update alone does not require running setup again.
 
 ### Claude Code
 
+First install:
+
+```sh
+claude plugin marketplace add haru3613/harness-ship
+claude plugin install harness-ship@harness-ship
 ```
-/plugin marketplace add haru3613/harness-ship
-/plugin install harness-ship
-/setup                          # once per project — configures the workflows for your repo
+
+Update an existing install:
+
+```sh
+claude plugin marketplace update harness-ship
+claude plugin update harness-ship@harness-ship
 ```
+
+Restart Claude Code after installing or upgrading, then run `/setup` once per project. A plugin
+update alone does not require running setup again.
 
 `setup` detects your stack, issue tracker, branch topology and test commands, asks only the few
 forks it can't infer, and writes a `## harness-ship` config block into your `AGENTS.md` (or
