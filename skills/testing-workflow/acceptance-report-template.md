@@ -7,6 +7,7 @@
 **Ticket(s):** <IDs / links>
 **Acceptance contract:** <spec-id/acceptance-vN>
 **QA-RUN-ID:** <execution ledger run>
+**Execution ledger:** [durable QA execution ledger](…)
 **Source commit:** <full 40-character SHA>
 **Tested artifact/environment:** <exact artifact/environment revision>
 **Artifact provenance:** <source + receipt link>
@@ -29,11 +30,11 @@
 
 | # | User journey | Scenario | Spec criterion | Ticket | Exact artifact/environment revision | QA layer / risk probe | Method/command or manual steps | Result | Caveat / acceptance disposition | Ledger attempt | Evidence |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | <what the user does> | <SC-001> | <AC-1> | <ID> | <artifact/env> | <integration> | `<command>` | ✅ PASS | <none> | <run/attempt> | [assertion + log](…) |
-| 2 | <…> | <SC-002> | <AC-2> | <ID> | <artifact/env> | <E2E> | `<command>` | ⚠️ FLAKY | <not accepted / follow-up ticket> | <run/attempts> | [video + attempts](…) |
-| 3 | <…> | <SC-003> | <AC-3> | <ID> | <artifact/env> | <exploratory> | <manual steps> | ✅ PASS | <accepted caveat + ticket> | <run/attempt> | [notes](…) |
-| 4 | <…> | <SC-004> | <AC-4> | <ID> | <artifact/env> | <non-functional> | <method> | ❌ NOT TESTED | <blocking gap> | <run/attempt> | [trace](…) |
-| 5 | <…> | <SC-005> | <AC-5> | <ID> | <artifact/env> | <integration> | `<command>` | ❌ BLOCKED | <blocking dependency> | <run/attempt> | [log](…) |
+| 1 | <what the user does> | <SC-001> | <AC-1> | <ID> | <artifact/env> | <integration> | `<command>` | ✅ PASS | <none> | [run/attempt](…) | [assertion + log](…) |
+| 2 | <…> | <SC-002> | <AC-2> | <ID> | <artifact/env> | <E2E> | `<command>` | ⚠️ FLAKY | <not accepted / follow-up ticket> | [run/attempts](…) | [video + attempts](…) |
+| 3 | <…> | <SC-003> | <AC-3> | <ID> | <artifact/env> | <exploratory> | <manual steps> | ✅ PASS | <accepted caveat + ticket> | [run/attempt](…) | [notes](…) |
+| 4 | <…> | <SC-004> | <AC-4> | <ID> | <artifact/env> | <non-functional> | <method> | ❌ NOT TESTED | <blocking gap> | [run/attempt](…) | [trace](…) |
+| 5 | <…> | <SC-005> | <AC-5> | <ID> | <artifact/env> | <integration> | `<command>` | ❌ BLOCKED | <blocking dependency> | [run/attempt](…) | [log](…) |
 
 **Result legend:** ✅ PASS · ⚠️ FLAKY · ❌ FAIL / BLOCKED / NOT TESTED. Keep caveats and
 acceptance disposition separate so the Result remains exactly derived from the ledger.

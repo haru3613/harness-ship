@@ -230,6 +230,12 @@ remain.
 
 Root alone:
 
+Until the QA handoff is valid, rerun the **CI ownership preflight** immediately before every
+trigger-capable mutation: initial push, retry push, PR open/update, merge/integration push, and any
+deployment mutation. Inspect the current triggers and wiring at that moment. If a QA-owned or
+**unclassified test job** would launch, stop before the mutation; only positively classified RD
+verification jobs and automatic non-QA branch-required checks may proceed.
+
 1. fetch the integration branch. If it advanced, rebase safely, **recompute the fixed point** from
    the new integration head, and treat the prior review/verification evidence as superseded. After
    any rebase or conflict resolution, require a clean tree and rerun the full RD verification gate,
@@ -254,14 +260,15 @@ Root alone:
    **standards-only** fixes keep tests green; requested contract changes return to the acceptance
    gate. Commit valid fixes and rerun affected plus the full RD verification gate. Rerun the
    **independent outcome verifier** and two fresh review runs under the same **RD-only pre-handoff
-   review boundary**; they must not run or consume any QA command or job. Push a new HEAD and wait
-   again. Retry unrelated infrastructure failures only within the configured bound, then stop with
-   evidence;
+   review boundary**; they must not run or consume any QA command or job. Rerun the CI ownership
+   preflight immediately, then push a new HEAD and wait again. Retry unrelated infrastructure
+   failures only within the configured bound, then stop with evidence;
 5. proceed only when required review, RD-owned CI, and all other non-QA branch-required checks are
    green on the new **exact head SHA**—stale green checks and QA-owned jobs do not count;
-6. after a fresh fencing check and pre-mutation checkpoint, merge only under the configured branch
-   policy. Never autonomously merge a protected release branch or auto-merge a single-branch
-   repository. Checkpoint the observed merge SHA immediately;
+6. rerun the CI ownership preflight immediately before merge. After a fresh fencing check and
+   pre-mutation checkpoint, merge only under the configured branch policy. Never autonomously merge
+   a protected release branch or auto-merge a single-branch repository. Checkpoint the observed
+   merge SHA immediately;
 7. run the idempotent **post-merge reconciliation** path: revalidate fencing, update the tracker to
    development-complete/awaiting-deployment, verify no process/session uses the clean merged feature
    worktree, then perform worktree **cleanup** immediately and checkpoint
@@ -269,10 +276,12 @@ Root alone:
    disposal on resume; do not skip it or recreate/reuse the merged branch. If a later local build is
    required, use a detached build-only worktree under `<repo-root>/.worktrees/` at the exact merged
    SHA and remove it after artifact production;
-8. obtain a **deployment receipt** for the configured non-production test environment: deployed
-   source SHA, artifact/environment revision, status, URL/access path, and fixtures. Verify the
-   artifact was built from the merged source. If deployment is manual or unavailable, mark the
-   ticket `awaiting deployment` and stop before QA until an external receipt supplies this evidence;
+8. obtain a **deployment receipt** for the configured non-production test environment. Before any
+   deployment-triggering mutation, rerun the CI ownership preflight and stop on a QA-owned or
+   unclassified test job. Record deployed source SHA, artifact/environment revision, status,
+   URL/access path, and fixtures. Verify the artifact was built from the merged source. If
+   deployment is manual or unavailable, mark the ticket `awaiting deployment` and stop before QA
+   until an external receipt supplies this evidence;
 9. update the tracker with PR/merge/deployment evidence and the awaiting-QA state—do not close
    acceptance early.
 

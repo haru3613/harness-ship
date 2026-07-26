@@ -10,6 +10,7 @@
 - **Deployed artifact/environment revision:** <immutable artifact or deployment revision + QA environment>
 - **Artifact-provenance source:** <provider/API/build manifest that binds the artifact to the source SHA>
 - **Artifact provenance receipt:** <receipt ID or durable link>
+- **QA evidence location:** <configured writable durable location>
 - **Access path:** <URL/app build/API endpoint>
 - **Fixtures/accounts:** <fixture IDs, account roles, permissions, seed state; no secrets>
 - **Known risks:** <approved risk probes and important edge cases>

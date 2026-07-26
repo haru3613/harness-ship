@@ -15,9 +15,13 @@ the bugs unit tests structurally can't. This workflow executes the **approved ac
 after the dev→QA handoff and produces a report the user can actually read and accept. Scenario
 ownership belongs to `acceptance-design`; this workflow must not author or redesign those scenarios.
 
-**Prerequisite:** read the project's versioned `## harness-ship` config (QA commands, QA
-environment, artifact-provenance source, evidence location, and tracker) in `AGENTS.md` /
-`CLAUDE.md`; run `setup` if it is absent or still uses the legacy unversioned format.
+**Prerequisite:** require the project's exact `## harness-ship` **Config version 1** block in
+`AGENTS.md` / `CLAUDE.md`. Its QA environment, artifact-provenance source, QA evidence location, and
+tracker must be concrete and non-placeholder. If the block is absent, legacy or unversioned,
+explicitly version 0, or has a missing/placeholder/`not-configured` required field, run `setup` and
+stop before Stage 2. An unsupported other version stops for explicit reconciliation; never guess or
+downgrade it. Do not reinterpret a legacy generic test command. Individual QA command capabilities
+may remain `not-configured`; Stage 3 records those scenarios NOT TESTED rather than inferring PASS.
 
 ## Ownership + pyramid (settle first — prevents duplication)
 
@@ -55,7 +59,8 @@ scenarios to match what was built.
 
 Any required field that is missing, still a placeholder, or mismatched makes the handoff **Not
 ready**. Do not start Stage 3. In particular, the provenance receipt must bind the exact deployed
-artifact to the full source SHA.
+artifact to the full source SHA. Also validate that the configured **QA evidence location** is a
+concrete, writable, durable destination available to the run; `not-configured` is Not ready.
 
 - **RD coverage summary is informational only:** use it to **avoid duplicate testing**. QA does not
   audit the TDD cycle and does not execute unit or API-contract tests. Missing or red RD
@@ -80,9 +85,10 @@ method, or `not-configured`. A `not-configured` capability cannot run: record **
 the result **Not ready**; never infer PASS from an unknown capability.
 
 Before each scenario, revalidate that the ledger's source SHA, exact artifact/environment revision,
-and artifact provenance receipt still match the handoff. Record the SC-ID, AC-ID, QA layer/risk
-probe, method/command or manual steps, **raw attempt outcome**, **scenario classification**, and
-durable evidence for every attempt, including PASS.
+and artifact provenance receipt still match the handoff, and that the configured **QA evidence
+location** is still writable. Record the SC-ID, AC-ID, QA layer/risk probe, method/command or manual
+steps, **raw attempt outcome**, **scenario classification**, and durable evidence for every attempt,
+including PASS.
 
 Then:
 
@@ -98,8 +104,9 @@ Then:
 - A skipped, quarantined, unavailable, or `not-configured` attempt appends raw `NOT RUN` with the
   reason and evidence; by first-match precedence its latest scenario classification is **NOT
   TESTED**. Never omit it.
-- A **P0** journey that is flaky, skipped, or quarantined **cannot be quarantined** to clear the
-  gate, **must not count as PASS**, and makes the verdict **Not ready**.
+- For a **P0** journey, **every classification except PASS**—`FAIL`, `FLAKY`, `BLOCKED`, or `NOT
+  TESTED`—forces the verdict **Not ready**. A skipped or quarantined P0 therefore cannot clear the
+  gate and **must not count as PASS**; it cannot be quarantined to manufacture acceptance.
 - A non-P0 flaky check may be quarantined only with a linked QA-maintenance ticket; its current
   result remains FLAKY or NOT TESTED rather than PASS.
 - **QA layering**: P0 journeys run against **every valid handoff's QA candidate artifact**. The QA

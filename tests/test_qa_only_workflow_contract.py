@@ -37,6 +37,8 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
             "fixtures/accounts",
             "known risks",
             "rd coverage summary",
+            "qa evidence location",
+            "writable",
             "not ready",
             "do not start stage 3",
         ):
@@ -102,9 +104,10 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
             "skills/dev-workflow/SKILL.md",
             "skills/implement/SKILL.md",
             "skills/tdd/SKILL.md",
+            "skills/testing-workflow/SKILL.md",
         ):
             entrypoint = " ".join(read(path).lower().split())
-            self.assertIn("config version", entrypoint)
+            self.assertIn("config version 1", entrypoint)
             self.assertIn("legacy or unversioned", entrypoint)
             self.assertIn("run `setup`", entrypoint)
             self.assertIn("do not reinterpret", entrypoint)
@@ -161,6 +164,33 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
         self.assertLess(preflight, phase4.index("open/update one pr"))
         self.assertIn("workflow triggers", phase4)
         self.assertIn("stop before the mutation", phase4)
+        for trigger in (
+            "initial push",
+            "retry push",
+            "pr open/update",
+            "merge/integration push",
+            "deployment",
+        ):
+            self.assertIn(trigger, phase4)
+        self.assertIn("unclassified test job", phase4)
+        remote_loop = phase4.split("remote feedback loop", maxsplit=1)[1].split(
+            "5. proceed", maxsplit=1
+        )[0]
+        merge_path = phase4.split("6. rerun", maxsplit=1)[1].split(
+            "7. run", maxsplit=1
+        )[0]
+        deployment_path = phase4.split("8. obtain", maxsplit=1)[1].split(
+            "9. update", maxsplit=1
+        )[0]
+        self.assertLess(
+            remote_loop.index("rerun the ci ownership preflight"),
+            remote_loop.index("push a new head"),
+        )
+        self.assertLess(
+            merge_path.index("the ci ownership preflight"),
+            merge_path.index("merge only"),
+        )
+        self.assertIn("rerun the ci ownership preflight", deployment_path)
         rebase_review = phase4.split("rebase or conflict resolution", maxsplit=1)[1].split(
             "2. before any push", maxsplit=1
         )[0]
@@ -274,6 +304,10 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
         self.assertIn("pr smoke gate", stage3)
         self.assertIn("rd-owned", stage3)
         self.assertNotRegex(stage3, r"p0.{0,50}every pr")
+        self.assertIn("every classification except pass", stage3)
+        self.assertRegex(stage3, r"p0.{0,160}every classification except pass.{0,120}not ready")
+        self.assertIn("qa evidence location", stage3)
+        self.assertIn("still writable", stage3)
 
     def test_anti_fake_green_rejection_is_appended_to_the_ledger(self) -> None:
         workflow = read("skills/testing-workflow/SKILL.md")
@@ -317,6 +351,9 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
         self.assertNotIn("CAVEAT", result_cells)
         self.assertNotIn("⚠️ Accept with caveats", report)
         self.assertNotIn("(⚠️)", report)
+        self.assertRegex(report, r"\*\*Execution ledger:\*\* \[[^\]]+\]\([^)]+\)")
+        for row in report_rows[1:]:
+            self.assertRegex(row, r"\|\s*\[run/attempts?\]\([^)]+\)\s*\|")
 
     def test_setup_config_is_versioned_and_separates_rd_from_qa(self) -> None:
         setup = read("skills/setup/SKILL.md")
