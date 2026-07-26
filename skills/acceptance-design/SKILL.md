@@ -20,18 +20,19 @@ absent; publishing must use that configured path.
 Require the current stable spec and its stable acceptance criteria. If criteria are missing,
 ambiguous, or not externally observable, return to `spec`; do not invent the product decision here.
 Do not require a separate spec-approval gate: `dev-workflow` presents the spec criteria and scenario
-set together at its acceptance-contract gate, where the user approves them. If an approved
-acceptance contract already exists, preserve stable SC-ID and AC-ID values unless observable
-behaviour changes; the contract revision still follows the rule below for every approved content
-change.
+set together at its acceptance-contract gate, where the user approves them. **Approved SC-ID and
+AC-ID values are immutable**: never renumber or reuse them. If observable meaning changes, the
+changed semantic scenario gets a new SC-ID in the new revision; retire the superseded scenario
+without erasing it so the old revision and references remain valid.
 
 ## Produce the acceptance contract
 
 Assign the scenario set the identifier `<spec-id>/acceptance-vN`. Start at `acceptance-v1` and
 publish it alongside the spec. After approval, increment `vN` whenever **any approved contract
 content changes**, including behaviour, priority, surface or QA-executable seam, fixture/data needs,
-or the QA assurance profile. Preserve stable SC-ID and AC-ID values when behaviour is unchanged;
-draft edits before the first approval stay within `acceptance-v1`.
+or the QA assurance profile. Unchanged scenarios keep their stable identifiers; a changed semantic
+scenario gets a new SC-ID rather than mutating or reusing the approved one. Draft edits before the
+first approval stay within `acceptance-v1`.
 
 Every scenario must contain:
 
@@ -50,7 +51,7 @@ Every scenario must contain:
 
 Show the complete set as a P0/P1 matrix so omissions and priority are reviewable. Map every stable
 SC-ID to at least one stable AC-ID, and map every in-scope AC-ID to at least one scenario. Do not
-silently renumber identifiers when revising the contract.
+renumber or reuse approved identifiers when revising the contract.
 
 ## Gate and stop
 

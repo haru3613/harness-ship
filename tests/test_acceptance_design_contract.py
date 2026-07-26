@@ -29,13 +29,6 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             ):
                 self.assertNotIn(marker, normalized)
             self.assertNotIn("**v0.6.0 migration:**", readme)
-            for command in (
-                "$harness-ship:acceptance-design",
-                "$harness-ship:testing-workflow",
-                "/harness-ship:acceptance-design",
-                "/harness-ship:testing-workflow",
-            ):
-                self.assertNotIn(command, readme)
             return
 
         self.assertEqual((major, minor), (0, 6))
@@ -101,8 +94,16 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             "qa assurance profile",
         ):
             self.assertIn(marker, text)
-        self.assertIn("preserve stable sc-id and ac-id", text)
+        self.assertIn("unchanged scenarios keep their stable identifiers", text)
         self.assertIn("draft edits before the first approval stay within", text)
+
+    def test_approved_identifiers_are_immutable_and_never_reused(self) -> None:
+        text = " ".join(read("skills/acceptance-design/SKILL.md").lower().split())
+
+        self.assertIn("approved sc-id and ac-id values are immutable", text)
+        self.assertIn("never renumber or reuse", text)
+        self.assertIn("changed semantic scenario gets a new sc-id", text)
+        self.assertIn("old revision and references remain valid", text)
 
     def test_acceptance_contract_uses_the_configured_tracker_path(self) -> None:
         text = " ".join(read("skills/acceptance-design/SKILL.md").lower().split())
@@ -204,6 +205,36 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             flags=re.DOTALL,
         )
         self.assert_compatibility_policy("0.7.0", future_workflow, future_readme)
+
+    def test_v07_allows_normal_direct_skill_commands(self) -> None:
+        current_workflow = read("skills/testing-workflow/SKILL.md")
+        current_readme = read("README.md")
+        future_workflow = re.sub(
+            r"## v0\.6 compatibility redirect.*?(?=## Stage 2)",
+            "",
+            current_workflow,
+            flags=re.DOTALL,
+        )
+        future_readme = re.sub(
+            r"\n\*\*v0\.6\.0 migration:\*\*.*?(?=\n\n)",
+            "",
+            current_readme,
+            flags=re.DOTALL,
+        )
+        future_readme += (
+            "\nUse `$harness-ship:acceptance-design` or "
+            "`/harness-ship:acceptance-design` directly.\n"
+        )
+
+        self.assert_compatibility_policy("0.7.0", future_workflow, future_readme)
+
+    def test_setup_lists_acceptance_design_as_a_config_consumer(self) -> None:
+        setup = " ".join(read("skills/setup/SKILL.md").lower().split())
+
+        self.assertRegex(
+            setup,
+            r"dev-workflow.{0,120}acceptance-design.{0,120}testing-workflow",
+        )
 
     def test_existing_execution_stage_ids_and_references_remain_stable(self) -> None:
         text = read("skills/testing-workflow/SKILL.md")
