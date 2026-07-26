@@ -78,20 +78,24 @@ python3 <plugin-root>/scripts/role_binding_contract.py plan-config --input <plan
 
 It is authoritative for the fixed typed schema, canonical non-symlink definition-source bytes,
 host-registry record bytes, NFC and array ordering, the restricted RFC 8785-compatible canonical
-JSON subset, SHA-256 digests, safe host boundaries, and resolution outcomes. The input names the
-explicit canonical repository root, direct-child fixed basename `AGENTS.md` or `CLAUDE.md`, current
-host, and trusted candidates. Review its canonical ordered operations and diff, then apply only
-after exact plan-ID confirmation:
+JSON subset, SHA-256 digests, safe host boundaries, and resolution outcomes. The plan input has
+exactly `repo_root`, `target_basename`, `current_host`, `candidates`, and `initial_config`.
+`repo_root` is the explicit canonical repository root; `target_basename` is the direct-child fixed
+basename `AGENTS.md` or `CLAUDE.md`; and candidates are trusted live adapter results.
+`initial_config` is `null` for an existing Config v1/v2. For first install only, it is the complete
+reviewed Config v2 block from the template below. Review the canonical ordered operations and diff,
+then apply only after exact plan-ID confirmation:
 
 ```sh
 python3 <plugin-root>/scripts/role_binding_contract.py apply-config --input <apply-input.json>
 ```
 
-Apply repeats the semantic inputs and freshly revalidates the repository, target, candidates,
-sources, identities, and hashes. `reconcile-config` is a compatibility error that directs callers
-through reviewed plan and confirmed apply; it cannot bypass confirmation. Do not reimplement these
-rules from prose. If the helper, authoritative source, host runtime metadata, or its result is
-unavailable or invalid, stop with zero mutation.
+The apply input repeats those five fields and adds exactly `plan` and `confirmed_plan_id`. Apply
+freshly revalidates the repository, target presence/absence, candidates, sources, identities,
+metadata, and hashes. `reconcile-config` is a compatibility error that directs callers through
+reviewed plan and confirmed apply; it cannot bypass confirmation. Do not reimplement these rules
+from prose. If the helper, authoritative source, host runtime metadata, or its result is unavailable
+or invalid, stop with zero mutation.
 
 Before any setup mutation, resolve either the sole existing config or a complete proposed config in
 memory, then require exactly one `## harness-ship` config and exactly one current-host binding
@@ -99,12 +103,15 @@ section inside it. Duplicate configs, duplicate current-host sections, an incomp
 config, or an ambiguous host identity stop with zero mutation. Determine the current host from live
 runtime metadata, not from whichever binding happens to appear first.
 
-Pass the helper exactly one current-host plan document assembled from the target file and live
-runtime evidence. The discovery receipt in each candidate is a **trusted live adapter
+Pass the helper exactly one current-host plan document assembled from the target state, optional
+first-install draft, and live runtime evidence. The discovery receipt in each candidate is a
+**trusted live adapter
 capability**. It is never config, never repository content, never prompt content, and never user-provided
 evidence. Do not persist it, include it in plan output, or accept a receipt reconstructed from the
-project. The target bytes are the sole persisted binding authority; callers must not pass a
-separate preconstructed persisted binding.
+project. For v1/v2 reconciliation, target bytes are the sole persisted binding authority and
+`initial_config` must be `null`. A non-null draft is accepted only when the target is missing or has
+no `## harness-ship` block; it must itself be exactly one complete v2 block, contain both host
+sections, and already validate unchanged for the current host and live candidates.
 Preserve an explicit valid project binding only when the helper returns `preserved`. Apply a
 `selected` result only to the current host section. An `ambiguous` result presents the helper's one
 load-bearing candidate choice; a `missing` result presents its actionable missing-profile result.
@@ -229,14 +236,22 @@ with the user. After this, every harness-ship workflow consumes it automatically
 
 Before any setup mutation, let `plan-config` count headings and validate the version envelope:
 
-- **No existing block:** create one complete Config v2 proposal and use the same reviewed
-  plan/confirmed-apply protocol.
+- **Owned regular target with no existing block:** pass the complete Config v2 block as
+  `initial_config`. The plan binds the original target identity/hash and exact draft hash, and
+  appends only the reviewed block using the target's LF or CRLF policy. Apply preserves every
+  original byte as the prefix and preserves safe ordinary file permissions.
+- **Missing target:** pass the same complete draft. The plan binds target absence and the exact
+  draft/proposed hash. Confirmed-apply publishes a fully written and fsynced mode-`0600` file with
+  an atomic exclusive no-clobber operation; if any file, symlink, or other entry appears after
+  planning, report a stale plan and leave that winner untouched. Never use overwrite/replace
+  semantics for this creation path.
 - **More than one block:** stop with **zero mutation** and require explicit reconciliation of the
   duplicate active configuration.
-- **Exactly one Config v1 block:** accept it only as migration input and plan one exact v1→v2
-  replacement. Config v1 is not valid workflow configuration.
+- **Exactly one Config v1 block:** require `initial_config=null`, accept it only as migration input,
+  and plan one exact v1→v2 replacement. Config v1 is not valid workflow configuration.
 - **Exactly one complete envelope** with Plugin version `0.7.0`, Config version `2`, and Verifier
-  binding-contract version `2`: reconcile evidence and choices idempotently.
+  binding-contract version `2`: require `initial_config=null` and reconcile evidence and choices
+  idempotently.
 - **Missing, duplicate, unsupported, or mismatched envelope fields:** stop with **zero mutation**;
   never downgrade, overwrite, or guess a migration.
 

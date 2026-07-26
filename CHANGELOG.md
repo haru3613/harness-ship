@@ -9,4 +9,3 @@
   release tag and `harness-ship-next` is an explicit opt-in bound to `main`.
 - Adds repository-native change declarations, deterministic version-state checks, and an attended
   exact-SHA publication contract with immutable-tag mismatch protection and provenance receipts.
-

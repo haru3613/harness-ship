@@ -235,6 +235,13 @@ class RoleBootstrapContractTests(unittest.TestCase):
             "byte-identical no-op",
             "hostile same-uid or root",
             "untrusted writable directories",
+            "`initial_config` is `null` for an existing config v1/v2",
+            "owned regular target with no existing block",
+            "missing target",
+            "exact draft hash",
+            "atomic exclusive no-clobber",
+            "leave that winner untouched",
+            "never use overwrite/replace semantics for this creation path",
         ):
             self.assertIn(marker, setup)
         for path in (

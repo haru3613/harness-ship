@@ -52,7 +52,13 @@ DISCOVERY_RECEIPT_FIELDS = {
 }
 DOCUMENT_FIELDS = {"current_host", "bindings", "candidates", "global_settings"}
 CONFIG_RECONCILE_FIELDS = {"config_text", "current_host", "candidates"}
-CONFIG_PLAN_FIELDS = {"repo_root", "target_basename", "current_host", "candidates"}
+CONFIG_PLAN_FIELDS = {
+    "repo_root",
+    "target_basename",
+    "current_host",
+    "candidates",
+    "initial_config",
+}
 CONFIG_APPLY_FIELDS = CONFIG_PLAN_FIELDS | {"plan", "confirmed_plan_id"}
 HOSTS = {"codex", "claude-code"}
 PLUGIN_VERSION = "0.7.0"
@@ -1421,6 +1427,78 @@ def _open_target(dir_fd: int, basename: Any) -> tuple:
         raise
 
 
+def _open_optional_target(dir_fd: int, basename: Any) -> tuple:
+    if type(basename) is not str or basename not in TARGET_BASENAMES:
+        raise ContractError("target must be the direct child AGENTS.md or CLAUDE.md")
+    try:
+        return _open_target(dir_fd, basename)
+    except FileNotFoundError:
+        try:
+            os.stat(basename, dir_fd=dir_fd, follow_symlinks=False)
+        except FileNotFoundError:
+            return None, None
+        raise ContractError("target entry exists but cannot be opened safely")
+
+
+def _validate_initial_config(
+    initial_config: Any,
+    current_host: str,
+    candidates: List[Mapping[str, Any]],
+) -> str:
+    if type(initial_config) is not str or not initial_config:
+        raise ContractError(
+            "first install requires a nonempty complete initial Config v2 proposal"
+        )
+    normalized, _ = _normalize_config_newlines(initial_config)
+    block_start, block_end = _config_block_span(normalized)
+    if block_start != 0 or block_end != len(normalized):
+        raise ContractError(
+            "initial_config must contain exactly one complete harness-ship block"
+        )
+    for label in ("Codex", "Claude Code"):
+        marker = f"- **Agent role bindings — {label}:**"
+        if len(re.findall(rf"(?m)^{re.escape(marker)}.*$", normalized)) != 1:
+            raise ContractError(
+                "initial_config must contain exactly one binding section per host"
+            )
+    other_label = "Claude Code" if current_host == "codex" else "Codex"
+    other_marker = f"- **Agent role bindings — {other_label}:** `not-configured`"
+    if len(re.findall(rf"(?m)^{re.escape(other_marker)}[ \t]*$", normalized)) != 1:
+        raise ContractError(
+            "initial_config non-current-host binding must be not-configured"
+        )
+    validated = _propose_v2_config_text(
+        initial_config, current_host, candidates
+    )
+    if (
+        validated.get("status") != "preserved"
+        or validated.get("proposed_config") != initial_config
+    ):
+        raise ContractError(
+            "initial_config must be a complete validated Config v2 for current host"
+        )
+    return initial_config
+
+
+def _append_initial_config(original: str, initial_config: str) -> str:
+    _, original_newline = _normalize_config_newlines(original)
+    _, initial_newline = _normalize_config_newlines(initial_config)
+    if "\n" in original and original_newline != initial_newline:
+        raise ContractError(
+            "initial_config newline policy must match the existing target"
+        )
+    newline = original_newline if "\n" in original else initial_newline
+    if not original:
+        return initial_config
+    if original.endswith(newline * 2):
+        separator = ""
+    elif original.endswith(newline):
+        separator = newline
+    else:
+        separator = newline * 2
+    return original + separator + initial_config
+
+
 def _candidate_plan_inputs(candidates: List[Mapping[str, Any]]) -> List[Dict[str, Any]]:
     result = []
     for candidate in candidates:
@@ -1442,23 +1520,51 @@ def plan_config_reconciliation(
     target_basename: str,
     current_host: str,
     candidates: List[Mapping[str, Any]],
+    initial_config: Any = None,
 ) -> Dict[str, Any]:
     """Return a canonical review plan without mutating the target."""
     dir_fd = target_fd = None
     try:
         repo_path, dir_fd, repo_stat = _open_owned_repo(repo_root)
-        target_fd, target_stat = _open_target(dir_fd, target_basename)
-        original_bytes = _read_all(target_fd)
-        try:
-            original_text = original_bytes.decode("utf-8")
-        except UnicodeDecodeError as error:
-            raise ContractError("config target must be exact UTF-8") from error
-        proposal = _propose_v2_config_text(
-            original_text, current_host, candidates
-        )
-        if proposal["status"] not in {"planned", "preserved"}:
-            return proposal
-        proposed_text = proposal["proposed_config"]
+        target_fd, target_stat = _open_optional_target(dir_fd, target_basename)
+        if target_fd is None:
+            target_state = "absent"
+            original_bytes = None
+            original_text = ""
+            initial_config = _validate_initial_config(
+                initial_config, current_host, candidates
+            )
+            proposed_text = initial_config
+        else:
+            original_bytes = _read_all(target_fd)
+            try:
+                original_text = original_bytes.decode("utf-8")
+            except UnicodeDecodeError as error:
+                raise ContractError("config target must be exact UTF-8") from error
+            normalized_original, _ = _normalize_config_newlines(original_text)
+            headings = list(
+                re.finditer(r"(?m)^## harness-ship[ \t]*$", normalized_original)
+            )
+            if not headings:
+                target_state = "present-no-config"
+                initial_config = _validate_initial_config(
+                    initial_config, current_host, candidates
+                )
+                proposed_text = _append_initial_config(
+                    original_text, initial_config
+                )
+            else:
+                target_state = "present-config"
+                if initial_config is not None:
+                    raise ContractError(
+                        "initial_config is forbidden for existing Config v1/v2"
+                    )
+                proposal = _propose_v2_config_text(
+                    original_text, current_host, candidates
+                )
+                if proposal["status"] not in {"planned", "preserved"}:
+                    return proposal
+                proposed_text = proposal["proposed_config"]
         proposed_bytes = proposed_text.encode("utf-8")
         semantic_candidates = _candidate_plan_inputs(candidates)
         diff = "".join(
@@ -1478,9 +1584,21 @@ def plan_config_reconciliation(
             "verifier_binding_contract_version": BINDING_CONTRACT_VERSION,
             "repo_root": str(repo_path),
             "target_basename": target_basename,
+            "target_state": target_state,
             "repo_identity": _identity(repo_stat),
-            "target_identity": _identity(target_stat),
-            "original_sha256": _sha256_bytes(original_bytes),
+            "target_identity": (
+                _identity(target_stat) if target_stat is not None else None
+            ),
+            "original_sha256": (
+                _sha256_bytes(original_bytes)
+                if original_bytes is not None
+                else None
+            ),
+            "initial_config_sha256": (
+                _sha256_bytes(initial_config.encode("utf-8"))
+                if initial_config is not None
+                else None
+            ),
             "proposed_sha256": _sha256_bytes(proposed_bytes),
             "current_host": current_host,
             "semantic_candidates": semantic_candidates,
@@ -1496,9 +1614,21 @@ def plan_config_reconciliation(
                 if original_bytes == proposed_bytes
                 else [
                     {
-                        "operation": "replace-file",
+                        "operation": (
+                            "create-file-exclusive"
+                            if target_state == "absent"
+                            else (
+                                "append-config"
+                                if target_state == "present-no-config"
+                                else "replace-file"
+                            )
+                        ),
                         "target": target_basename,
-                        "preserve_mode": stat.S_IMODE(target_stat.st_mode),
+                        "mode": (
+                            stat.S_IMODE(target_stat.st_mode)
+                            if target_stat is not None
+                            else 0o600
+                        ),
                     }
                 ]
             ),
@@ -1566,6 +1696,7 @@ def apply_config_reconciliation(
     candidates: List[Mapping[str, Any]],
     plan: Mapping[str, Any],
     confirmed_plan_id: str,
+    initial_config: Any = None,
 ) -> Dict[str, Any]:
     """Apply only an exactly confirmed plan after fresh target/candidate validation."""
     try:
@@ -1578,10 +1709,68 @@ def apply_config_reconciliation(
             "mutation": False,
             "required_plan_id": supplied_plan_id,
         }
+    if plan.get("target_state") == "absent":
+        check_dir_fd = None
+        try:
+            _, check_dir_fd, _ = _open_owned_repo(repo_root)
+            if (
+                type(target_basename) is not str
+                or target_basename not in TARGET_BASENAMES
+            ):
+                raise ContractError(
+                    "target must be the direct child AGENTS.md or CLAUDE.md"
+                )
+            try:
+                os.stat(
+                    target_basename,
+                    dir_fd=check_dir_fd,
+                    follow_symlinks=False,
+                )
+            except FileNotFoundError:
+                pass
+            else:
+                return {
+                    "status": "stale-plan",
+                    "mutation": False,
+                    "plan_id": confirmed_plan_id,
+                    "error": "target entry appeared after planning",
+                }
+        except (ContractError, OSError) as error:
+            return {
+                "status": "invalid-config",
+                "mutation": False,
+                "error": str(error),
+            }
+        finally:
+            if check_dir_fd is not None:
+                os.close(check_dir_fd)
     fresh = plan_config_reconciliation(
-        repo_root, target_basename, current_host, candidates
+        repo_root, target_basename, current_host, candidates, initial_config
     )
     if fresh.get("status") not in {"planned", "preserved"}:
+        if plan.get("target_state") == "absent":
+            recheck_dir_fd = None
+            try:
+                _, recheck_dir_fd, _ = _open_owned_repo(repo_root)
+                os.stat(
+                    target_basename,
+                    dir_fd=recheck_dir_fd,
+                    follow_symlinks=False,
+                )
+            except FileNotFoundError:
+                pass
+            except (ContractError, OSError):
+                pass
+            else:
+                return {
+                    "status": "stale-plan",
+                    "mutation": False,
+                    "plan_id": confirmed_plan_id,
+                    "error": "target entry appeared during fresh validation",
+                }
+            finally:
+                if recheck_dir_fd is not None:
+                    os.close(recheck_dir_fd)
         return fresh
     if fresh["plan_id"] != confirmed_plan_id or fresh["plan"] != plan:
         return {
@@ -1609,13 +1798,29 @@ def apply_config_reconciliation(
         _, dir_fd, repo_stat = _open_owned_repo(repo_root)
         if _identity(repo_stat) != plan["repo_identity"]:
             raise ContractError("repo identity changed after planning")
-        target_fd, target_stat = _open_target(dir_fd, target_basename)
-        original_bytes = _read_all(target_fd)
-        if (
-            _identity(target_stat) != plan["target_identity"]
-            or _sha256_bytes(original_bytes) != plan["original_sha256"]
-        ):
-            raise ContractError("target identity or bytes changed after planning")
+        target_fd, target_stat = _open_optional_target(
+            dir_fd, target_basename
+        )
+        creating = plan["target_state"] == "absent"
+        if creating:
+            if target_fd is not None:
+                outcome = {
+                    "status": "stale-plan",
+                    "mutation": False,
+                    "plan_id": confirmed_plan_id,
+                    "error": "target appeared after planning",
+                }
+                return outcome
+            original_bytes = None
+        else:
+            if target_fd is None:
+                raise ContractError("target disappeared after planning")
+            original_bytes = _read_all(target_fd)
+            if (
+                _identity(target_stat) != plan["target_identity"]
+                or _sha256_bytes(original_bytes) != plan["original_sha256"]
+            ):
+                raise ContractError("target identity or bytes changed after planning")
         proposed_bytes = fresh["proposed_config"].encode("utf-8")
         if _sha256_bytes(proposed_bytes) != plan["proposed_sha256"]:
             raise ContractError("fresh proposed bytes do not match confirmed plan")
@@ -1664,34 +1869,59 @@ def apply_config_reconciliation(
         temp_stat = os.fstat(temp_fd)
         temp_identity = (temp_stat.st_dev, temp_stat.st_ino)
         _write_all(temp_fd, proposed_bytes)
-        os.fchown(temp_fd, target_stat.st_uid, target_stat.st_gid)
-        os.fchmod(temp_fd, stat.S_IMODE(target_stat.st_mode))
+        expected_uid = target_stat.st_uid if target_stat else os.geteuid()
+        expected_gid = target_stat.st_gid if target_stat else os.getegid()
+        expected_mode = (
+            stat.S_IMODE(target_stat.st_mode) if target_stat else 0o600
+        )
+        os.fchown(temp_fd, expected_uid, expected_gid)
+        os.fchmod(temp_fd, expected_mode)
         temp_stat = os.fstat(temp_fd)
         if (
             not stat.S_ISREG(temp_stat.st_mode)
-            or temp_stat.st_uid != target_stat.st_uid
-            or temp_stat.st_gid != target_stat.st_gid
+            or temp_stat.st_uid != expected_uid
+            or temp_stat.st_gid != expected_gid
             or temp_stat.st_nlink != 1
-            or stat.S_IMODE(temp_stat.st_mode) != stat.S_IMODE(target_stat.st_mode)
+            or stat.S_IMODE(temp_stat.st_mode) != expected_mode
         ):
             raise ContractError("new target metadata does not match the original")
         os.fsync(temp_fd)
 
-        observed = os.stat(
-            target_basename, dir_fd=dir_fd, follow_symlinks=False
-        )
-        if (
-            (observed.st_dev, observed.st_ino)
-            != (target_stat.st_dev, target_stat.st_ino)
-            or observed.st_nlink != 1
-        ):
-            raise ContractError("target changed immediately before replace")
-        os.replace(
-            temp_name,
-            target_basename,
-            src_dir_fd=dir_fd,
-            dst_dir_fd=dir_fd,
-        )
+        if creating:
+            try:
+                os.link(
+                    temp_name,
+                    target_basename,
+                    src_dir_fd=dir_fd,
+                    dst_dir_fd=dir_fd,
+                    follow_symlinks=False,
+                )
+            except FileExistsError:
+                outcome = {
+                    "status": "stale-plan",
+                    "mutation": False,
+                    "plan_id": confirmed_plan_id,
+                    "error": "target appeared immediately before publish",
+                }
+                return outcome
+            replaced = True
+            _unlink_created(dir_fd, temp_name, temp_identity)
+        else:
+            observed = os.stat(
+                target_basename, dir_fd=dir_fd, follow_symlinks=False
+            )
+            if (
+                (observed.st_dev, observed.st_ino)
+                != (target_stat.st_dev, target_stat.st_ino)
+                or observed.st_nlink != 1
+            ):
+                raise ContractError("target changed immediately before replace")
+            os.replace(
+                temp_name,
+                target_basename,
+                src_dir_fd=dir_fd,
+                dst_dir_fd=dir_fd,
+            )
         replaced = True
         temp_name = None
         temp_identity = None
@@ -1975,6 +2205,7 @@ def main(argv: List[str] = None) -> int:
                 document["target_basename"],
                 document["current_host"],
                 document["candidates"],
+                document["initial_config"],
             )
             _emit(result)
             return 0 if result["status"] in {"planned", "preserved"} else 2
@@ -1990,6 +2221,7 @@ def main(argv: List[str] = None) -> int:
                 document["candidates"],
                 document["plan"],
                 document["confirmed_plan_id"],
+                document["initial_config"],
             )
             _emit(result)
             return 0 if result["status"] in {

@@ -83,6 +83,301 @@ class RoleBindingRuntimeTests(unittest.TestCase):
     def versions(self) -> dict:
         return deepcopy(self.contract.VERSION_ENVELOPE)
 
+    def complete_initial_config(self, repo: Path, candidates: list) -> str:
+        migration = repo / "CLAUDE.md"
+        migration.write_text(
+            self.config_text("claude_not_configured.md"), encoding="utf-8"
+        )
+        planned = self.contract.plan_config_reconciliation(
+            repo, "CLAUDE.md", "claude-code", candidates, None
+        )
+        migration.unlink()
+        config = planned["proposed_config"]
+        start, end = self.contract._config_block_span(config)
+        return config[start:end]
+
+    def test_first_install_appends_reviewed_v2_to_existing_file(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = (Path(directory) / "repo").resolve()
+            repo.mkdir(mode=0o700)
+            target = repo / "AGENTS.md"
+            original = b"# Existing instructions\n\nKeep this exact.\n"
+            target.write_bytes(original)
+            target.chmod(0o640)
+            candidates = fixture("claude.json")["candidates"]
+            initial = self.complete_initial_config(repo, candidates)
+
+            planned = self.contract.plan_config_reconciliation(
+                repo, "AGENTS.md", "claude-code", candidates, initial
+            )
+
+            self.assertEqual(planned["status"], "planned")
+            self.assertFalse(planned["mutation"])
+            self.assertEqual(target.read_bytes(), original)
+            self.assertEqual(planned["plan"]["target_state"], "present-no-config")
+            self.assertEqual(
+                planned["plan"]["initial_config_sha256"],
+                "sha256:" + hashlib.sha256(initial.encode("utf-8")).hexdigest(),
+            )
+            self.assertEqual(
+                planned["proposed_config"],
+                original.decode("utf-8") + "\n" + initial,
+            )
+            wrong = self.contract.apply_config_reconciliation(
+                repo,
+                "AGENTS.md",
+                "claude-code",
+                candidates,
+                planned["plan"],
+                "sha256:" + "0" * 64,
+                initial,
+            )
+            self.assertEqual(wrong["status"], "confirmation-required")
+            self.assertEqual(target.read_bytes(), original)
+
+            applied = self.contract.apply_config_reconciliation(
+                repo,
+                "AGENTS.md",
+                "claude-code",
+                candidates,
+                planned["plan"],
+                planned["plan_id"],
+                initial,
+            )
+            self.assertEqual(applied["status"], "applied")
+            self.assertEqual(
+                target.read_bytes(), planned["proposed_config"].encode("utf-8")
+            )
+            self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o640)
+            second = self.contract.plan_config_reconciliation(
+                repo, "AGENTS.md", "claude-code", candidates, None
+            )
+            self.assertEqual(second["status"], "preserved")
+            self.assertEqual(second["plan"]["operations"], [])
+
+    def test_first_install_creates_missing_target_without_clobber(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = (Path(directory) / "repo").resolve()
+            repo.mkdir(mode=0o700)
+            candidates = fixture("claude.json")["candidates"]
+            initial = self.complete_initial_config(repo, candidates)
+            target = repo / "AGENTS.md"
+
+            planned = self.contract.plan_config_reconciliation(
+                repo, "AGENTS.md", "claude-code", candidates, initial
+            )
+            alternate_initial = initial.rstrip("\n")
+            if alternate_initial != initial:
+                alternate = self.contract.plan_config_reconciliation(
+                    repo,
+                    "AGENTS.md",
+                    "claude-code",
+                    candidates,
+                    alternate_initial,
+                )
+                self.assertNotEqual(alternate["plan_id"], planned["plan_id"])
+            self.assertEqual(planned["plan"]["target_state"], "absent")
+            self.assertIsNone(planned["plan"]["target_identity"])
+            self.assertIsNone(planned["plan"]["original_sha256"])
+            self.assertEqual(
+                planned["plan"]["operations"][0]["operation"],
+                "create-file-exclusive",
+            )
+            self.assertFalse(target.exists())
+
+            target.write_bytes(b"appeared after planning\n")
+            stale = self.contract.apply_config_reconciliation(
+                repo,
+                "AGENTS.md",
+                "claude-code",
+                candidates,
+                planned["plan"],
+                planned["plan_id"],
+                initial,
+            )
+            self.assertEqual(stale["status"], "stale-plan")
+            self.assertFalse(stale["mutation"])
+            self.assertEqual(target.read_bytes(), b"appeared after planning\n")
+
+            target.unlink()
+            planned = self.contract.plan_config_reconciliation(
+                repo, "AGENTS.md", "claude-code", candidates, initial
+            )
+            target.symlink_to(repo / "missing-link-target")
+            stale_symlink = self.contract.apply_config_reconciliation(
+                repo,
+                "AGENTS.md",
+                "claude-code",
+                candidates,
+                planned["plan"],
+                planned["plan_id"],
+                initial,
+            )
+            self.assertEqual(stale_symlink["status"], "stale-plan")
+            self.assertTrue(target.is_symlink())
+
+            target.unlink()
+            planned = self.contract.plan_config_reconciliation(
+                repo, "AGENTS.md", "claude-code", candidates, initial
+            )
+            applied = self.contract.apply_config_reconciliation(
+                repo,
+                "AGENTS.md",
+                "claude-code",
+                candidates,
+                planned["plan"],
+                planned["plan_id"],
+                initial,
+            )
+            self.assertEqual(applied["status"], "applied")
+            self.assertEqual(target.read_text(encoding="utf-8"), initial)
+            self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o600)
+
+            second = self.contract.plan_config_reconciliation(
+                repo, "AGENTS.md", "claude-code", candidates, None
+            )
+            self.assertEqual(second["status"], "preserved")
+            self.assertEqual(second["plan"]["operations"], [])
+
+    def test_first_install_requires_matching_crlf_policy(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = (Path(directory) / "repo").resolve()
+            repo.mkdir(mode=0o700)
+            candidates = fixture("claude.json")["candidates"]
+            initial_lf = self.complete_initial_config(repo, candidates)
+            target = repo / "CLAUDE.md"
+            original = b"# Existing\r\n\r\nKeep\r\n"
+            target.write_bytes(original)
+
+            mismatch = self.contract.plan_config_reconciliation(
+                repo, "CLAUDE.md", "claude-code", candidates, initial_lf
+            )
+            self.assertEqual(mismatch["status"], "invalid-config")
+            self.assertEqual(target.read_bytes(), original)
+
+            initial_crlf = initial_lf.replace("\n", "\r\n")
+            planned = self.contract.plan_config_reconciliation(
+                repo, "CLAUDE.md", "claude-code", candidates, initial_crlf
+            )
+            self.assertEqual(planned["status"], "planned")
+            applied = self.contract.apply_config_reconciliation(
+                repo,
+                "CLAUDE.md",
+                "claude-code",
+                candidates,
+                planned["plan"],
+                planned["plan_id"],
+                initial_crlf,
+            )
+            self.assertEqual(applied["status"], "applied")
+            output = target.read_bytes()
+            self.assertNotIn(b"\n", output.replace(b"\r\n", b""))
+            self.assertTrue(output.startswith(original))
+
+    def test_first_install_rejects_invalid_or_inapplicable_initial_config(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = (Path(directory) / "repo").resolve()
+            repo.mkdir(mode=0o700)
+            claude_candidates = fixture("claude.json")["candidates"]
+            initial = self.complete_initial_config(repo, claude_candidates)
+            target = repo / "AGENTS.md"
+
+            target.write_text("# No config yet\n", encoding="utf-8")
+            missing_draft = self.contract.plan_config_reconciliation(
+                repo, "AGENTS.md", "claude-code", claude_candidates, None
+            )
+            self.assertEqual(missing_draft["status"], "invalid-config")
+
+            malformed = initial.replace(
+                "- **Verifier binding-contract version:** `2`",
+                "- **Verifier binding-contract version:** `1`",
+            )
+            invalid = self.contract.plan_config_reconciliation(
+                repo, "AGENTS.md", "claude-code", claude_candidates, malformed
+            )
+            self.assertEqual(invalid["status"], "invalid-config")
+
+            wrong_host = self.contract.plan_config_reconciliation(
+                repo,
+                "AGENTS.md",
+                "codex",
+                fixture("codex.json")["candidates"],
+                initial,
+            )
+            self.assertEqual(wrong_host["status"], "invalid-config")
+
+            target.write_text("# Metadata will change\n", encoding="utf-8")
+            target.chmod(0o644)
+            metadata_plan = self.contract.plan_config_reconciliation(
+                repo, "AGENTS.md", "claude-code", claude_candidates, initial
+            )
+            target.chmod(0o600)
+            stale_metadata = self.contract.apply_config_reconciliation(
+                repo,
+                "AGENTS.md",
+                "claude-code",
+                claude_candidates,
+                metadata_plan["plan"],
+                metadata_plan["plan_id"],
+                initial,
+            )
+            self.assertEqual(stale_metadata["status"], "stale-plan")
+
+            target.write_text(
+                self.config_text("claude_not_configured.md"), encoding="utf-8"
+            )
+            migration_injection = self.contract.plan_config_reconciliation(
+                repo, "AGENTS.md", "claude-code", claude_candidates, initial
+            )
+            self.assertEqual(migration_injection["status"], "invalid-config")
+
+            target.write_text(initial, encoding="utf-8")
+            v2_injection = self.contract.plan_config_reconciliation(
+                repo, "AGENTS.md", "claude-code", claude_candidates, initial
+            )
+            self.assertEqual(v2_injection["status"], "invalid-config")
+
+    def test_missing_target_publish_race_is_atomic_no_clobber(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = (Path(directory) / "repo").resolve()
+            repo.mkdir(mode=0o700)
+            candidates = fixture("claude.json")["candidates"]
+            initial = self.complete_initial_config(repo, candidates)
+            target = repo / "AGENTS.md"
+            planned = self.contract.plan_config_reconciliation(
+                repo, "AGENTS.md", "claude-code", candidates, initial
+            )
+            real_link = self.contract.os.link
+
+            def racing_link(source, destination, *args, **kwargs):
+                if destination == "AGENTS.md":
+                    target.write_bytes(b"race winner\n")
+                return real_link(source, destination, *args, **kwargs)
+
+            with mock.patch.object(
+                self.contract.os, "link", side_effect=racing_link
+            ):
+                result = self.contract.apply_config_reconciliation(
+                    repo,
+                    "AGENTS.md",
+                    "claude-code",
+                    candidates,
+                    planned["plan"],
+                    planned["plan_id"],
+                    initial,
+                )
+
+            self.assertEqual(result["status"], "stale-plan")
+            self.assertFalse(result["mutation"])
+            self.assertNotIn("cleanup_errors", result)
+            self.assertEqual(target.read_bytes(), b"race winner\n")
+            self.assertEqual(
+                sorted(path.name for path in repo.iterdir()),
+                ["AGENTS.md"],
+            )
+
     def test_version_envelope_names_verifier_contract_explicitly(self) -> None:
         self.assertIn(
             "verifier_binding_contract_version",
@@ -1725,6 +2020,7 @@ class RoleBindingRuntimeTests(unittest.TestCase):
                 "target_basename": "AGENTS.md",
                 "current_host": "codex",
                 "candidates": reconcile["candidates"],
+                "initial_config": None,
             }
             inputs = {}
             for name, payload in (
