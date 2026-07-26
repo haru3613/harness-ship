@@ -79,9 +79,8 @@ scenario set alongside the spec.
 
 **Stop after scenario design. Do not implement or generate test-runner code yet. Gate:** the user
 confirms the spec criteria and scenarios describe the right behaviour. Together they become the
-approved acceptance contract, identified by contract revision and stable scenario IDs. Every
-approved contract-content change after that—including behaviour, priority, surface/seam, fixtures,
-or the QA assurance profile—returns to Stage 3 for re-approval and a new revision.
+approved acceptance contract, identified by contract revision and stable scenario IDs; any later
+behaviour change returns here for re-approval and a new revision.
 
 ## Stage 4 — Tickets
 
@@ -104,17 +103,6 @@ before policy-allowed merge. It performs cleanup immediately after merge. It the
 deployment evidence for the configured non-production environment before QA handoff and writes a durable
 implementation receipt so an interrupted ticket resumes from evidence rather than conversation.
 
-For every approved P0 integration/E2E automation profile, `implement` copies the approved **QA
-automation owner** principal ID and display label unchanged into the ticket/receipt before PR
-creation; reassignment returns to Stage 3 for a new contract revision. This **accountable owner**
-owns the outcome and follow-up ticket; it is not the **executing agent role**. Without an approved
-manual exception, `implement` dispatches the configured executing agent role to implement the
-automation through the profile's named harness and run it locally against the clean committed
-feature-branch HEAD before publication. When the PR opens, `implement` attaches the ownership and
-pre-publication evidence, then requires the automation in CI on the exact PR HEAD before merge
-unless the exception passes its fresh validation. This is pre-merge QA automation work, not `tdd`
-work; `tdd` remains responsible for RD's unit and contract coverage.
-
 No extra human gate is added here. Observable behaviour changes return to Stage 3; missing or
 drifted required role profiles, invalid baselines/REDs, unavailable independent verification, and
 protected-branch decisions stop safely under `implement`'s rules.
@@ -127,10 +115,6 @@ needs to know what to *verify*):
 - **What changed** (user-facing behaviour, per ticket).
 - **The acceptance-contract revision**, approved scenario IDs, and each criterion to verify.
 - **The exact source commit and deployed artifact/environment revision** under test.
-- **The pair-bound delivery chain:** exact PR HEAD, expected target HEAD, observed merge SHA and
-  merge derivation, plus the pair-bound RD receipt and pair-bound P0 receipt. For a human merge,
-  include the observed human merge receipt, merge action timestamp, actual-action snapshot, and
-  merge actor principal ID.
 - **How to reach it**: test URL / environment + fixtures/accounts + seed data.
 - **Known risks / edge cases** worth probing.
 - **The TDD receipt and what unit + contract tests cover** — so QA focuses on integration +

@@ -23,31 +23,16 @@
 ## Journeys
 
 > Each row is something a user does, in their words. Result maps to the ticket's acceptance
-> criteria. Record the approved profile and produced evidence for every scenario, including ✅.
+> criteria. Evidence links open a screenshot / video / trace for anything not ✅.
 
-| # | User journey | Scenario | Spec criterion | Ticket | QA assurance profile | Execution method / automation | Result | Required evidence | Exact PR HEAD | Expected target HEAD | Observed merge SHA/derivation | Pair-bound RD receipt | PR automation/CI evidence | Handed-off source/artifact revision | Independent QA evidence | Produced evidence | Risk-probe result |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | <what the user does> | <SC-001> | <AC-1> | <ID> | <integration; probes…> | <runner / manual> | ✅ | <trace + assertion> | <SHA> | <target SHA> | <merge SHA + derivation> | <RD receipt> | <CI run / exception receipt> | <source SHA + artifact/environment revision> | [trace](…) | [all evidence](…) | <probe → result> |
-| 2 | <…> | <SC-002> | <AC-2> | <ID> | <E2E; probes…> | <runner> | ✅ | <video + trace> | <SHA> | <target SHA> | <merge SHA + derivation> | <RD receipt> | <CI run> | <source/artifact revision> | [video](…) [trace](…) | [all evidence](…) | <probe → result> |
-| 3 | <…> | <SC-003> | <AC-3> | <ID> | <integration; probes…> | <runner> | ⚠️ | <trace> | <SHA> | <target SHA> | <merge SHA + derivation> | <RD receipt> | <CI run / exception receipt> | <source/artifact revision> | [trace](…) | [all evidence](…) | <probe → caveat> |
-| 4 | <…> | <SC-004> | <AC-4> | <ID> | <E2E; probes…> | <runner> | ❌ | <video + trace> | <SHA> | <target SHA> | <merge SHA + derivation> | <RD receipt> | <CI run> | <source/artifact revision> | [video](…) [trace](…) | [all evidence](…) | <probe → failure> |
-
-### Delivery-chain receipts
-
-| Scenario | Pair-bound P0 receipt | Observed human merge receipt | Merge action timestamp | Actual-action snapshot | Merge actor principal ID |
-|---|---|---|---|---|---|
-| <SC-001> | <receipt bound to PR/target pair> | <provider receipt / not applicable> | <timestamp / n/a> | <refs + exception snapshot / n/a> | <provider principal ID / n/a> |
+| # | User journey | Scenario | Spec criterion | Ticket | Result | Evidence |
+|---|---|---|---|---|---|---|
+| 1 | <what the user does> | <SC-001> | <AC-1> | <ID> | ✅ | — |
+| 2 | <…> | <SC-002> | <AC-2> | <ID> | ✅ | — |
+| 3 | <…> | <SC-003> | <AC-3> | <ID> | ⚠️ | [video](…) |
+| 4 | <…> | <SC-004> | <AC-4> | <ID> | ❌ | [trace](…) |
 
 **Legend:** ✅ works as intended · ⚠️ works with a caveat (below) · ❌ broken
-
-## Manual P0 exceptions
-
-> Include one row for every manual P0 exception. Use `none` only when the approved contract has no
-> manual P0 exception.
-
-| Scenario | Exception approval | Exception ticket | Approved exception owner principal ID | Approved exception owner display label | Approved QA automation owner principal ID | Approved QA automation owner display label | Live ticket assignee principal ID | Live ticket assignee display label | Owner match | Exception expiry | Exception execution method | Exception required evidence | Exception produced evidence | Exception validated at | Exception evaluation |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| <SC-001 / none> | <user approval record> | <open ticket link> | <provider ID> | <label> | <provider ID> | <label> | <provider ID> | <label> | <all IDs match / mismatch> | <deadline> | <exact-candidate method> | <required artifact/trace> | <produced artifact/trace> | <timestamp> | <valid / incomplete / closed / expired / owner mismatch> |
 
 ## What failed / caveats
 
@@ -67,10 +52,8 @@
 
 ## Sign-off
 
-- [ ] Only the user accepts the ✅ journeys as done.
+- [ ] Reviewer accepts the ✅ journeys as done.
 - [ ] Caveats (⚠️) are acknowledged and ticketed.
 - [ ] Blocking failures (❌) return to dev-workflow before release.
 
-Automation cannot sign this gate.
-
-Accepted by (user): __________   Date: __________
+Accepted by: __________   Date: __________

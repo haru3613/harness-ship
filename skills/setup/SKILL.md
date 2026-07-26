@@ -9,10 +9,10 @@ description: >-
 
 # setup
 
-A one-time step so `dev-workflow`, `acceptance-design`, `implement`, `testing-workflow`, `spec`,
-`tickets`, `tdd`, and `review` run against this project's **real** specifics instead of generic
-defaults. Detect what you can, ask only the forks a wrong guess would get wrong, and write the
-result where the workflows look.
+A one-time step so `dev-workflow`, `implement`, `testing-workflow`, `spec`, `tickets`, `tdd`, and
+`review` run against this project's **real** specifics instead of generic defaults. Detect what you
+can, ask only the forks a wrong guess would get wrong, and write the result where the workflows
+look.
 
 Follow the same discipline the workflows preach: **answer the 90% with stated assumptions, ask only
 the load-bearing forks** (don't interrogate).
@@ -35,12 +35,6 @@ the load-bearing forks** (don't interrogate).
   - otherwise local files under `.scratch/`.
   - **Issues and PRs may live in different systems** (e.g. Jira issues + GitHub PRs) — capture both.
   - Note any **forbidden tool** you spot (e.g. a `gh` ban in `CLAUDE.md`/policy) so workflows avoid it.
-  - Detect and record the tracker's **immutable principal-ID capability**, **live assignee-read
-    capability**, and the PR host's **merge-check/reservation capability**. For a local-file tracker,
-    generate and persist a **stable project-local principal ID** for accountable owners. If live
-    assignee reads or atomic merge enforcement are unavailable, record **Manual P0 exceptions:
-    disabled** and require **automated-only P0** profiles; do not imitate a live assignee check with
-    a display name.
 - **Branch topology** — the default branch; whether a distinct integration branch
   (`staging` / `develop`) exists separate from the release branch. **If only one branch exists**
   (the common case), integration and release collapse onto it — record the same branch for both.
@@ -99,9 +93,6 @@ with the user. After this, every harness-ship workflow consumes it automatically
 ## harness-ship
 
 - **Issue tracker:** <system + access method, e.g. `Jira project CB via Atlassian MCP` | `GitHub issues via gh` | `Linear MCP` | `local .scratch/ files`>
-- **Tracker identity capabilities:** immutable principal-ID capability <provider ID | stable project-local principal ID>; live assignee-read capability <method | unavailable>.
-- **Merge-check/reservation capability:** <provider-enforced queue/check | cross-system atomic reservation | unavailable>.
-- **Manual P0 exceptions:** <enabled only when immutable IDs + live assignee read + atomic merge enforcement exist | disabled — automated-only P0>.
 - **Code review / PR host:** <e.g. `GitHub via MCP` | `GitHub via gh` | `GitLab MR`> — may differ from the issue tracker.
 - **Forbidden tools:** <e.g. `gh` CLI (policy) | none> — workflows must avoid these even when installed.
 - **Integration branch:** <e.g. `staging`> — feature PRs target this; never push to it directly. If the repo has only one branch, this equals the release branch below.
