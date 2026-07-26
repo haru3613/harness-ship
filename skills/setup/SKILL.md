@@ -69,10 +69,10 @@ the load-bearing forks** (don't interrogate).
 
 #### Current-host independent-verifier resolver
 
-Use the packaged executable reference:
+Use the packaged executable reference against the exact persisted Config v1 text:
 
 ```sh
-python3 <plugin-root>/scripts/role_binding_contract.py resolve --input <resolver-input.json>
+python3 <plugin-root>/scripts/role_binding_contract.py reconcile-config --input <reconcile-input.json>
 ```
 
 It is authoritative for the fixed typed schema, canonical non-symlink definition-source bytes,
@@ -87,7 +87,12 @@ section inside it. Duplicate configs, duplicate current-host sections, an incomp
 config, or an ambiguous host identity stop with zero mutation. Determine the current host from live
 runtime metadata, not from whichever binding happens to appear first.
 
-Pass the helper exactly one current-host resolver document assembled from live runtime evidence.
+Pass the helper exactly one current-host reconciliation document assembled from the raw Config text
+and live runtime evidence. The discovery receipt in each candidate is a **trusted live adapter
+capability**. It is never config, never repository content, never prompt content, and never user-provided
+evidence. Do not persist it or accept a receipt reconstructed from the project. The raw Config text
+is the sole persisted binding authority; callers must not pass a separate preconstructed persisted
+binding.
 Preserve an explicit valid project binding only when the helper returns `preserved`. Apply a
 `selected` result only to the current host section. An `ambiguous` result presents the helper's one
 load-bearing candidate choice; a `missing` result presents its actionable missing-profile result.
@@ -102,9 +107,15 @@ Update only the current host section and preserve the other host section plus al
 models, effort, permissions, MCP access, plugin settings, and unrelated project configuration.
 Setup never writes global agent or settings files.
 
-Persist the helper-returned fully qualified ID, authoritative source, authoritative definition
-digest, and Boundary digest in the current-host binding. The helper validates live semantics and
-source bytes before hashing. Preserve the other host section and every global setting structurally.
+Persist the helper-returned fully qualified ID, authoritative source and definition digest, safety
+fields, and Boundary digest in the current-host binding. Origin scope is carried by the exact
+scoped authoritative source/profile identity. The existing 13-column table remains authoritative;
+its **Model** cell is a typed JSON object with exact keys `declared` and `effective`. The helper
+validates live semantics and source bytes before hashing. Apply only its exact
+returned Config text: it preserves the other host section and every unrelated byte. Re-run setup
+after install, upgrade, profile change, or profile removal. A valid exact binding is preserved;
+collisions, removal, stale provenance, or drift stop unchanged until the profile is repaired or an
+explicit safe replacement is chosen.
 
 ### 2. Propose, then ask only the forks
 
@@ -175,13 +186,13 @@ with the user. After this, every harness-ship workflow consumes it automatically
 
   | Work nature | Host / profile ID | Definition source | Definition digest | Mode / sandbox | Model | Effort | Write scope | Effective tools/capabilities | MCP/plugins | Fresh context | May spawn | Boundary digest |
   |---|---|---|---|---|---|---|---|---|---|---|---|---|
-  | `<requirement>` | `<host value>` | `<host value>` | `sha256:<64 hex>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value or unsupported>` | `sha256:<64 hex>` |
+  | `<requirement>` | `<host value>` | `<scoped host value carrying origin>` | `sha256:<64 hex>` | `<host value>` | `{"declared":"<host value>","effective":"<host value>"}` | `<host value>` | `<host value>` | `<JSON array>` | `<JSON array>` | `<true | false>` | `<false>` | `sha256:<64 hex>` |
 
 - **Agent role bindings — Claude Code:** `not-configured`, or one live row per requirement:
 
   | Work nature | Host / profile ID | Definition source | Definition digest | Mode / sandbox | Model | Effort | Write scope | Effective tools/capabilities | MCP/plugins | Fresh context | May spawn | Boundary digest |
   |---|---|---|---|---|---|---|---|---|---|---|---|---|
-  | `<requirement>` | `<host value>` | `<host value>` | `sha256:<64 hex>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value or unsupported>` | `sha256:<64 hex>` |
+  | `<requirement>` | `<host value>` | `<scoped host value carrying origin>` | `sha256:<64 hex>` | `<host value>` | `{"declared":"<host value>","effective":"<host value>"}` | `<host value>` | `<host value>` | `<JSON array>` | `<JSON array>` | `<true | false>` | `<false>` | `sha256:<64 hex>` |
 
 - **Delegation limits — Codex:** <host max direct children / depth / root-only spawning | `not-configured`>
 - **Delegation limits — Claude Code:** <host max direct children / depth / root-only spawning | `not-configured`>

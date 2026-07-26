@@ -1,7 +1,9 @@
 from copy import deepcopy
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 import unittest
@@ -11,6 +13,7 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 HELPER = ROOT / "scripts" / "role_binding_contract.py"
 FIXTURES = ROOT / "tests" / "fixtures" / "role_binding"
+CONFIG_FIXTURES = FIXTURES / "configs"
 PLUGIN_AGENT = (ROOT / "agents" / "harness-ship-independent-verifier.md").resolve()
 
 
@@ -38,6 +41,25 @@ def canonical_record(profile: dict) -> str:
     )
 
 
+def refresh_receipt(raw: dict, host_default=None) -> None:
+    receipt = raw["discovery_receipt"]
+    receipt["host"] = raw["profile"]["host"]
+    receipt["origin_scope"] = raw["profile"]["origin_scope"]
+    receipt["profile_id"] = raw["profile"]["profile_id"]
+    receipt["definition_source"] = raw["profile"]["definition_source"]
+    receipt["effective_model"] = raw["profile"]["effective_model"]
+    source_bytes = (
+        Path(raw["source"]).read_bytes()
+        if raw["source_kind"] == "file"
+        else raw["source"].encode("utf-8")
+    )
+    receipt["authoritative_definition_digest"] = (
+        "sha256:" + hashlib.sha256(source_bytes).hexdigest()
+    )
+    if host_default is not None:
+        receipt["host_default"] = host_default
+
+
 class RoleBindingRuntimeTests(unittest.TestCase):
     def setUp(self) -> None:
         self.contract = load_contract()
@@ -48,6 +70,402 @@ class RoleBindingRuntimeTests(unittest.TestCase):
 
     def document(self, name: str) -> dict:
         return fixture(name)
+
+    def config_text(self, name: str) -> str:
+        return (CONFIG_FIXTURES / name).read_text(encoding="utf-8")
+
+    def test_reconcile_config_populates_only_current_host_and_is_idempotent(
+        self,
+    ) -> None:
+        for config_name, candidate_name, host, other_label in (
+            (
+                "codex_not_configured.md",
+                "codex.json",
+                "codex",
+                "- **Agent role bindings — Claude Code:** `not-configured`",
+            ),
+            (
+                "claude_not_configured.md",
+                "claude.json",
+                "claude-code",
+                "- **Agent role bindings — Codex:** `not-configured`",
+            ),
+        ):
+            original = self.config_text(config_name)
+            result = self.contract.reconcile_config_text(
+                original,
+                host,
+                fixture(candidate_name)["candidates"],
+            )
+            with self.subTest(host=host):
+                self.assertEqual(result["status"], "selected")
+                self.assertTrue(result["mutation"])
+                self.assertEqual(result["config_text"].count(other_label), 1)
+                self.assertIn(self.contract.LEGACY_TABLE_HEADER, result["config_text"])
+                self.assertIn('"declared":', result["config_text"])
+                self.assertIn('"effective":', result["config_text"])
+                current_marker = (
+                    "- **Agent role bindings — Codex:**"
+                    if host == "codex"
+                    else "- **Agent role bindings — Claude Code:**"
+                )
+                self.assertEqual(
+                    result["config_text"].split(current_marker, 1)[0],
+                    original.split(current_marker, 1)[0],
+                )
+                suffix_marker = (
+                    "- **Agent role bindings — Claude Code:**"
+                    if host == "codex"
+                    else "- **Sentinel after bindings:**"
+                )
+                self.assertEqual(
+                    result["config_text"][
+                        result["config_text"].index(suffix_marker) :
+                    ],
+                    original[original.index(suffix_marker) :],
+                )
+                second = self.contract.reconcile_config_text(
+                    result["config_text"],
+                    host,
+                    fixture(candidate_name)["candidates"],
+                )
+                self.assertEqual(second["status"], "preserved")
+                self.assertFalse(second["mutation"])
+                self.assertEqual(second["config_text"], result["config_text"])
+
+    def test_reconcile_config_upgrades_legacy_rows_only_on_one_exact_match(
+        self,
+    ) -> None:
+        for host, candidate_name, config_name in (
+            ("codex", "codex.json", "codex_legacy.md"),
+            ("claude-code", "claude.json", "claude_legacy.md"),
+        ):
+            original = self.config_text(config_name)
+            candidates = fixture(candidate_name)["candidates"]
+            migrated = self.contract.reconcile_config_text(
+                original, host, candidates
+            )
+            with self.subTest(host=host):
+                self.assertEqual(migrated["status"], "migrated")
+                self.assertTrue(migrated["mutation"])
+                self.assertIn(self.contract.LEGACY_TABLE_HEADER, migrated["config_text"])
+                self.assertIn('"declared":', migrated["config_text"])
+                self.assertIn('"effective":', migrated["config_text"])
+                second = self.contract.reconcile_config_text(
+                    migrated["config_text"], host, candidates
+                )
+                self.assertEqual(second["status"], "preserved")
+                self.assertEqual(second["config_text"], migrated["config_text"])
+
+                missing = self.contract.reconcile_config_text(original, host, [])
+                self.assertFalse(missing["mutation"])
+                self.assertEqual(missing["config_text"], original)
+
+                ambiguous = self.contract.reconcile_config_text(
+                    original, host, [deepcopy(candidates[0]), deepcopy(candidates[0])]
+                )
+                self.assertFalse(ambiguous["mutation"])
+                self.assertEqual(ambiguous["config_text"], original)
+
+                digest_matches = list(re.finditer(r"sha256:[0-9a-f]{64}", original))
+                last_digest = digest_matches[-1]
+                replacement = last_digest.group()[:-1] + (
+                    "0" if last_digest.group()[-1] != "0" else "1"
+                )
+                tampered = (
+                    original[: last_digest.start()]
+                    + replacement
+                    + original[last_digest.end() :]
+                )
+                blocked = self.contract.reconcile_config_text(
+                    tampered, host, candidates
+                )
+                self.assertFalse(blocked["mutation"])
+                self.assertEqual(blocked["config_text"], tampered)
+
+    def test_reconcile_config_migrates_only_verifier_in_realistic_multi_role_table(
+        self,
+    ) -> None:
+        original = self.config_text("codex_multi_legacy.md")
+        before = (
+            "  | narrow lookup | `Codex/scout` | Codex built-in role registry + "
+            "active project instructions | unsupported | read-only | `gpt-5.6-luna` | "
+            "low | none | unsupported | none | true | false | unsupported |"
+        )
+        after = (
+            "  | security review | `Codex/security_reviewer` | Codex built-in role "
+            "registry + active project instructions | unsupported | read-only "
+            "trust-boundary analysis | `gpt-5.6-sol` | xhigh | none | unsupported | "
+            "none | true | false | unsupported |"
+        )
+
+        result = self.contract.reconcile_config_text(
+            original, "codex", fixture("codex.json")["candidates"]
+        )
+
+        self.assertEqual(result["status"], "migrated")
+        self.assertIn(before, result["config_text"])
+        self.assertIn(after, result["config_text"])
+        self.assertEqual(
+            result["config_text"].split(before, 1)[0],
+            original.split(before, 1)[0],
+        )
+        self.assertEqual(
+            result["config_text"].split(after, 1)[1],
+            original.split(after, 1)[1],
+        )
+        self.assertEqual(result["config_text"].count(self.contract.LEGACY_TABLE_HEADER), 1)
+        second = self.contract.reconcile_config_text(
+            result["config_text"], "codex", fixture("codex.json")["candidates"]
+        )
+        self.assertEqual(second["status"], "preserved")
+        self.assertEqual(second["config_text"], result["config_text"])
+
+        canonical = self.config_text("codex_multi_canonical.md")
+        preserved = self.contract.reconcile_config_text(
+            canonical, "codex", fixture("codex.json")["candidates"]
+        )
+        self.assertEqual(preserved["status"], "preserved")
+        self.assertFalse(preserved["mutation"])
+        self.assertEqual(preserved["config_text"], canonical)
+
+    def test_reconcile_config_rejects_legacy_custom_and_builtin_to_user_laundering(
+        self,
+    ) -> None:
+        raw = fixture("codex.json")["candidates"][0]
+        raw["profile"]["origin_scope"] = "project"
+        raw["profile"]["profile_id"] = "Codex/project-verifier"
+        raw["profile"]["definition_source"] = (
+            "host-registry://codex/project/project-verifier"
+        )
+        raw["source"] = canonical_record(raw["profile"])
+        refresh_receipt(raw, host_default=False)
+        binding = self.contract.build_candidate(**raw)["binding"]
+
+        legacy_profile = {
+            field: binding[field]
+            for field in self.contract.PROFILE_FIELDS
+            if field not in {"origin_scope", "effective_model"}
+        }
+        legacy_profile["definition_source"] = (
+            "host-registry://codex/project-verifier"
+        )
+        legacy_source_profile = dict(legacy_profile)
+        del legacy_source_profile["authoritative_definition_digest"]
+        legacy_profile["authoritative_definition_digest"] = (
+            "sha256:"
+            + hashlib.sha256(
+                canonical_record(legacy_source_profile).encode("utf-8")
+            ).hexdigest()
+        )
+        legacy_digest = "sha256:" + hashlib.sha256(
+            canonical_record(legacy_profile).encode("utf-8")
+        ).hexdigest()
+        values = [
+            legacy_profile["work_nature"],
+            legacy_profile["profile_id"],
+            legacy_profile["definition_source"],
+            legacy_profile["authoritative_definition_digest"],
+            legacy_profile["mode_sandbox"],
+            legacy_profile["model"],
+            legacy_profile["effort"],
+            legacy_profile["write_scope"],
+            ", ".join(legacy_profile["effective_tools_capabilities"]),
+            "none",
+            "true",
+            "false",
+            legacy_digest,
+        ]
+        row = "  | " + " | ".join(f"`{value}`" for value in values) + " |"
+        marker = "- **Agent role bindings — Codex:** `not-configured`"
+        legacy_section = (
+            "- **Agent role bindings — Codex:**\n\n"
+            f"  {self.contract.LEGACY_TABLE_HEADER}\n"
+            f"  {'|' + '---|' * 13}\n"
+            f"{row}"
+        )
+        original = self.config_text("codex_not_configured.md").replace(
+            marker, legacy_section
+        )
+
+        migrated = self.contract.reconcile_config_text(
+            original, "codex", [raw]
+        )
+
+        self.assertEqual(migrated["status"], "invalid-config")
+        self.assertFalse(migrated["mutation"])
+        self.assertEqual(migrated["config_text"], original)
+
+        laundering = fixture("codex.json")["candidates"][0]
+        laundering["profile"]["origin_scope"] = "user"
+        laundering["profile"]["definition_source"] = (
+            "host-registry://codex/user/verifier"
+        )
+        laundering["source"] = canonical_record(laundering["profile"])
+        refresh_receipt(laundering, host_default=False)
+        builtin_legacy = self.config_text("codex_legacy.md")
+        blocked = self.contract.reconcile_config_text(
+            builtin_legacy, "codex", [laundering]
+        )
+        self.assertEqual(blocked["status"], "invalid-config")
+        self.assertFalse(blocked["mutation"])
+        self.assertEqual(blocked["config_text"], builtin_legacy)
+
+    def test_reconcile_config_rejects_malformed_text_with_exact_zero_mutation(
+        self,
+    ) -> None:
+        valid = self.config_text("codex_not_configured.md")
+        malformed = (
+            b"\xffnot-utf8",
+            valid.replace("## harness-ship", "## missing"),
+            valid + "\n## harness-ship\n",
+            valid.replace("`1`", "`2`", 1),
+            valid.replace(
+                "- **Agent role bindings — Codex:** `not-configured`",
+                "",
+            ),
+            valid.replace(
+                "- **Agent role bindings — Codex:** `not-configured`",
+                "- **Agent role bindings — Codex:** `not-configured`\n"
+                "- **Agent role bindings — Codex:** `not-configured`",
+            ),
+            valid.replace(
+                "- **Agent role bindings — Codex:** `not-configured`",
+                "- **Agent role bindings — Codex:**\n\n  | malformed |",
+            ),
+            valid.replace(
+                "- **Agent role bindings — Codex:** `not-configured`",
+                "- **Agent role bindings — Codex:** garbage\n\n"
+                f"  {load_contract().LEGACY_TABLE_HEADER}\n"
+                f"  {'|' + '---|' * 13}",
+            ),
+            valid.replace(
+                "- **Agent role bindings — Codex:** `not-configured`",
+                "- **Agent role bindings — Codex:** `not-configured`\n\n"
+                f"  {load_contract().LEGACY_TABLE_HEADER}\n"
+                f"  {'|' + '---|' * 13}",
+            ),
+        )
+        for raw in malformed:
+            result = self.contract.reconcile_config_text(
+                raw, "codex", fixture("codex.json")["candidates"]
+            )
+            with self.subTest(raw=raw):
+                self.assertEqual(result["status"], "invalid-config")
+                self.assertFalse(result["mutation"])
+                self.assertEqual(result["config_text"], raw)
+
+        unhashable_host = self.contract.reconcile_config_text(
+            valid, ["codex"], fixture("codex.json")["candidates"]
+        )
+        self.assertEqual(unhashable_host["status"], "invalid-config")
+        self.assertFalse(unhashable_host["mutation"])
+        self.assertEqual(unhashable_host["config_text"], valid)
+
+        multi = self.config_text("codex_multi_legacy.md")
+        verifier_line = next(
+            line
+            for line in multi.splitlines()
+            if "`independent verification`" in line
+        )
+        malformed_tables = (
+            multi.replace(verifier_line, f"{verifier_line}\n{verifier_line}"),
+            multi.replace(verifier_line, ""),
+            multi.replace(
+                "| narrow lookup |",
+                "| narrow lookup | extra |",
+                1,
+            ),
+        )
+        for raw in malformed_tables:
+            result = self.contract.reconcile_config_text(
+                raw, "codex", fixture("codex.json")["candidates"]
+            )
+            self.assertEqual(result["status"], "invalid-config")
+            self.assertFalse(result["mutation"])
+            self.assertEqual(result["config_text"], raw)
+
+    def test_reconcile_config_blocked_live_states_preserve_all_raw_text(self) -> None:
+        original = self.config_text("codex_not_configured.md")
+        default = fixture("codex.json")["candidates"][0]
+
+        second = deepcopy(default)
+        second["profile"]["profile_id"] = "Codex/alternate-verifier"
+        second["profile"]["definition_source"] = (
+            "host-registry://codex/builtin/alternate-verifier"
+        )
+        second["source"] = canonical_record(second["profile"])
+        refresh_receipt(second, host_default=True)
+        ambiguous = self.contract.reconcile_config_text(
+            original, "codex", [default, second]
+        )
+        self.assertEqual(ambiguous["status"], "ambiguous")
+        self.assertFalse(ambiguous["mutation"])
+        self.assertEqual(ambiguous["config_text"], original)
+        self.assertEqual(len(ambiguous["candidates"]), 2)
+        self.assertIn("explicitly", ambiguous["actionable"])
+
+        for candidates, status in (([], "missing"), ([default, deepcopy(default)], "collision")):
+            result = self.contract.reconcile_config_text(
+                original, "codex", candidates
+            )
+            with self.subTest(status=status):
+                self.assertEqual(result["status"], status)
+                self.assertFalse(result["mutation"])
+                self.assertEqual(result["config_text"], original)
+
+        reviewer = deepcopy(default)
+        reviewer["profile"]["origin_scope"] = "user"
+        reviewer["profile"]["profile_id"] = "Codex/security-reviewer"
+        reviewer["profile"]["definition_source"] = (
+            "host-registry://codex/user/security-reviewer"
+        )
+        reviewer["source"] = canonical_record(reviewer["profile"])
+        refresh_receipt(reviewer, host_default=False)
+        result = self.contract.reconcile_config_text(original, "codex", [reviewer])
+        self.assertEqual(result["status"], "missing")
+        self.assertEqual(result["config_text"], original)
+
+        expanded = self.contract.reconcile_config_text(
+            original, "codex", [default]
+        )["config_text"]
+        drift_fields = {
+            "origin_scope": "user",
+            "model": "drifted",
+            "effective_model": "drifted",
+            "effort": "medium",
+            "mode_sandbox": "writable",
+            "write_scope": "workspace",
+            "effective_tools_capabilities": ["Bash", "Glob", "Grep", "Read"],
+            "may_spawn": True,
+            "fresh_context": False,
+            "mcp_plugins": ["plugin"],
+        }
+        for field, value in drift_fields.items():
+            drift = deepcopy(default)
+            drift["profile"][field] = value
+            drift["source"] = canonical_record(drift["profile"])
+            refresh_receipt(drift)
+            result = self.contract.reconcile_config_text(expanded, "codex", [drift])
+            with self.subTest(field=field):
+                self.assertFalse(result["mutation"])
+                self.assertEqual(result["config_text"], expanded)
+
+        claude_original = self.config_text("claude_not_configured.md")
+        claude_default = fixture("claude.json")["candidates"][0]
+        claude_expanded = self.contract.reconcile_config_text(
+            claude_original, "claude-code", [claude_default]
+        )["config_text"]
+        for field, value in drift_fields.items():
+            drift = deepcopy(claude_default)
+            drift["profile"][field] = value
+            refresh_receipt(drift)
+            result = self.contract.reconcile_config_text(
+                claude_expanded, "claude-code", [drift]
+            )
+            with self.subTest(host="claude-code", field=field):
+                self.assertFalse(result["mutation"])
+                self.assertEqual(result["config_text"], claude_expanded)
 
     def test_valid_explicit_binding_is_preserved_for_both_hosts(self) -> None:
         for name, host in (("claude.json", "claude-code"), ("codex.json", "codex")):
@@ -82,8 +500,13 @@ class RoleBindingRuntimeTests(unittest.TestCase):
     def test_ambiguous_and_missing_candidates_fail_without_mutation(self) -> None:
         document = self.document("codex.json")
         second_raw = fixture("codex.json")["candidates"][0]
+        second_raw["profile"]["profile_id"] = "Codex/alternate-verifier"
+        second_raw["profile"]["definition_source"] = (
+            "host-registry://codex/builtin/alternate-verifier"
+        )
         second_raw["profile"]["model"] = "alternate-host-assigned-model"
         second_raw["source"] = canonical_record(second_raw["profile"])
+        refresh_receipt(second_raw)
         document["candidates"].append(second_raw)
         original = deepcopy(document)
 
@@ -122,6 +545,7 @@ class RoleBindingRuntimeTests(unittest.TestCase):
             document["candidates"][0]["source"] = canonical_record(
                 document["candidates"][0]["profile"]
             )
+            refresh_receipt(document["candidates"][0])
             with self.subTest(mode=mode):
                 self.assertEqual(
                     self.contract.resolve_document(document)["status"], "missing"
@@ -137,6 +561,7 @@ class RoleBindingRuntimeTests(unittest.TestCase):
             document["candidates"][0]["source"] = canonical_record(
                 document["candidates"][0]["profile"]
             )
+            refresh_receipt(document["candidates"][0])
             with self.subTest(capability=capability):
                 persisted = self.contract.build_candidate(
                     **document["candidates"][0]
@@ -165,6 +590,7 @@ class RoleBindingRuntimeTests(unittest.TestCase):
             del missing["profile"]["work_nature"]
             if missing["source_kind"] == "host-record":
                 missing["source"] = canonical_record(missing["profile"])
+                refresh_receipt(missing)
             document = self.document(name)
             document["candidates"] = [missing]
             self.assertEqual(
@@ -175,6 +601,7 @@ class RoleBindingRuntimeTests(unittest.TestCase):
             other["profile"]["work_nature"] = "code implementation"
             if other["source_kind"] == "host-record":
                 other["source"] = canonical_record(other["profile"])
+                refresh_receipt(other)
             document["candidates"] = [other]
             self.assertEqual(
                 self.contract.resolve_document(document)["status"], "missing"
@@ -187,10 +614,12 @@ class RoleBindingRuntimeTests(unittest.TestCase):
         candidate = document["candidates"][0]
         candidate["profile"]["profile_id"] = "Codex/arbitrary-purpose"
         candidate["profile"]["definition_source"] = (
-            "host-registry://codex/arbitrary-purpose"
+            "host-registry://codex/project/arbitrary-purpose"
         )
+        candidate["profile"]["origin_scope"] = "project"
         candidate["profile"]["work_nature"] = "deployment"
         candidate["source"] = canonical_record(candidate["profile"])
+        refresh_receipt(candidate, host_default=False)
 
         self.assertEqual(
             self.contract.resolve_document(document)["status"], "missing"
@@ -198,10 +627,11 @@ class RoleBindingRuntimeTests(unittest.TestCase):
 
         candidate["profile"]["profile_id"] = "Codex/custom-independent-verifier"
         candidate["profile"]["definition_source"] = (
-            "host-registry://codex/custom-independent-verifier"
+            "host-registry://codex/project/custom-independent-verifier"
         )
         candidate["profile"]["work_nature"] = "independent verification"
         candidate["source"] = canonical_record(candidate["profile"])
+        refresh_receipt(candidate, host_default=False)
         materialized = self.contract.build_candidate(**candidate)
         document["bindings"]["codex"] = deepcopy(materialized["binding"])
         preserved = self.contract.resolve_document(document)
@@ -260,6 +690,19 @@ class RoleBindingRuntimeTests(unittest.TestCase):
         self.assertEqual(result["status"], "missing")
         self.assertFalse(result["mutation"])
 
+        with tempfile.TemporaryDirectory() as directory:
+            user_agent = (
+                Path(directory) / "harness-ship-independent-verifier.md"
+            )
+            user_agent.write_bytes(PLUGIN_AGENT.read_bytes())
+            wrong_raw = fixture("claude.json")["candidates"][0]
+            wrong_raw["source"] = str(user_agent.resolve())
+            refresh_receipt(wrong_raw)
+            document["candidates"] = [wrong_raw]
+            result = self.contract.resolve_document(document)
+            self.assertEqual(result["status"], "missing")
+            self.assertFalse(result["mutation"])
+
     def test_claude_candidate_metadata_must_match_one_agent_byte_snapshot(self) -> None:
         raw = fixture("claude.json")["candidates"][0]
         valid_source = PLUGIN_AGENT.read_text(encoding="utf-8")
@@ -285,11 +728,16 @@ class RoleBindingRuntimeTests(unittest.TestCase):
                 path.parent.mkdir()
                 path.write_text(source_text, encoding="utf-8")
                 candidate = deepcopy(raw)
-                candidate["profile"]["definition_source"] = str(path.resolve())
                 candidate["source"] = str(path.resolve())
                 with self.subTest(index=index):
-                    with self.assertRaises(self.contract.ContractError):
-                        self.contract.build_candidate(**candidate)
+                    with mock.patch.object(
+                        self.contract, "PLUGIN_AGENT", path.resolve()
+                    ):
+                        with self.assertRaisesRegex(
+                            self.contract.ContractError,
+                            "agent|Claude profile boundary",
+                        ):
+                            self.contract.build_candidate(**candidate)
 
     def test_codex_record_semantics_must_equal_supplied_profile(self) -> None:
         raw = fixture("codex.json")["candidates"][0]
@@ -368,6 +816,259 @@ class RoleBindingRuntimeTests(unittest.TestCase):
                 self.assertEqual(
                     self.contract.preflight_document(missing)["status"], "fail"
                 )
+
+    def test_packaged_claude_binding_survives_relocation_but_not_source_drift(
+        self,
+    ) -> None:
+        original_raw = fixture("claude.json")["candidates"][0]
+        original = self.contract.build_candidate(**original_raw)
+        config = self.contract.reconcile_config_text(
+            self.config_text("claude_not_configured.md"),
+            "claude-code",
+            [original_raw],
+        )["config_text"]
+        with tempfile.TemporaryDirectory() as directory:
+            relocated = (
+                Path(directory)
+                / "new-plugin-root"
+                / "agents"
+                / "harness-ship-independent-verifier.md"
+            )
+            relocated.parent.mkdir(parents=True)
+            relocated.write_bytes(PLUGIN_AGENT.read_bytes())
+            moved_raw = deepcopy(original_raw)
+            moved_raw["source"] = str(relocated.resolve())
+            with mock.patch.object(self.contract, "PLUGIN_AGENT", relocated.resolve()):
+                moved = self.contract.build_candidate(**moved_raw)
+                self.assertEqual(moved["binding"], original["binding"])
+                preserved = self.contract.reconcile_config_text(
+                    config, "claude-code", [moved_raw]
+                )
+                self.assertEqual(preserved["status"], "preserved")
+                self.assertEqual(preserved["config_text"], config)
+
+                relocated.write_text("tampered", encoding="utf-8")
+                with self.assertRaises(self.contract.ContractError):
+                    self.contract.build_candidate(**moved_raw)
+                blocked = self.contract.reconcile_config_text(
+                    config, "claude-code", [moved_raw]
+                )
+                self.assertFalse(blocked["mutation"])
+                self.assertEqual(blocked["config_text"], config)
+
+                relocated.unlink()
+                with self.assertRaises(FileNotFoundError):
+                    self.contract.build_candidate(**moved_raw)
+                blocked = self.contract.reconcile_config_text(
+                    config, "claude-code", [moved_raw]
+                )
+                self.assertFalse(blocked["mutation"])
+                self.assertEqual(blocked["config_text"], config)
+
+            renamed = relocated.with_name("renamed-verifier.md")
+            renamed.write_bytes(PLUGIN_AGENT.read_bytes())
+            moved_raw["source"] = str(renamed.resolve())
+            with mock.patch.object(self.contract, "PLUGIN_AGENT", relocated.resolve()):
+                with self.assertRaises(self.contract.ContractError):
+                    self.contract.build_candidate(**moved_raw)
+                blocked = self.contract.reconcile_config_text(
+                    config, "claude-code", [moved_raw]
+                )
+                self.assertFalse(blocked["mutation"])
+                self.assertEqual(blocked["config_text"], config)
+
+    def test_explicit_custom_claude_host_record_is_preserved_but_never_default(
+        self,
+    ) -> None:
+        document = self.document("claude.json")
+        raw = deepcopy(document["candidates"][0])
+        raw["profile"]["profile_id"] = "Claude/project/custom-verifier"
+        raw["profile"]["origin_scope"] = "project"
+        raw["profile"]["definition_source"] = (
+            "host-registry://claude-code/project/custom-verifier"
+        )
+        raw["profile"]["model"] = "custom-declared-model"
+        raw["profile"]["effective_model"] = "custom-effective-model"
+        raw["source_kind"] = "host-record"
+        raw["source"] = canonical_record(raw["profile"])
+        raw["discovery_receipt"]["adapter"] = "claude-code-runtime"
+        refresh_receipt(raw, host_default=False)
+        custom = self.contract.build_candidate(**raw)
+        document["candidates"] = [raw]
+
+        self.assertEqual(self.contract.resolve_document(document)["status"], "missing")
+        document["bindings"]["claude-code"] = deepcopy(custom["binding"])
+        self.assertEqual(
+            self.contract.resolve_document(document)["status"], "preserved"
+        )
+        packet = {
+            "persisted": custom["binding"],
+            "live": deepcopy(raw),
+            "launch_plan": deepcopy(raw),
+        }
+        self.assertEqual(self.contract.preflight_document(packet)["status"], "pass")
+
+    def test_discovery_receipts_are_required_exact_and_adapter_scoped(self) -> None:
+        for name in ("claude.json", "codex.json"):
+            raw = fixture(name)["candidates"][0]
+            invalid = []
+            missing = deepcopy(raw)
+            del missing["discovery_receipt"]
+            invalid.append(missing)
+            unknown = deepcopy(raw)
+            unknown["discovery_receipt"]["adapter"] = "repository-config"
+            invalid.append(unknown)
+            mismatch = deepcopy(raw)
+            mismatch["discovery_receipt"]["effective_model"] = "other-model"
+            invalid.append(mismatch)
+            origin_mismatch = deepcopy(raw)
+            origin_mismatch["discovery_receipt"]["origin_scope"] = "user"
+            invalid.append(origin_mismatch)
+            wrong_default = deepcopy(raw)
+            if name == "claude.json":
+                wrong_default["discovery_receipt"]["host_default"] = False
+                invalid.append(wrong_default)
+            for candidate in invalid:
+                document = self.document(name)
+                document["candidates"] = [candidate]
+                with self.subTest(name=name, candidate=candidate):
+                    self.assertEqual(
+                        self.contract.resolve_document(document)["status"], "missing"
+                    )
+                    self.assertFalse(
+                        self.contract.resolve_document(document)["mutation"]
+                    )
+
+    def test_strict_profile_and_definition_source_grammar_rejects_uri_attacks(
+        self,
+    ) -> None:
+        attacks = {
+            "codex.json": (
+                (
+                    "Codex/verifier/child",
+                    "host-registry://codex/builtin/verifier/child",
+                ),
+                (
+                    "Codex/verifier",
+                    "host-registry://codex/builtin/verifier?trusted=true",
+                ),
+                ("Codex/verifier", "host-registry://codex/builtin/../verifier"),
+                ("Codex/other", "host-registry://codex/builtin/verifier"),
+            ),
+            "claude.json": (
+                (
+                    "harness-ship:harness-ship-independent-verifier/child",
+                    "plugin://harness-ship/agents/harness-ship-independent-verifier.md",
+                ),
+                (
+                    "harness-ship:harness-ship-independent-verifier",
+                    "plugin://harness-ship/agents/harness-ship-independent-verifier.md#x",
+                ),
+                (
+                    "harness-ship:harness-ship-independent-verifier",
+                    "plugin://harness-ship/agents/../agents/harness-ship-independent-verifier.md",
+                ),
+            ),
+        }
+        for name, cases in attacks.items():
+            for profile_id, definition_source in cases:
+                raw = fixture(name)["candidates"][0]
+                raw["profile"]["profile_id"] = profile_id
+                raw["profile"]["definition_source"] = definition_source
+                refresh_receipt(raw)
+                document = self.document(name)
+                document["candidates"] = [raw]
+                with self.subTest(name=name, source=definition_source):
+                    result = self.contract.resolve_document(document)
+                    self.assertEqual(result["status"], "missing")
+                    self.assertFalse(result["mutation"])
+
+        raw = fixture("claude.json")["candidates"][0]
+        raw["profile"]["origin_scope"] = "project"
+        raw["profile"]["profile_id"] = "Claude/project/custom-verifier"
+        raw["profile"]["definition_source"] = (
+            "host-registry://claude-code/user/custom-verifier"
+        )
+        raw["source_kind"] = "host-record"
+        raw["source"] = canonical_record(raw["profile"])
+        raw["discovery_receipt"]["adapter"] = "claude-code-runtime"
+        refresh_receipt(raw, host_default=False)
+        document = self.document("claude.json")
+        document["candidates"] = [raw]
+        self.assertEqual(self.contract.resolve_document(document)["status"], "missing")
+
+    def test_collisions_precede_preserve_and_nondefault_reviewers_are_not_selected(
+        self,
+    ) -> None:
+        for name, host in (("claude.json", "claude-code"), ("codex.json", "codex")):
+            document = self.document(name)
+            candidate = self.candidate(name)
+            document["bindings"][host] = deepcopy(candidate["binding"])
+            document["candidates"].append(deepcopy(document["candidates"][0]))
+            collision = self.contract.resolve_document(document)
+            with self.subTest(name=name):
+                self.assertEqual(collision["status"], "collision")
+                self.assertFalse(collision["mutation"])
+                self.assertIn("actionable", collision)
+
+        for name in ("codex.json", "claude.json"):
+            document = self.document(name)
+            reviewer = deepcopy(document["candidates"][0])
+            reviewer["profile"]["origin_scope"] = "user"
+            if name == "codex.json":
+                reviewer["profile"]["profile_id"] = "Codex/security-reviewer"
+                reviewer["profile"]["definition_source"] = (
+                    "host-registry://codex/user/security-reviewer"
+                )
+            else:
+                reviewer["profile"]["profile_id"] = (
+                    "Claude/user/security-reviewer"
+                )
+                reviewer["profile"]["definition_source"] = (
+                    "host-registry://claude-code/user/security-reviewer"
+                )
+                reviewer["source_kind"] = "host-record"
+                reviewer["discovery_receipt"]["adapter"] = "claude-code-runtime"
+            reviewer["source"] = canonical_record(reviewer["profile"])
+            for host_default in (False, True):
+                refresh_receipt(reviewer, host_default=host_default)
+                document["candidates"] = [deepcopy(reviewer)]
+                with self.subTest(name=name, host_default=host_default):
+                    result = self.contract.resolve_document(document)
+                    self.assertEqual(result["status"], "missing")
+                    self.assertFalse(result["mutation"])
+
+    def test_dual_host_boundary_and_effective_model_drift_fail_preflight(self) -> None:
+        mutations = {
+            "origin_scope": "user",
+            "effective_model": "drifted-effective-model",
+            "model": "drifted-declared-model",
+            "effort": "medium",
+            "mode_sandbox": "writable",
+            "write_scope": "workspace",
+            "may_spawn": True,
+            "fresh_context": False,
+            "effective_tools_capabilities": ["Bash", "Glob", "Grep", "Read"],
+            "mcp_plugins": ["plugin"],
+        }
+        for name in ("claude.json", "codex.json"):
+            original_raw = fixture(name)["candidates"][0]
+            persisted = self.contract.build_candidate(**original_raw)["binding"]
+            for field, value in mutations.items():
+                drift = deepcopy(original_raw)
+                drift["profile"][field] = value
+                if drift["source_kind"] == "host-record":
+                    drift["source"] = canonical_record(drift["profile"])
+                refresh_receipt(drift)
+                packet = {
+                    "persisted": persisted,
+                    "live": drift,
+                    "launch_plan": deepcopy(drift),
+                }
+                with self.subTest(name=name, field=field):
+                    self.assertEqual(
+                        self.contract.preflight_document(packet)["status"], "fail"
+                    )
 
     def test_multilingual_boundary_digest_matches_hardcoded_golden(self) -> None:
         golden = fixture("multilingual_golden.json")
@@ -457,10 +1158,16 @@ class RoleBindingRuntimeTests(unittest.TestCase):
             "live": deepcopy(candidate),
             "loaded": deepcopy(candidate),
         }
+        reconcile = {
+            "config_text": self.config_text("codex_not_configured.md"),
+            "current_host": "codex",
+            "candidates": fixture("codex.json")["candidates"],
+        }
         with tempfile.TemporaryDirectory() as directory:
             inputs = {}
             for name, payload in (
                 ("resolve", document),
+                ("reconcile-config", reconcile),
                 ("preflight", preflight),
                 ("post-launch", post_launch),
             ):
@@ -476,6 +1183,13 @@ class RoleBindingRuntimeTests(unittest.TestCase):
                     "resolve",
                     "--input",
                     str(inputs["resolve"]),
+                ],
+                [
+                    "python3",
+                    str(HELPER),
+                    "reconcile-config",
+                    "--input",
+                    str(inputs["reconcile-config"]),
                 ],
                 [
                     "python3",

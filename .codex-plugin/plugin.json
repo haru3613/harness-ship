@@ -1,6 +1,6 @@
 {
   "name": "harness-ship",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "Idea → shipped, humans on the ends. A root-orchestrated development and QA workflow with separate acceptance design, role-routed implementation, and explicit human judgment gates.",
   "author": {
     "name": "haru3613",
