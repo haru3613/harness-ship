@@ -165,6 +165,47 @@ This report is dev-workflow's gate 5. Hand it to the user.
 
 For every QA **non-pass** (`FAIL`, `FLAKY`, `BLOCKED`, or `NOT TESTED`), run **`bug-workflow`** and
 link the ledger evidence to one stable BUG-ID. Classify before routing: only a `product-defect`
-enters **`diagnose`** for a red-capable repro and falsifiable hypotheses. Test defects, environment
+enters **`diagnose`** for safe cause analysis and a Diagnosis Receipt. Test defects, environment
 defects, spec ambiguities, duplicates, and known limitations follow their distinct Bug Case routes.
 Handoffs and later retests append to the same Bug Case rather than replacing it.
+
+## Stage 7 — Fixed-artifact Bug Case verification
+
+Resume a classified product Bug Case only from a valid fixed-artifact addendum in
+`qa-handoff-template.md`. Require the stable BUG-ID, numbered fix attempt, original failed artifact
+and evidence, `diagnose` Diagnosis Receipt, `implement` defect receipt, exact new full source SHA,
+exact new deployed artifact/environment revision, new deployment receipt, affected SC-IDs, and RD
+verification summary.
+
+If the new deployment evidence is missing or mismatched, do not execute QA: append a resumable
+`blocked` observation to the same BUG-ID with the exact resume condition. Never infer a fixed
+artifact from a green RD check.
+
+After the fixed-artifact addendum passes **Stage 2** handoff validation, execute every recheck
+through the existing **Stage 3** QA ownership preflight, per-scenario artifact/evidence
+revalidation, and ordered first-match normalization. Then apply the **Stage 4** anti-fake-green
+gate. The fixed-artifact section of the ledger indexes these canonical attempts; it does not create
+a parallel result model. In particular, retry-green remains `FLAKY` and cannot become `verified`.
+
+On the fixed artifact, QA reruns:
+
+1. the **original observation**;
+2. each **affected SC-ID journey**; and
+3. a **proportionate neighbouring regression** scope selected from the approved risks.
+
+This remains **QA execution only**. QA does not execute unit or API-contract tests, audit RD TDD, or
+repair product code. Append a numbered fix attempt and retest attempt as a **QA verification
+attempt** in `execution-ledger-template.md`; preserve the original failed-artifact evidence and
+never overwrite any earlier attempt.
+
+Disposition is evidence-bound:
+
+- only QA can set `verified`, after every required scenario classification is `PASS` under Stages
+  3–4;
+- a repeated failure sets `reopened` and routes the same BUG-ID through `bug-workflow`;
+- missing or mismatched deployment evidence sets resumable `blocked`; and
+- accept-with-caveat requires an explicit human decision and a linked follow-up where applicable.
+
+After disposition, regenerate the Stage 5 acceptance report so it compares the original failure and
+fixed-artifact retest under the same contract trace and BUG-ID. Release promotion remains outside
+`testing-workflow`.

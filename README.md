@@ -10,7 +10,7 @@ Codex and Claude Code. You pilot five judgment gates; AI runs everything between
 
 ## What's inside
 
-One bootstrap skill, three orchestration skills, plus eight self-contained blocks they drive. No
+One bootstrap skill, three orchestration skills, plus nine self-contained blocks they drive. No
 external plugin dependencies — everything needed is in this repo.
 
 | Skill | Role |
@@ -26,8 +26,8 @@ external plugin dependencies — everything needed is in this repo.
 | `tickets` | break an approved spec + acceptance contract into vertical-slice tracer-bullet tickets |
 | `tdd` | implement one ticket through evidence-backed RED → GREEN behaviour slices at approved seams |
 | `review` | dual-axis code review (Standards × Spec) with an optional data-mutation safety gate |
-| `bug-workflow` | QA non-pass → one traceable Bug Case → classification-specific owner route |
-| `diagnose` | red-repro-first RD diagnosis for a classified product defect |
+| `bug-workflow` | QA non-pass → one Bug Case → classification route → product-defect closure receipts |
+| `diagnose` | safe RD cause analysis → append-only Diagnosis Receipt; never product repair |
 
 ## The five human gates
 

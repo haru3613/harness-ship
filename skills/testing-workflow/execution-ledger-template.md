@@ -13,6 +13,25 @@
 - **Artifact provenance receipt:** <receipt ID or durable link>
 - **Evidence location:** <configured durable path>
 
+## Bug Case fixed-artifact verification
+
+- **Stable BUG-ID:** <existing product-defect BUG-ID>
+- **Fix attempt:** <append-only repair attempt>
+- **Original failed-artifact evidence:** <prior ledger attempt + artifact/environment>
+- **Fixed artifact:** <new source SHA + exact artifact/environment + new deployment receipt>
+
+Append one **QA verification attempt** for every fixed-artifact check. A retest attempt is numbered
+within its fix attempt and never overwrites the original failure or another fix/retest attempt.
+Each row indexes the canonical Stage 3 attempt and its normalized scenario classification after
+Stage 4; it does not assign the final Bug Case disposition.
+
+| Fix attempt | Retest attempt | Previous verification attempt | Canonical Stage 3 attempt | SC-ID | Original observation / neighbouring regression | Fixed artifact | Raw outcome | Normalized scenario classification | Evidence |
+|---|---|---|---|---|---|---|---|---|---|
+| <1> | <1> | <original failed attempt> | <QA-RUN-ID/attempt> | <SC-ID> | <original observation / affected journey / neighbour> | <SHA + artifact/env> | <PASS / FAIL / BLOCKED / NOT RUN> | <PASS / FAIL / FLAKY / BLOCKED / NOT TESTED> | <durable link> |
+
+After all required rows pass Stages 3–4, append one QA-owned Bug Case disposition event:
+`verified`, `reopened`, `blocked`, or `pending human caveat`.
+
 ## Attempts
 
 Append one row per scenario attempt or skipped/quarantined observation. A retry gets a new attempt

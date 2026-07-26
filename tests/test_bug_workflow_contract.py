@@ -96,11 +96,12 @@ class BugWorkflowContractTests(unittest.TestCase):
             "stable bug-id",
             "classification is `product-defect`",
             "otherwise run `bug-workflow` and stop",
-            "diagnosis-only",
-            "then stop without changing product code",
-            "downstream repair workflow explicitly authorizes",
+            "diagnosis receipt",
+            "does not edit product code",
+            "only a `diagnosed` receipt may enter `implement`",
         ):
             self.assertIn(marker, diagnose)
+        self.assertNotIn("## phase 3", diagnose)
 
     def test_bug_case_preserves_traceability_provenance_and_observation(self) -> None:
         template = " ".join(

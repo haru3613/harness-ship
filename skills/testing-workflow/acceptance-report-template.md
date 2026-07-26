@@ -13,6 +13,18 @@
 **Artifact provenance:** <source + receipt link>
 **Date:** <YYYY-MM-DD>
 
+## Bug Case repair comparison
+
+- **Stable BUG-ID:** <same BUG-ID across every receipt>
+- **Contract trace:** <revision; SC-ID → AC-ID → originating ticket>
+- **Original failure:** <user-visible failure + original failed artifact + evidence>
+- **Fixed-artifact retest:** <new source/artifact + QA verification attempt + evidence>
+- **Disposition:** <verified | reopened | blocked | human caveat decision>
+- **Human caveat decision / linked follow-up:** <explicit decision + ticket | not applicable>
+
+Never replace the original failure with the fixed result. The report must show both artifact-bound
+observations against the same BUG-ID and contract trace.
+
 ---
 
 ## Verdict
@@ -61,6 +73,7 @@ acceptance disposition separate so the Result remains exactly derived from the l
 
 - [ ] Only the user accepts the ✅ journeys as done.
 - [ ] Caveats are acknowledged and ticketed.
-- [ ] Blocking failures (❌) return to dev-workflow before release.
+- [ ] Bug Case repeated/blocking failures return through `bug-workflow` under the same BUG-ID.
+- [ ] Other blocking acceptance failures return to `dev-workflow` before release.
 
 Accepted by (user): __________   Date: __________

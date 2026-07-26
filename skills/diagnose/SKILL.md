@@ -2,28 +2,30 @@
 name: diagnose
 description: >-
   Root-cause an already-triaged product defect by building a red-capable, deterministic
-  reproduction FIRST, then ranking falsifiable hypotheses. For a QA finding, use only after
-  bug-workflow supplies a stable BUG-ID classified product-defect. Triggers: "/diagnose",
+  reproduction when safe, then ranking falsifiable hypotheses and emitting a Diagnosis Receipt.
+  For a QA finding, use only after bug-workflow supplies a stable BUG-ID classified
+  product-defect. This skill diagnoses; it does not edit product code. Triggers: "/diagnose",
   "root-cause this product defect", "diagnose BUG-ID".
 ---
 
 # diagnose
 
-Find the real cause, not a plausible one. The discipline that separates this from guess-and-patch is
-**a reproduction before a theory**.
+Find the real cause, not a plausible one, and publish a bounded **Diagnosis Receipt** for the
+downstream RD repair. `diagnose` does not edit product code, create a replacement defect, or mark
+the Bug Case `verified`.
 
 **QA boundary:** if the input came from QA or `testing-workflow`, require an existing stable BUG-ID
 whose classification is `product-defect`. Otherwise run `bug-workflow` and stop; do not bypass
 classification.
 
-## Phase 1 — build a red-capable loop (no skipping to Phase 2)
+## 1 — Establish a safe observation
 
-Before any hypothesis, get a **single command that fails deterministically** on the bug — a failing
-test, a script, a curl that reliably errors. If you cannot make it fail on demand, you cannot know
-when you've fixed it. **No red-capable command → no Phase 2.** For flakiness, make the flake
-reproducible (seed, loop, forced timing) before theorizing.
+Prefer one deterministic, red-capable command at the smallest safe seam. Never force an unsafe,
+destructive, production-only, or inherently intermittent observation through a dangerous
+reproduction. Use bounded non-destructive evidence instead and record why the reproduction cannot
+be made safe.
 
-## Phase 2 — rank falsifiable hypotheses
+## 2 — Rank falsifiable hypotheses
 
 List candidate causes, each stated so a single observation could **disprove** it. Test the cheapest
 distinguishing observation first. Follow the evidence at each layer; don't pattern-match to a past
@@ -33,22 +35,20 @@ fix.
 prior incident, then run one distinguishing query (DB / log / API) that **disproves** the old root
 cause before you accept it. "Plausible because it matches last time" is exactly the trap.
 
-## Repair authorization boundary
+## 3 — Append the Diagnosis Receipt
 
-When invoked from a QA Bug Case, Phases 1–2 are diagnosis-only. Append the red repro, tested
-hypotheses, and root-cause receipt to the same BUG-ID, then stop without changing product code or
-adding a regression test. Enter Phase 3 only when the downstream repair workflow explicitly
-authorizes implementation for that Bug Case.
+Use `diagnosis-receipt-template.md` and append one outcome to the same stable BUG-ID:
 
-## Phase 3 — fix at the root, once
+- `diagnosed` — evidence identifies a falsifiable root cause and a safe repair seam;
+- `inconclusive` — safe observations exist, but the evidence does not distinguish the remaining
+  hypotheses; or
+- `reproduction-blocked` — a safe observation cannot currently be obtained.
 
-Fix where all callers route through, not the one path the report named — a report names a symptom;
-grep the callers of the function you're about to touch. Add a **regression test at the seam** that
-fails before the fix and passes after, so the bug can't return silently.
+`inconclusive` and `reproduction-blocked` are resumable outcomes, not guesses or closure. Record the
+missing evidence and exact resume condition. Do not force a diagnosis.
 
-## Loopback
+## Handoff
 
-When `bug-workflow` routes a classified `product-defect` here, append the red repro, tested
-hypotheses, and root cause to the existing stable BUG-ID. Do not create a replacement defect. If
-implementation work needs a delivery ticket, create a linked ticket via `tickets` so the fix flows
-through the normal dev path with its RD-owned regression test.
+Only a `diagnosed` receipt may enter `implement` through `HS-DEFECT-PACKET/v1`. The root/controller
+then owns the RD repair and deployment handoff; `testing-workflow` retains fixed-artifact QA
+verification. Append every receipt to the Bug Case; never create a second defect.

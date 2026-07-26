@@ -26,8 +26,28 @@
 The RD coverage summary helps QA avoid duplicate testing. QA does not audit the TDD cycle and does
 not execute RD unit or API-contract tests.
 
+## Product-defect fixed-artifact addendum
+
+Complete this section only when returning a repaired Bug Case to QA:
+
+- **Stable BUG-ID:** <existing product-defect BUG-ID>
+- **Fix attempt:** <append-only number>
+- **Original failed artifact:** <source SHA + artifact/environment revision + evidence>
+- **Diagnosis Receipt:** <diagnosed receipt link>
+- **Implement defect receipt:** <RD repair receipt link>
+- **Exact new full source SHA:** <40-character fixed SHA>
+- **Exact new deployed artifact/environment revision:** <immutable fixed artifact + QA environment>
+- **New deployment receipt:** <provenance receipt that binds the new artifact to the new SHA>
+- **Affected SC-IDs:** <original observation / journeys to rerun>
+- **RD verification summary:** <unit/API-contract/TDD/review evidence; informational only>
+- **Neighbouring regression scope:** <proportionate approved QA scope>
+
 ## Validation
 
 Mark the handoff `Not ready` when a required value is missing, a placeholder, or mismatched; when
 the provenance receipt does not bind the full source SHA to the deployed artifact; or when the
-configured QA environment cannot be reached safely.
+configured QA environment cannot be reached safely. For a fixed-artifact addendum, also require the
+new artifact to differ from the original failed artifact. Every receipt must name the same stable
+BUG-ID. The defect packet, implement receipt, deployment receipt, addendum, and QA verification
+attempt must name the same fix attempt; the Diagnosis Receipt retains its own diagnosis-attempt
+number.
