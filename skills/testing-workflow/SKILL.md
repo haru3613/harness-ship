@@ -94,8 +94,11 @@ Then:
   gate, **must not count as PASS**, and makes the verdict **Not ready**.
 - A non-P0 flaky check may be quarantined only with a linked QA-maintenance ticket; its current
   result remains FLAKY or NOT TESTED rather than PASS.
-- **CI layering**: P0 journeys run on **every PR**; the full suite runs **nightly / pre-release**.
-  E2E is too slow to run whole on every push.
+- **QA layering**: P0 journeys run against **every valid handoff's QA candidate artifact**. The QA
+  full suite runs for a pre-release candidate and may run as scheduled regression only while a
+  current valid handoff still binds its source, artifact, environment, and provenance receipt. A
+  **PR smoke gate**, when needed before handoff, is an **RD-owned** command and must not invoke a QA
+  command. Never run QA P0/full-suite commands against an unhanded-off PR artifact.
 
 ## Stage 4 — Anti-fake-green gate
 

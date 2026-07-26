@@ -158,7 +158,9 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
             self.assertIn(field, attempt_header)
 
     def test_retry_green_is_flaky_and_p0_cannot_be_quarantined_to_pass(self) -> None:
-        workflow = " ".join(read("skills/testing-workflow/SKILL.md").lower().split())
+        workflow_raw = read("skills/testing-workflow/SKILL.md")
+        workflow = " ".join(workflow_raw.lower().split())
+        stage3 = section(workflow_raw, "## Stage 3", "## Stage 4")
 
         for marker in (
             "retry-green",
@@ -171,6 +173,10 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
         ):
             self.assertIn(marker, workflow)
         self.assertRegex(workflow, r"retry-green.{0,100}flaky")
+        self.assertIn("every valid handoff's qa candidate artifact", stage3)
+        self.assertIn("pr smoke gate", stage3)
+        self.assertIn("rd-owned", stage3)
+        self.assertNotRegex(stage3, r"p0.{0,50}every pr")
 
     def test_acceptance_report_keeps_plain_verdict_and_ledger_evidence(self) -> None:
         report = read("skills/testing-workflow/acceptance-report-template.md")
@@ -193,10 +199,12 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
         ):
             self.assertIn(marker, normalized)
         report_rows = [line for line in report.splitlines() if line.startswith("| ")]
-        result_cells = [row.split("|")[9].strip() for row in report_rows[2:]]
+        result_cells = [row.split("|")[9].strip() for row in report_rows[1:]]
         for result in result_cells:
             self.assertRegex(result, r"^(✅ PASS|⚠️ FLAKY|❌ (FAIL|NOT TESTED))$")
         self.assertNotIn("CAVEAT", result_cells)
+        self.assertNotIn("⚠️ Accept with caveats", report)
+        self.assertNotIn("(⚠️)", report)
 
     def test_setup_config_is_versioned_and_separates_rd_from_qa(self) -> None:
         setup = read("skills/setup/SKILL.md")

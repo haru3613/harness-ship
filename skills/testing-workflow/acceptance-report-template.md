@@ -18,7 +18,7 @@
 
 > One line, first — so the reader knows the answer before the detail.
 
-**<✅ Ready to accept  |  ⚠️ Accept with caveats  |  ❌ Not ready>** — <why, in one sentence>
+**<✅ Ready to accept  |  🟡 Accept with caveats  |  ❌ Not ready>** — <why, in one sentence>
 
 ---
 
@@ -39,9 +39,10 @@ acceptance disposition separate so the Result remains exactly derived from the l
 
 ## What failed / caveats
 
-> For each ⚠️ / ❌: what the **user** would experience, not the stack trace.
+> For each Caveat, ⚠️ FLAKY, or ❌ result: what the **user** would experience, not the stack trace.
 
-- **#3 (⚠️):** <plain-language caveat> → follow-up ticket <ID?>
+- **#2 (FLAKY):** <plain-language retry instability> → QA-maintenance ticket <ID>
+- **#3 (Caveat):** <plain-language caveat> → follow-up ticket <ID?>
 - **#4 (❌):** <what breaks for the user> → **blocking**, ticket <ID>
 
 ## Coverage — what was and wasn't tested
@@ -57,7 +58,7 @@ acceptance disposition separate so the Result remains exactly derived from the l
 ## Sign-off
 
 - [ ] Only the user accepts the ✅ journeys as done.
-- [ ] Caveats (⚠️) are acknowledged and ticketed.
+- [ ] Caveats are acknowledged and ticketed.
 - [ ] Blocking failures (❌) return to dev-workflow before release.
 
 Accepted by (user): __________   Date: __________
