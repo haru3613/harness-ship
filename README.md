@@ -22,7 +22,7 @@ external plugin dependencies — everything needed is in this repo.
 | `clarify` | bounded requirement clarification — only load-bearing questions, defaults become assumptions |
 | `spike` | time-boxed throwaway prototype that returns a feasible / not / needs-more verdict |
 | `spec` | synthesize the conversation into a spec/PRD with explicit AC at the highest test seam |
-| `acceptance-design` | approved spec → versioned, traceable Given/When/Then acceptance contract |
+| `acceptance-design` | current stable spec → versioned, traceable Given/When/Then acceptance contract |
 | `tickets` | break an approved spec + acceptance contract into vertical-slice tracer-bullet tickets |
 | `tdd` | implement one ticket through evidence-backed RED → GREEN behaviour slices at approved seams |
 | `review` | dual-axis code review (Standards × Spec) with an optional data-mutation safety gate |

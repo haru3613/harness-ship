@@ -49,6 +49,21 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         self.assertRegex(text, r"do not (begin|start|run) qa execution")
         self.assertIn("do not implement", text)
 
+    def test_acceptance_design_uses_the_joint_acceptance_gate(self) -> None:
+        skill = " ".join(read("skills/acceptance-design/SKILL.md").lower().split())
+        dev = " ".join(read("skills/dev-workflow/SKILL.md").lower().split())
+        readme = " ".join(read("README.md").lower().split())
+        codex = json.loads(read(".codex-plugin/plugin.json"))
+
+        self.assertIn("current stable spec", skill)
+        self.assertIn("do not require a separate spec-approval gate", skill)
+        self.assertIn("approve the spec criteria and scenario set together", skill)
+        self.assertIn("spec criteria and scenarios describe the right behaviour", dev)
+        self.assertIn("current stable spec", readme)
+        self.assertTrue(
+            any("current spec" in prompt.lower() for prompt in codex["interface"]["defaultPrompt"])
+        )
+
     def test_dev_workflow_invokes_acceptance_design_at_the_acceptance_gate(self) -> None:
         text = read("skills/dev-workflow/SKILL.md")
         stage = text.split("## Stage 3 — Acceptance contract", maxsplit=1)[1].split(

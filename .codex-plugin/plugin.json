@@ -38,7 +38,7 @@
     "defaultPrompt": [
       "Set up harness-ship for this repository.",
       "Run the development workflow for this feature.",
-      "Design the versioned acceptance contract for this approved spec.",
+      "Design the versioned acceptance contract for this current spec.",
       "Implement this approved ticket with the configured agent role profiles.",
       "Implement this ticket test-first with an evidence-backed red-green loop.",
       "Run the testing workflow for the current change."
