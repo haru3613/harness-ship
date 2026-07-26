@@ -29,6 +29,16 @@ jobs:
           .claude-plugin/marketplace.json
           .agents/plugins/marketplace.json
 
+      - name: Validate plugin fresh-install and upgrade lifecycle
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          CURRENT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if printf '%s' "$BASE_SHA" | grep -Eq '^0+$'; then
+            BASE_SHA="${CURRENT_SHA}^"
+          fi
+          bash scripts/validate_plugin_lifecycle.sh "$BASE_SHA" "$CURRENT_SHA"
+
       - name: Check changed-line whitespace
         env:
           EVENT_NAME: ${{ github.event_name }}

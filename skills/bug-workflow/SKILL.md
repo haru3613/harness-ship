@@ -34,8 +34,8 @@ Keep these independent fields:
 
 Choose exactly one classification and append the evidence for that choice:
 
-- `product-defect` → RD diagnosis through `diagnose`; append its red repro and root-cause evidence
-  to the same BUG-ID.
+- `product-defect` → RD diagnosis through `diagnose`; append its Diagnosis Receipt to the same
+  BUG-ID.
 - `test-defect` → QA maintenance; preserve the product observation and repair the QA asset.
 - `environment-defect` → configured environment owner; include the failing environment receipt.
 - `spec-ambiguity` → `acceptance-design`; approve a new contract revision before any behaviour
@@ -57,5 +57,21 @@ unavailable, emit the filled **portable Bug Case** from `bug-case-template.md`, 
 **publication did not occur**, and preserve the next safe action. Do not invent a tracker ID,
 publication receipt, or successful handoff.
 
-This workflow ends after classification and routing. Product repair and QA execution against a
-fixed artifact belong to the downstream repair/retest workflow.
+For every non-product classification, this workflow ends after classification and routing.
+
+## 4 — Product-defect repair and verification
+
+For a `product-defect`, preserve role ownership while the root/controller advances these four
+receipts in order:
+
+1. `diagnose` appends a **Diagnosis Receipt**. Continue only when its status is `diagnosed`;
+   `inconclusive` and `reproduction-blocked` remain resumable.
+2. `implement` consumes `HS-DEFECT-PACKET/v1`, performs the RD-owned repair, and appends an
+   **implement defect receipt**.
+3. The configured controller publishes the exact fixed artifact and appends a **new deployment
+   receipt**.
+4. `testing-workflow` validates that handoff and appends a QA-owned **QA verification attempt**.
+
+Every fix and retest attempt stays append-only under the same stable BUG-ID. Do not overwrite the
+original failed artifact, its evidence, or any earlier receipt. Only the final QA step may set
+`verified`; release promotion and production rollout remain outside this workflow.

@@ -34,6 +34,30 @@ Children **must not spawn** more agents. They start without MCP/plugins unless a
 has deliberately created a task-specific profile; never pass credentials or direct personal data
 through a child prompt.
 
+## Defect repair entry contract
+
+In addition to an approved delivery ticket, `implement` accepts a **versioned defect packet**
+`HS-DEFECT-PACKET/v1` from `bug-workflow`. Use
+`defect-repair-receipt-template.md`. The packet must contain:
+
+- one stable BUG-ID classified `product-defect`;
+- the approved contract revision and `SC-ID → AC-ID → originating ticket`;
+- the original failed-artifact evidence;
+- a `diagnose` Diagnosis Receipt whose status is `diagnosed`; and
+- the next append-only repair attempt number.
+
+An `inconclusive` or `reproduction-blocked` diagnosis stops before a worktree or code change.
+For an accepted defect packet, **RD owns root-cause repair**, RD unit and RD API-contract regression
+coverage, TDD, and review. Root/controller ownership of worktrees, PRs, CI, deployment, recovery,
+and tracker mutations is unchanged.
+
+After the fixed code is merged and RD verification passes, append the **implement defect receipt**.
+After the configured controller deploys that exact source, append the **new deployment receipt** to
+the same BUG-ID and repair attempt. The QA return handoff must name the exact new full source SHA,
+exact new deployed artifact/environment revision, affected SC-IDs, and RD verification summary.
+`implement` must not set `verified`; only `testing-workflow` may append the QA verification attempt
+and disposition.
+
 ## Role-profile gate
 
 Dispatch only to a **pre-defined role profile** that exists in the host runtime and is mapped under
@@ -287,6 +311,10 @@ verification jobs and automatic non-QA branch-required checks may proceed.
    until an external receipt supplies this evidence;
 9. update the tracker with PR/merge/deployment evidence and the awaiting-QA state—do not close
    acceptance early.
+
+For `HS-DEFECT-PACKET/v1`, also complete the implement defect receipt, new deployment receipt, and
+product-defect addendum in `testing-workflow/qa-handoff-template.md`. Preserve the original failed
+artifact and every prior repair attempt under the same BUG-ID.
 
 ## Stop and recovery
 

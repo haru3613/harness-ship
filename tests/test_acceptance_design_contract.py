@@ -261,7 +261,7 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         readme = read("README.md")
 
         self.assertRegex(readme, r"(?m)^\| `acceptance-design` \|")
-        self.assertIn("eight self-contained blocks", readme)
+        self.assertIn("nine self-contained blocks", readme)
 
         versions = set()
         for manifest in (
@@ -281,7 +281,7 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         )
 
         marketplace = json.loads(read(".claude-plugin/marketplace.json"))["plugins"][0]
-        self.assertIn("eight self-contained blocks", marketplace["description"])
+        self.assertIn("nine self-contained blocks", marketplace["description"])
         self.assertIn("acceptance-design", marketplace["keywords"])
 
 
