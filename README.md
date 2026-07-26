@@ -1,7 +1,7 @@
 # harness-ship
 
-**Idea → shipped, humans on the ends.** A self-contained development + testing workflow for
-Codex and Claude Code. You pilot five judgment gates; AI runs everything between them.
+**Idea → shipped, humans on the ends.** A development + testing workflow for Codex and Claude
+Code. You pilot five judgment gates; AI runs the bounded work between them.
 
 > The core belief: assume the user has stated ~10% of what a feature needs. The AI's job is to
 > surface the other 90% — not by interrogating, but by answering it with stated assumptions and
@@ -10,8 +10,9 @@ Codex and Claude Code. You pilot five judgment gates; AI runs everything between
 
 ## What's inside
 
-One bootstrap skill, three orchestration skills, plus nine self-contained blocks they drive. No
-external plugin dependencies — everything needed is in this repo.
+One bootstrap skill and three orchestration skills, plus nine self-contained blocks, make 13
+bundled skills. Harness Ship has no third-party skill-pack dependency, but it relies on the
+selected host, its tools, and validated role profiles for execution.
 
 | Skill | Role |
 |---|---|
@@ -39,18 +40,43 @@ external plugin dependencies — everything needed is in this repo.
 
 Never sail past a gate autonomously. Between gates, don't stall for permission.
 
+## Project status
+
+Harness Ship is usable from Git today, but this repository is still private while its public-release
+gates are reviewed. The source, plugin lifecycle, and contract suite are maintained; public
+visibility, history privacy, and GitHub security settings are separate maintainer decisions.
+
+See [Releases](https://github.com/haru3613/harness-ship/releases) for version-specific changes.
+The plugin manifests are the version source of truth.
+
+## Prerequisites
+
+- Git.
+- Codex or Claude Code with plugin marketplace commands available.
+- Access to this repository while it remains private. Public clones will not require GitHub
+  authentication after visibility changes.
+- A target repository where Harness Ship may write its generated project configuration.
+
+Check the host capability before installing:
+
+```sh
+codex plugin --help
+# or
+claude plugin --help
+```
+
 ## Install
 
-This repository is currently private. Collaborators must authenticate GitHub HTTPS access before
-either plugin manager can clone it:
+While this repository is private, collaborators must authenticate GitHub HTTPS access before either
+plugin manager can clone it:
 
 ```sh
 gh auth login       # skip when `gh auth status` is already green
 gh auth setup-git
 ```
 
-If the repository becomes public, this authentication step is no longer required. Users without
-access to the private repository cannot install the plugin, even when a GitHub Release exists.
+After the repository becomes public, skip this authentication step. Until then, a GitHub Release
+does not grant repository access.
 
 ### Codex
 
@@ -71,6 +97,9 @@ Update an existing install:
 codex plugin marketplace upgrade harness-ship
 codex plugin add harness-ship@harness-ship
 ```
+
+The marketplace upgrade refreshes the Git source; the second command activates that refreshed
+plugin version.
 
 Start a new Codex session after installing or upgrading so Codex loads the refreshed skills. Invoke
 `$harness-ship:setup` once per project.
@@ -107,6 +136,8 @@ claude plugin marketplace update harness-ship
 claude plugin update harness-ship@harness-ship
 ```
 
+The marketplace update refreshes the catalog; the plugin update installs the refreshed plugin.
+
 Restart Claude Code after installing or upgrading, then run `/setup` once per project.
 
 Install supplies the verifier capability as the scoped Claude plugin agent
@@ -134,6 +165,18 @@ Codex uses `$harness-ship:acceptance-design` and `$harness-ship:testing-workflow
 known values, separates RD unit/API-contract commands from QA integration/P0/full-suite commands,
 and records the QA environment, artifact provenance, and evidence location. Unknown QA capability
 stays `not-configured` or uses explicit manual steps; it never implies PASS.
+
+## First use
+
+1. Install or update the plugin, then start a new host session.
+2. Open the target repository and run `$harness-ship:setup` in Codex or
+   `/harness-ship:setup` in Claude Code.
+3. Review the generated `## harness-ship` block in that project's `AGENTS.md` or `CLAUDE.md`.
+4. Describe the feature or invoke `dev-workflow`; approve the feasibility, UI (when applicable),
+   acceptance-contract, and ticket-granularity gates.
+5. Let `implement` deliver one claimed ticket through RD evidence and a QA handoff.
+6. Run `testing-workflow` against the approved current stable spec and exact handed-off artifact,
+   then make the final acceptance decision.
 
 `setup` detects your stack, issue tracker, branch topology and test commands, asks only the few
 forks it can't infer, and writes a `## harness-ship` config block into your `AGENTS.md` (or
@@ -177,7 +220,29 @@ themselves. Re-run `setup` any time the stack, tracker, branches, or host agent 
 - **Two things are original to this pack** because nothing off-the-shelf did them: an explicit
   feasibility *verdict*, and a plain-language *acceptance report* for non-technical sign-off.
 
+## Boundaries and limitations
+
+- Harness Ship ships source-only plugin content. It does not run a hosted service or deployment
+  environment.
+- It orchestrates the host's existing tools and permissions; installing it does not create a
+  security boundary or grant new credentials.
+- Codex installation supplies skills only and requires a validated live independent-verifier
+  profile. Claude Code installs the scoped verifier agent described above.
+- Missing test, QA, deployment, or artifact capabilities remain `not-configured`; the workflows do
+  not convert missing evidence into PASS.
+- Setup writes only the target project's Harness Ship configuration block. This repository's local
+  maintainer `AGENTS.md` is not a consumer template.
+
+## Contributing, support, and security
+
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) before proposing a change.
+- Use [GitHub Issues](https://github.com/haru3613/harness-ship/issues) for reproducible bugs,
+  questions, and focused feature proposals.
+- Follow [SECURITY.md](SECURITY.md) for vulnerabilities. Do not include vulnerability details in a
+  public issue.
+- Attribution and source provenance are recorded in [NOTICE](NOTICE).
+
 ## License
 
-MIT. See `LICENSE`. Some blocks reimplement, in original wording, ideas popularized by other
-open-source skill authors — see `NOTICE`.
+MIT. See [LICENSE](LICENSE). Some blocks reimplement, in original wording, ideas popularized by
+other open-source skill authors; see [NOTICE](NOTICE).
