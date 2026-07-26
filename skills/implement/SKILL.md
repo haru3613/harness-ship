@@ -197,11 +197,19 @@ acceptance-contract gate. Standards-only refactoring keeps tests green; it does 
 ### Pre-merge P0 QA automation
 
 After the RD TDD slices, root records a named **QA automation owner** for every approved P0
-integration/E2E profile. Unless the approved contract carries a still-valid manual exception, that
-owner implements the approved automation in its named integration or journey harness and runs it
-against the implementation PR's committed **exact HEAD before merge**. This automation is not
-owned by `tdd`; use the compatible configured write role for implementation and preserve the
-approved QA seam, layer, fixtures, required evidence, and risk probes unchanged.
+integration/E2E profile in the ticket/receipt before PR creation. Unless the approved contract
+carries a still-valid manual exception, treat each profile as a **bounded QA automation write
+slice** under the existing dispatch and durable-checkpoint protocol: reserve it before dispatch
+with allowed harness files and exact expected HEAD; dispatch the compatible configured write role;
+then root inspects the diff and execution evidence, rejects scope or contract drift, runs the
+focused harness check, makes a clean checkpoint commit, and records the result in the receipt.
+Children never commit.
+
+After that checkpoint commit, root runs the approved automation in its named integration or journey
+harness against the implementation PR's committed **exact HEAD before merge**. This automation is
+not owned by `tdd`; preserve the approved QA seam, layer, fixtures, required evidence, and risk
+probes unchanged. When the PR opens, attach the recorded QA automation owner, profile, and exact-HEAD
+evidence to it.
 
 A manual exception may skip this pre-merge automation only after root verifies its recorded user
 approval, that the follow-up ticket exists and is open, its named owner, and its unexpired deadline.
@@ -247,10 +255,14 @@ Root alone:
    infrastructure failures only within the configured bound, then stop with evidence;
 5. proceed only when required review and CI are green on the new **exact head SHA**—stale green
    checks do not count. Required CI includes every approved P0 integration/E2E automation profile;
-   rerun it after every new commit or rebase unless the validated manual exception applies;
+   rerun it after every new commit or rebase unless the validated manual exception applies. Before
+   every exception-based skip in this remote loop, re-read the current user approval, live
+   follow-up-ticket open state, named owner, and deadline; prior validation is not reusable;
 6. after a fresh fencing check and pre-mutation checkpoint, merge only under the configured branch
-   policy. Never autonomously merge a protected release branch or auto-merge a single-branch
-   repository. Checkpoint the observed merge SHA immediately;
+   policy. Immediately before merge, revalidate those same manual-exception fields when an
+   exception is being used. Any missing, closed, or expired state stops and returns to
+   `acceptance-design` through `dev-workflow` Stage 3. Never autonomously merge a protected release
+   branch or auto-merge a single-branch repository. Checkpoint the observed merge SHA immediately;
 7. run the idempotent **post-merge reconciliation** path: revalidate fencing, update the tracker to
    development-complete/awaiting-deployment, verify no process/session uses the clean merged feature
    worktree, then perform worktree **cleanup** immediately and checkpoint

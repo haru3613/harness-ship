@@ -105,10 +105,11 @@ deployment evidence for the configured non-production environment before QA hand
 implementation receipt so an interrupted ticket resumes from evidence rather than conversation.
 
 For every approved P0 integration/E2E automation profile that has no approved manual exception,
-`implement` assigns a **QA automation owner** on the implementation PR. That owner implements the
-approved P0 integration/E2E automation through the profile's named harness and runs it against the
-implementation PR's exact head before merge. This is pre-merge QA automation work, not `tdd` work;
-`tdd` remains responsible for RD's unit and contract coverage.
+`implement` records a **QA automation owner** in the ticket/receipt before PR creation. That owner
+implements the approved P0 integration/E2E automation through the profile's named harness and runs
+it against the implementation PR's exact head before merge; when the PR opens, `implement` attaches
+the ownership and evidence to it. This is pre-merge QA automation work, not `tdd` work; `tdd`
+remains responsible for RD's unit and contract coverage.
 
 No extra human gate is added here. Observable behaviour changes return to Stage 3; missing or
 drifted required role profiles, invalid baselines/REDs, unavailable independent verification, and

@@ -142,11 +142,27 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         self.assertIn("approved p0 integration/e2e automation", dev)
         self.assertIn("qa automation owner", implement)
         self.assertIn("approved p0 integration/e2e", implement)
+        self.assertIn("bounded qa automation write slice", implement)
+        self.assertIn("root inspects", implement)
+        self.assertIn("checkpoint commit", implement)
+        self.assertIn("ticket/receipt before pr creation", implement)
+        self.assertIn("attach", implement)
         self.assertIn("exact head", implement)
         self.assertIn("before merge", implement)
         self.assertIn("independently execute", testing)
         self.assertIn("exact handed-off artifact", testing)
         self.assertIn("unit and contract tests only", tdd)
+
+    def test_manual_p0_exception_is_revalidated_at_every_remote_skip(self) -> None:
+        implement = " ".join(read("skills/implement/SKILL.md").lower().split())
+
+        self.assertIn("before every exception-based skip", implement)
+        self.assertIn("immediately before merge", implement)
+        self.assertIn("user approval", implement)
+        self.assertIn("ticket", implement)
+        self.assertIn("owner", implement)
+        self.assertIn("deadline", implement)
+        self.assertIn("stage 3", implement)
 
     def test_manual_p0_exception_is_validated_and_reported(self) -> None:
         testing = " ".join(read("skills/testing-workflow/SKILL.md").lower().split())
