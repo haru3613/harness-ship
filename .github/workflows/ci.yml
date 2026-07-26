@@ -21,6 +21,21 @@ jobs:
       - name: Run skill contract tests
         run: python3 -m unittest discover -s tests -v
 
+      - name: Validate change declaration
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CURRENT_SHA: ${{ github.event.pull_request.head.sha }}
+        run: >-
+          python3 scripts/check_release_contract.py
+          pr "$BASE_SHA" "$CURRENT_SHA"
+
+      - name: Validate merged version state
+        if: github.event_name == 'push'
+        run: >-
+          python3 scripts/check_release_contract.py
+          version-state check --ref "$GITHUB_SHA"
+
       - name: Validate plugin manifests
         run: >-
           jq empty

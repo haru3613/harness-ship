@@ -36,20 +36,6 @@ records those scenarios NOT TESTED rather than inferring PASS.
 Keep the pyramid shape: **many unit, some integration, few E2E.** An E2E-heavy suite is slow and
 flaky — reach for E2E only where a journey crosses the whole stack.
 
----
-
-## v0.6 compatibility redirect
-
-For one minor release, v0.6, redirect either legacy entry state to **`acceptance-design`**:
-
-- a pre-implementation `testing-workflow` call; or
-- a call where implementation already exists but there is no approved acceptance contract.
-
-Use the original or current stable spec and never infer expected behaviour from code. Stop when
-`acceptance-design` reaches its approval gate. Do not begin QA execution, route tests, or continue
-to Stage 2. This redirect expires after one minor release; new workflow guidance should call
-`acceptance-design` directly.
-
 ## Stage 2 — Route approved scenarios by ownership
 
 Resume here only after the dev→QA handoff uses `qa-handoff-template.md`. Validate its handoff

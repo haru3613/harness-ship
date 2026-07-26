@@ -62,6 +62,9 @@ validate_current_install() {
   local install_root="$1"
   validate_generic_install "${install_root}" >/dev/null
 
+  python3 "${repo_root}/scripts/check_release_contract.py" \
+    version-state check --repo "${install_root}" --ref WORKTREE >/dev/null
+
   local required
   for required in \
     "agents/harness-ship-independent-verifier.md" \
@@ -82,6 +85,10 @@ validate_current_install() {
   python3 "${install_root}/scripts/role_binding_contract.py" self-test >/dev/null
 
   if command -v claude >/dev/null 2>&1; then
+    (
+      cd "${install_root}"
+      claude plugin validate --strict .
+    )
     local claude_inventory
     claude_inventory="$(
       cd "${install_root}"
@@ -99,7 +106,7 @@ base_version="$(manifest_version "${upgrade_dir}")"
 current_version="$(manifest_version "${fresh_dir}")"
 
 python3 "${repo_root}/scripts/check_release_contract.py" \
-  --repo "${repo_root}" "${base_ref}" "${current_ref}"
+  pr --repo "${repo_root}" "${base_ref}" "${current_ref}"
 
 validate_current_install "${fresh_dir}"
 validate_generic_install "${upgrade_dir}" >/dev/null

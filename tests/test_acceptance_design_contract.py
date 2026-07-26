@@ -198,29 +198,15 @@ class AcceptanceDesignContractTests(unittest.TestCase):
 
         self.assert_compatibility_policy(version, text, docs)
 
-    def test_v07_policy_rejects_retained_alias_and_accepts_complete_removal(self) -> None:
+    def test_v07_policy_has_completed_compatibility_removal(self) -> None:
         current_workflow = read("skills/testing-workflow/SKILL.md")
         current_readme = read("README.md")
         current_upgrade = read("docs/upgrade-guide.md")
         current_docs = current_readme + "\n" + current_upgrade
 
-        with self.assertRaises(AssertionError):
-            self.assert_compatibility_policy("0.7.0", current_workflow, current_docs)
-
-        future_workflow = re.sub(
-            r"## v0\.6 compatibility redirect.*?(?=## Stage 2)",
-            "",
-            current_workflow,
-            flags=re.DOTALL,
-        )
-        future_upgrade = re.sub(
-            r"\n\*\*v0\.6\.0 migration:\*\*.*?(?=\n\n)",
-            "",
-            current_upgrade,
-            flags=re.DOTALL,
-        )
-        future_docs = current_readme + "\n" + future_upgrade
-        self.assert_compatibility_policy("0.7.0", future_workflow, future_docs)
+        self.assertNotIn("## v0.6 compatibility redirect", current_workflow)
+        self.assertNotIn("**v0.6.0 migration:**", current_docs)
+        self.assert_compatibility_policy("0.7.0", current_workflow, current_docs)
 
     def test_v07_allows_normal_direct_skill_commands(self) -> None:
         current_workflow = read("skills/testing-workflow/SKILL.md")

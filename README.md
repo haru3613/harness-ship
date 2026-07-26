@@ -8,7 +8,7 @@ exact-artifact QA, and a human release decision.
 > Harness Ship is a workflow plugin, not a test framework, autonomous controller, hosted service,
 > or security boundary. It coordinates the tools and role profiles already available in your host.
 
-Current release: **v0.6.4** · License: **MIT** · Repository status: **private pre-release review**
+Current release: **v0.7.0** · License: **MIT** · Repository status: **private pre-release review**
 
 ## Why Harness Ship
 
@@ -117,14 +117,14 @@ codex plugin add harness-ship@harness-ship
 Claude Code:
 
 ```sh
-claude plugin marketplace add haru3613/harness-ship
+claude plugin marketplace add haru3613/harness-ship@main
 claude plugin install harness-ship@harness-ship
 ```
 
 ### 3. Start a new session and configure the target repository
 
 Run `$harness-ship:setup` in Codex or `/harness-ship:setup` in Claude Code. Setup inspects the
-target repository and writes a `## harness-ship` Config v1 block into its `AGENTS.md` or
+target repository and writes a `## harness-ship` Config v2 block into its `AGENTS.md` or
 `CLAUDE.md`.
 
 Review that block before delivery work begins. Re-run setup after changing the stack, tracker,
@@ -143,9 +143,39 @@ Canonical direct commands remain available:
 
 ## Install and update details
 
-Upgrading from an earlier release? Both hosts must install the refreshed plugin, start a new
-session, and re-run setup. Follow the [upgrade guide](docs/upgrade-guide.md); every current Config
-v1 project must re-run setup once after installing v0.6.4.
+Upgrading from an earlier release? Both hosts must install the refreshed plugin, restart or reload
+the real host process, start a new session, and re-run setup. Follow the
+[upgrade guide](docs/upgrade-guide.md); every Config v1 project must review and explicitly confirm
+its generated Config v2 migration after installing v0.7.0.
+
+### Stable, next, and editable source
+
+The managed `harness-ship` channel is stable and pinned to release tag `v0.7.0`.
+`harness-ship-next` is an explicit opt-in that follows `main`. Tag immutability is enforced by the
+publication mismatch guard and channel + tag + full-SHA + version receipts; it is not assumed from
+the tag name. The marketplace catalog itself is deliberately refreshed from `main`, so a later
+stable entry such as `v0.7.1` can be discovered without replacing a frozen catalog registration.
+Both channels use that same mutable catalog but expose the same underlying plugin namespace, so
+never install or activate both in one host. Remove the current channel before switching, then
+restart or reload the host and begin a new session.
+
+Opt in to next only when you intend to test unreleased source:
+
+```sh
+# Codex: after removing/deactivating the stable channel
+codex plugin marketplace add haru3613/harness-ship --ref main
+codex plugin add harness-ship-next@harness-ship
+
+# Claude Code: after uninstalling the stable channel
+claude plugin marketplace add haru3613/harness-ship@main
+claude plugin install harness-ship-next@harness-ship
+```
+
+An editable local checkout is a development source, not a managed stable installation. Run the
+repository contract commands directly from that checkout, or use the host's temporary local
+plugin-directory facility for attended testing. Local edits do not arrive through marketplace
+upgrade, and a checkout test does not prove the tagged managed channel. Do not mutate global plugin
+state during repository contract validation.
 
 ### Codex
 
@@ -191,7 +221,7 @@ bundled skills. They share one evidence model but remain usable as focused comma
 
 | Skill | Stage | Responsibility |
 |---|---|---|
-| **`setup`** | Bootstrap | Detect the repository and write the Config v1 block every workflow reads |
+| **`setup`** | Bootstrap | Detect the repository and write the Config v2 block every workflow reads |
 | **`dev-workflow`** | Orchestrate | Move an idea through the four pre-QA human gates and into a valid QA handoff |
 | **`implement`** | Orchestrate | Route one claimed ticket through TDD, review, exact-SHA evidence, and PR/CI delivery |
 | **`testing-workflow`** | Orchestrate | Execute approved QA scenarios against the handed-off artifact and report acceptance |
@@ -218,10 +248,14 @@ bundled skills. They share one evidence model but remain usable as focused comma
 - **Deployment path** — how QA obtains an exact-source deployment or artifact receipt.
 - **Risk gates** — optional data-mutation checks and the repository UI convention.
 
-**Config v1 migration:** re-run `setup` once. It upgrades the existing block in place, preserves
-known values, separates RD unit/API-contract commands from QA integration/P0/full-suite commands,
-and records the QA environment, artifact provenance, and evidence location. Unknown capability
-stays `not-configured`; it never implies PASS.
+**Config v1 migration to v2:** re-run `setup` once. Setup first produces a proposed migration plan
+without applying it. Review the complete proposed block and exact diff, correct any unsafe or
+unknown binding, then give an exact confirmation for that proposal. Only that confirmation permits
+apply; changed input or a changed proposal requires another review and confirmation. The migration
+preserves known values, separates RD unit/API-contract commands from QA
+integration/P0/full-suite commands, and records the QA environment, artifact provenance, evidence
+location, and role-boundary provenance. Unknown capability stays `not-configured`; it never implies
+PASS.
 
 ## Host and trust boundaries
 

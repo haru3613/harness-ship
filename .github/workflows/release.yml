@@ -1,0 +1,52 @@
+name: Attended release
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_sha:
+        description: Full merged main commit SHA to publish
+        required: true
+        type: string
+      tag:
+        description: Exact stable release tag, for example v0.7.0
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - name: Check out exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.candidate_sha }}
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Reconcile intended main and tag state
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+        run: |
+          test "$(printf '%s' "$CANDIDATE_SHA" | wc -c | tr -d ' ')" = 40
+          git fetch --no-tags origin main
+          git fetch --tags origin
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          test "$(git rev-parse refs/remotes/origin/main)" = "$CANDIDATE_SHA"
+
+      - name: Validate and publish attended release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: >-
+          python3 scripts/publish_release.py
+          --candidate "$CANDIDATE_SHA"
+          --main-ref refs/remotes/origin/main
+          --tag "$RELEASE_TAG"
+          --channel stable

@@ -188,7 +188,7 @@ class RoleBootstrapContractTests(unittest.TestCase):
             for path in (".codex-plugin/plugin.json", ".claude-plugin/plugin.json")
         }
 
-        self.assertEqual(versions, {"0.6.4"})
+        self.assertEqual(versions, {"0.7.0"})
         self.assertEqual(upgrade.count("**v0.6.4 migration:**"), 2)
         self.assertEqual(upgrade.count("**v0.6.3 migration:**"), 2)
         self.assertIn("every config v1 project must run", upgrade)
@@ -204,7 +204,7 @@ class RoleBootstrapContractTests(unittest.TestCase):
             "zero mutation",
         ):
             self.assertIn(marker, upgrade)
-        self.assertIn("current release: **v0.6.4**", readme)
+        self.assertIn("current release: **v0.7.0**", readme)
         self.assertIn("codex installation supplies skills only", readme)
         self.assertIn("it does not supply an independent verifier", readme)
         self.assertIn("claude plugin agent", readme)

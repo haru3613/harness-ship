@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "id": "issue-27",
+  "classification": "minor",
+  "migration": "required",
+  "summary": "Add Config v2 migration and governed stable and next release channels.",
+  "paths": [
+    ".agents/plugins/marketplace.json",
+    ".claude-plugin/marketplace.json",
+    ".claude-plugin/plugin.json",
+    ".codex-plugin/plugin.json",
+    ".github/pull_request_template.md",
+    ".github/workflows/ci.yml",
+    ".github/workflows/release.yml",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "docs/upgrade-guide.md",
+    "release/policy.json",
+    "scripts/check_release_contract.py",
+    "scripts/publish_release.py",
+    "scripts/role_binding_contract.py",
+    "scripts/validate_plugin_lifecycle.sh",
+    "skills/dev-workflow/SKILL.md",
+    "skills/implement/SKILL.md",
+    "skills/setup/SKILL.md",
+    "skills/tdd/SKILL.md",
+    "skills/testing-workflow/SKILL.md"
+  ]
+}
