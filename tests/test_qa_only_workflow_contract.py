@@ -83,6 +83,20 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
         self.assertIn("configured qa commands", stage3)
         self.assertNotRegex(stage3, r"\b(run|execute)\b.{0,50}\b(unit|api-contract)\b")
 
+    def test_rd_workflows_never_consume_qa_commands_before_handoff(self) -> None:
+        tdd = " ".join(read("skills/tdd/SKILL.md").lower().split())
+        implement = " ".join(read("skills/implement/SKILL.md").lower().split())
+
+        for workflow in (tdd, implement):
+            self.assertIn("rd unit", workflow)
+            self.assertIn("rd api-contract", workflow)
+            self.assertRegex(
+                workflow,
+                r"(do not|never).{0,100}(run|execute|consume).{0,100}qa.{0,60}command",
+            )
+        self.assertNotIn("repository's test commands", tdd)
+        self.assertNotIn("full configured suite", implement)
+
     def test_reusable_qa_handoff_template_has_required_fields(self) -> None:
         template = " ".join(
             read("skills/testing-workflow/qa-handoff-template.md").lower().split()
@@ -175,8 +189,14 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
             "flaky",
             "evidence",
             "ledger attempt",
+            "caveat",
         ):
             self.assertIn(marker, normalized)
+        report_rows = [line for line in report.splitlines() if line.startswith("| ")]
+        result_cells = [row.split("|")[9].strip() for row in report_rows[2:]]
+        for result in result_cells:
+            self.assertRegex(result, r"^(✅ PASS|⚠️ FLAKY|❌ (FAIL|NOT TESTED))$")
+        self.assertNotIn("CAVEAT", result_cells)
 
     def test_setup_config_is_versioned_and_separates_rd_from_qa(self) -> None:
         setup = read("skills/setup/SKILL.md")
@@ -193,6 +213,7 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
             "artifact-provenance source:",
             "qa evidence location:",
             "deployment / test environment:",
+            "legacy test-command migration note:",
         ):
             self.assertIn(field, config)
         self.assertRegex(config, r"config version:\*\* `1`")
@@ -229,6 +250,7 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
             "not-configured",
             "manual: <steps",
             "never infer pass",
+            "legacy test-command migration note",
             "second run",
             "byte-for-byte unchanged",
         ):

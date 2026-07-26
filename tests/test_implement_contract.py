@@ -55,7 +55,7 @@ class ImplementSkillContractTests(unittest.TestCase):
             "red",
             "green",
             "typecheck",
-            "full configured suite",
+            "full configured **rd verification gate**",
             "review",
             "exact head sha",
             "recompute the fixed point",

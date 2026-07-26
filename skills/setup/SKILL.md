@@ -107,6 +107,7 @@ with the user. After this, every harness-ship workflow consumes it automatically
 - **QA integration command:** `<command | manual: <steps + required evidence> | not-configured>`
 - **QA P0 command:** `<command | manual: <steps + required evidence> | not-configured>`
 - **QA full-suite command:** `<command | manual: <steps + required evidence> | not-configured>`
+- **Legacy test-command migration note:** <none | prior field name + verbatim command + classification evidence>
 - **Lint / typecheck / build:** `<lint cmd>` / `<typecheck cmd>` / `<build cmd>` — write `none` only when the project is known not to have that check.
 - **QA environment:** <non-production environment + URL/access + fixtures/accounts | not-configured>
 - **Artifact-provenance source:** <provider/API/build manifest that binds full source SHA to artifact revision | not-configured>
@@ -156,14 +157,17 @@ Treat a `## harness-ship` block without `Config version` as **legacy v0**. Upgra
 `## harness-ship` block in place; never append a second block.
 
 - Preserve every known user choice and host binding. Split a legacy generic test command only when
-  current scripts/paths prove its owner and seam; otherwise preserve it in a migration note and set
-  each unknown RD/QA command to `not-configured`.
+  current scripts/paths prove its owner and seam; otherwise copy its prior field name and verbatim
+  command into **Legacy test-command migration note**, add the available classification evidence,
+  and set each unknown RD/QA command to `not-configured`. A fresh config writes `none` in this
+  field.
 - Use `manual: <steps + required evidence>` only when concrete manual steps and evidence are known.
   `not-configured`, missing CI, or a manual method never infer PASS.
 - Add the QA environment, artifact-provenance source, and QA evidence location as
   `not-configured` when they cannot be detected.
 - Set `Config version` to `1` after the complete block is written. On a **second run** with unchanged
-  repository and host inputs, the versioned block must be **byte-for-byte unchanged**.
+  repository and host inputs, the versioned block—including the Legacy test-command migration
+  note's placement and value—must be **byte-for-byte unchanged**.
 
 ## Idempotent
 

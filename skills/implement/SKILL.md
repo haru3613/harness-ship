@@ -199,7 +199,11 @@ acceptance-contract gate. Standards-only refactoring keeps tests green; it does 
 When all slices are integrated:
 
 1. require a clean working tree and inspect every commit plus `git diff <fixed-point>...HEAD`;
-2. run the **full configured suite** once, plus configured typecheck/lint/build steps (`none` skips);
+2. run the full configured **RD verification gate** once: the RD unit command, RD API-contract
+   command, and configured typecheck/lint/build steps (`none` skips). Do not run or consume any QA
+   integration, P0, or full-suite command before the dev→QA handoff. An applicable
+   `not-configured` RD command is reported as missing, never replaced with a QA command or inferred
+   PASS;
 3. dispatch the mandatory independent-verification profile against the ticket, contract, exact
    diff, and commands; it may create test artifacts but must not edit source code;
 4. run `review` with two fresh child runs from the mapped verification profile, the fixed point,
@@ -208,7 +212,8 @@ When all slices are integrated:
 
 Blocking verification/review findings return to a bounded executor or root. Behaviour fixes restart
 a RED → GREEN slice; standards-only fixes keep tests green. Commit fixes, rerun affected checks,
-the full configured gate when impact warrants it, and independent review until no blockers remain.
+the full RD verification gate when impact warrants it, and independent review until no blockers
+remain.
 
 ## Phase 4 — Publish exact evidence
 
@@ -216,7 +221,7 @@ Root alone:
 
 1. fetch the integration branch. If it advanced, rebase safely, **recompute the fixed point** from
    the new integration head, and treat the prior review/verification evidence as superseded. After
-   any rebase or conflict resolution, require a clean tree and rerun the full configured gate,
+   any rebase or conflict resolution, require a clean tree and rerun the full RD verification gate,
    independent verification, and `review` against the new `fixed-point...HEAD` before publishing;
 2. apply the fencing check and receipt write-ahead protocol, then push the feature branch and
    open/update one PR targeting the integration branch;
@@ -225,7 +230,7 @@ Root alone:
 4. run the **remote feedback loop** on the exact head SHA. Classify review change requests and CI
    failures before editing: approved-behaviour defects use a bounded RED → GREEN slice;
    **standards-only** fixes keep tests green; requested contract changes return to the acceptance
-   gate. Commit valid fixes and rerun affected plus full configured checks. Rerun the
+   gate. Commit valid fixes and rerun affected plus the full RD verification gate. Rerun the
    **independent outcome verifier** and two fresh review runs, push a new HEAD, and wait again. Retry unrelated
    infrastructure failures only within the configured bound, then stop with evidence;
 5. proceed only when required review and CI are green on the new **exact head SHA**—stale green
@@ -265,6 +270,6 @@ termination recovery relies on the checkpoint protocol above rather than an inte
 - workflow phase, PR, merge SHA, deployment state, and whether the feature worktree was disposed;
 - fixed point, branch, worktree, current HEAD, and clean/dirty state;
 - completed/current/remaining slices and assigned role profiles;
-- RED/GREEN/regression/static/full-suite commands and results;
+- RD unit/API-contract RED/GREEN/regression commands plus static-check commands and results;
 - review/CI state at the exact head SHA and any deployment/artifact receipt;
 - blocker, next safe action, and any required human judgment.
