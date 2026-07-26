@@ -13,3 +13,10 @@ repository was written independently for this pack.
 
 The TDD block was informed by Matt Pocock's MIT-licensed `tdd` skill:
 https://github.com/mattpocock/skills/tree/ed37663cc5fbef691ddfecd080dff42f7e7e350d/skills/engineering/tdd
+
+The standalone implement orchestration boundary was informed by Matt Pocock's
+MIT-licensed `implement` and `code-review` skills. harness-ship independently adds
+pre-defined role routing, root-owned integration, fixed-point review, delivery
+evidence, and recovery:
+https://github.com/mattpocock/skills/tree/ed37663cc5fbef691ddfecd080dff42f7e7e350d/skills/engineering/implement
+https://github.com/mattpocock/skills/tree/ed37663cc5fbef691ddfecd080dff42f7e7e350d/skills/engineering/code-review

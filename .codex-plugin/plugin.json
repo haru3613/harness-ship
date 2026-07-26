@@ -1,7 +1,7 @@
 {
   "name": "harness-ship",
-  "version": "0.4.0",
-  "description": "Idea → shipped, humans on the ends. A self-contained development and testing workflow with explicit human judgment gates.",
+  "version": "0.5.0",
+  "description": "Idea → shipped, humans on the ends. A root-orchestrated development and testing workflow with role-routed implementation and explicit human judgment gates.",
   "author": {
     "name": "haru3613",
     "url": "https://github.com/haru3613"
@@ -16,6 +16,8 @@
     "qa",
     "spec",
     "tickets",
+    "implement",
+    "subagents",
     "code-review",
     "tdd",
     "feasibility",
@@ -25,7 +27,7 @@
   "interface": {
     "displayName": "Harness Ship",
     "shortDescription": "Idea-to-acceptance development workflow",
-    "longDescription": "Turn an idea into an accepted change through clarification, feasibility, specification, pre-implementation acceptance scenarios, evidence-backed test-driven implementation, review, testing, and a plain-language acceptance report.",
+    "longDescription": "Turn an idea into an accepted change through clarification, feasibility, specification, pre-implementation acceptance scenarios, root-orchestrated role-routed TDD implementation, fixed-point review, exact-SHA delivery evidence, testing, and a plain-language acceptance report.",
     "developerName": "haru3613",
     "category": "Engineering",
     "capabilities": [
@@ -35,6 +37,7 @@
     "defaultPrompt": [
       "Set up harness-ship for this repository.",
       "Run the development workflow for this feature.",
+      "Implement this approved ticket with the configured agent role profiles.",
       "Implement this ticket test-first with an evidence-backed red-green loop.",
       "Run the testing workflow for the current change."
     ],

@@ -10,13 +10,14 @@ Codex and Claude Code. You pilot five judgment gates; AI runs everything between
 
 ## What's inside
 
-One bootstrap skill, two orchestration skills, plus seven self-contained blocks they drive. No
+One bootstrap skill, three orchestration skills, plus seven self-contained blocks they drive. No
 external plugin dependencies — everything needed is in this repo.
 
 | Skill | Role |
 |---|---|
 | **`setup`** | one-time: detect the project's stack/tracker/branches and write the config the workflows read |
 | **`dev-workflow`** | idea → clarify → feasibility → spec → acceptance contract → tickets → implement → QA handoff |
+| **`implement`** | root-orchestrated, role-routed ticket delivery → TDD slices → review → exact-SHA PR/CI evidence |
 | **`testing-workflow`** | scenarios before implementation → tests after handoff → gate → acceptance report |
 | `clarify` | bounded requirement clarification — only load-bearing questions, defaults become assumptions |
 | `spike` | time-boxed throwaway prototype that returns a feasible / not / needs-more verdict |
@@ -70,7 +71,11 @@ codex plugin add harness-ship@harness-ship
 ```
 
 Start a new Codex session after installing or upgrading so Codex loads the refreshed skills. Invoke
-`$harness-ship:setup` once per project; a plugin update alone does not require running setup again.
+`$harness-ship:setup` once per project.
+
+**v0.5.0 migration:** run setup once again after this upgrade so the project config records the
+host's pre-defined agent role profiles. Later plugin updates do not require setup unless the stack,
+tracker, branches, or host agent profiles change.
 
 ### Claude Code
 
@@ -88,22 +93,32 @@ claude plugin marketplace update harness-ship
 claude plugin update harness-ship@harness-ship
 ```
 
-Restart Claude Code after installing or upgrading, then run `/setup` once per project. A plugin
-update alone does not require running setup again.
+Restart Claude Code after installing or upgrading, then run `/setup` once per project.
+
+**v0.5.0 migration:** run setup once again after this upgrade so the project config records the
+host's pre-defined agent role profiles. Later plugin updates do not require setup unless the stack,
+tracker, branches, or host agent profiles change.
 
 `setup` detects your stack, issue tracker, branch topology and test commands, asks only the few
 forks it can't infer, and writes a `## harness-ship` config block into your `AGENTS.md` (or
 `CLAUDE.md`). Every workflow reads that block, so nothing runs on generic guesses.
 
-Then invoke the platform's `dev-workflow`, `tdd`, or `testing-workflow` skill — or just describe a
-feature and the skills trigger themselves. Re-run `setup` any time the stack, tracker, or branches
-change.
+Then invoke the platform's `dev-workflow`, `implement`, `tdd`, or `testing-workflow` skill — or just
+describe a feature and the skills trigger themselves. Re-run `setup` any time the stack, tracker,
+branches, or host agent profiles change.
 
 ## What `setup` configures
 
 - **Issue tracker** — where `spec`/`tickets` publish (Jira via MCP, GitHub `gh`, Linear, local files…), its access method, and any forbidden tool. Issues and PRs may live in different systems.
 - **Branch topology** — integration vs protected release branch (workflows never merge the release branch); collapses to one branch when the repo has only `main`.
-- **Test / lint / typecheck commands** — per your stack.
+- **Test / lint / typecheck / build commands** — per your stack.
+- **Agent role profiles** — maps work nature to host-defined profiles and records each profile's
+  definition source, mode/sandbox, model, effort, write scope, MCP/plugin boundary, and no-spawn
+  status. Portable requirements are shared, while Codex and Claude Code keep separate live bindings.
+  Setup never creates or overrides global agents.
+- **Ready/claim and deployment paths** — separates ticket eligibility from an atomic owner/session
+  claim, and records how QA obtains an exact-source deployment receipt for a non-production
+  environment.
 - **Data-mutation safety gate** — turns on `review`'s cron/batch-write BLOCK gate when the project
   has scheduled jobs that write the database (abort guard before the write loop, sparse-input test,
   failure alerting). Off unless detected.
@@ -113,6 +128,9 @@ change.
 
 - **Composition, not monolith.** The workflows are thin orchestration layers; each block does one
   job and is usable on its own.
+- **Root owns the control plane.** `implement` keeps planning, delegation, integration, Git/tracker
+  state, and final decisions in the main session. It delegates only bounded work to pre-defined
+  profiles selected by task nature and independently verifies their output.
 - **Evidence, not ritual.** TDD requires a RED that fails for the missing behaviour and a GREEN that
   passes at the same interface; harness or infrastructure failures do not count.
 - **Blocks were chosen after auditing quality.** Weak patterns (planning that yields a monolithic

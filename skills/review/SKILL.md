@@ -12,6 +12,23 @@ description: >-
 Review the diff on **two axes at once**, kept separate so a clean-code pass can't hide a
 built-the-wrong-thing miss, and vice versa.
 
+## Pin the review source
+
+Before reviewing, establish and report:
+
+1. the exact **fixed point** supplied by `implement`, or derive it with
+   `git merge-base HEAD <configured-integration-ref>`;
+2. the originating ticket, spec, acceptance-contract revision, and SC-ID → AC-ID mappings;
+3. the repository standards sources (`AGENTS.md` / `CLAUDE.md`, relevant ADRs and local
+   conventions);
+4. the `git log --oneline <fixed-point>..HEAD` **commit list**.
+
+Verify the fixed point resolves, the working tree is clean, and
+`git diff <fixed-point>...HEAD` is non-empty. Review this committed range—not only staged files or
+the last commit. The reviewed range is `fixed-point...HEAD`. Stop if the tree is dirty, the range is
+empty, or the originating behaviour source cannot be identified; do not silently review a partial
+change or guess the Spec axis.
+
 ## Two axes (do not rerank across them)
 
 **Standards** — is the code good?
@@ -24,6 +41,12 @@ built-the-wrong-thing miss, and vice versa.
 - Anything built that wasn't asked for (scope creep)? Anything asked for that's missing?
 
 Report each axis separately. A finding on one axis never cancels a finding on the other.
+
+The root orchestrator dispatches Standards and Spec as **two fresh child runs** of the mapped,
+pre-defined independent-verification profile. They receive the same fixed-point diff and sources,
+but do not communicate or rerank each other; the same profile may be instantiated twice. If the
+profile is missing, drifted, or cannot be live-verified, review is **blocked**—root-run analysis
+cannot be presented as independent review.
 
 ## Optional: data-mutation safety gate
 
@@ -43,3 +66,7 @@ every unit test and every visible check. Off by default; turn it on in a project
 Findings ranked most-severe first, each **CRITICAL / HIGH / LOW** with `file:line`, the concrete
 failure it causes, and a one-line fix. If nothing blocks, say so plainly — don't manufacture faults.
 Blocking findings must be fixed and re-reviewed; non-blocking may be deferred but must be listed.
+
+Include the fixed point, reviewed HEAD, commit count, originating work item/contract revision, and
+the profile/run identity for each independent axis. After any fix, require a clean committed tree
+and rerun the affected axis in a fresh child against the new HEAD.

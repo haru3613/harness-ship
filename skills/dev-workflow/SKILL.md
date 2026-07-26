@@ -90,28 +90,21 @@ acceptance criteria traced to the approved scenarios — and publish to the trac
 
 ## Stage 5 — Implement (automated middle)
 
-**First, inspect `git worktree list`.** Remove a merged worktree only when it is clean and no active
-process or session uses it; then prune stale metadata. Never move or remove an active or dirty
-worktree.
+Run **`implement`** once per frontier ticket. It is the only implementation orchestrator: the
+main/root session owns planning, role routing, integration, Git/tracker/PR state, and the final
+decision; bounded work is delegated only to the host's pre-defined role profiles recorded by
+`setup`.
 
-Then drive the frontier ticket (all blockers done). Per ticket, non-negotiable:
+`implement` pins the exact base/fixed point, creates one repository-local worktree and PR, drives
+approved behaviour slices through `tdd`, integrates clean GREEN checkpoint commits, runs
+independent verification plus fixed-point `review`, and waits for required CI on the exact head SHA
+before policy-allowed merge. It performs cleanup immediately after merge. It then captures
+deployment evidence for the configured non-production environment before QA handoff and writes a durable
+implementation receipt so an interrupted ticket resumes from evidence rather than conversation.
 
-- **one feature = one worktree = one PR**, based on the integration branch.
-- **Run `tdd`** at the spec's approved seams and against the ticket's SC-ID → AC-ID mappings. Work
-  one behaviour slice at a time: prove a valid RED, add the smallest GREEN implementation, run the
-  relevant regression suite, and attach the TDD receipt. Do not substitute a blanket coverage %.
-- **Code review = `review`** (dual-axis Standards × Spec; enable its data-mutation safety gate if the
-  project has batch/cron DB writers). Standards-only cleanup keeps tests green; a behaviour change
-  returns to a RED cycle.
-- **A pre-push gate** — typecheck / lint / test / review all green before push (skip any step the
-  config marks `none`).
-- Merge to the **integration branch**. **NEVER** merge to a protected release branch — that's a human
-  + release gate. *(When the config lists the same branch for both — a single-branch repo — the PR
-  still goes through review + CI and is never auto-merged; the human is the release gate.)*
-- **Clean up the worktree right after merge**, verifying no other session uses it.
-
-*(If you have an autonomous implement loop available — e.g. a `ship-loop` skill — this stage can
-delegate to it; otherwise drive tickets one at a time with the discipline above.)*
+No extra human gate is added here. Observable behaviour changes return to Stage 3; missing or
+drifted required role profiles, invalid baselines/REDs, unavailable independent verification, and
+protected-branch decisions stop safely under `implement`'s rules.
 
 ## Stage 6 — Hand to QA
 

@@ -9,11 +9,13 @@
     {
       "name": "harness-ship",
       "source": "./",
-      "description": "Two orchestration workflows (dev + testing) plus the self-contained blocks they need: clarify, spike, spec, tickets, TDD, review, diagnose. Humans pilot five judgment gates; AI runs the middle.",
+      "description": "Three orchestration workflows (dev, implement, and testing) plus the self-contained blocks they need. The root session routes bounded work to pre-defined role profiles while humans pilot five judgment gates.",
       "category": "engineering",
       "keywords": [
         "workflow",
         "dev-workflow",
+        "implement",
+        "subagents",
         "testing",
         "qa",
         "spec",
