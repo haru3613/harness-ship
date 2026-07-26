@@ -55,20 +55,20 @@ PLUGIN_AGENT = (
     / "harness-ship-independent-verifier.md"
 ).resolve()
 HIGH_OR_HIGHER = {"high", "xhigh", "max", "ultra"}
-UNSAFE_CAPABILITY_PARTS = {
-    "agent",
-    "bash",
-    "delete",
-    "edit",
-    "exec",
-    "mcp",
-    "network",
-    "shell",
-    "skill",
-    "spawn",
-    "web",
-    "write",
+HOST_BOUNDARIES = {
+    "claude-code": {
+        "mode_sandbox": "read-only tools",
+        "write_scope": "none",
+        "effective_tools_capabilities": ["Glob", "Grep", "Read"],
+    },
+    "codex": {
+        "mode_sandbox": "read-only",
+        "write_scope": "no source edits",
+        "effective_tools_capabilities": ["Glob", "Grep", "Read"],
+    },
 }
+CODEX_DEFAULT_PROFILE_ID = "Codex/verifier"
+CODEX_DEFAULT_DEFINITION_SOURCE = "host-registry://codex/verifier"
 GOLDEN_PROFILE = {
     "host": "codex",
     "profile_id": "Codex/驗證器",
@@ -314,24 +314,18 @@ def _materialize_candidate(candidate: Mapping[str, Any]) -> Dict[str, Any]:
 
 def _safe_materialized_candidate(candidate: Mapping[str, Any], host: str) -> bool:
     binding = candidate["binding"]
+    boundary = HOST_BOUNDARIES[host]
     if binding["host"] != host:
         return False
     if (
         binding["may_spawn"]
         or not binding["fresh_context"]
         or binding["mcp_plugins"]
-        or "read-only" not in binding["mode_sandbox"].lower()
-        or binding["write_scope"].lower() not in {"none", "no source edits"}
+        or binding["mode_sandbox"] != boundary["mode_sandbox"]
+        or binding["write_scope"] != boundary["write_scope"]
         or binding["effort"].lower() not in HIGH_OR_HIGHER
-    ):
-        return False
-    capabilities = binding["effective_tools_capabilities"]
-    if not capabilities:
-        return False
-    if any(
-        unsafe in capability.lower()
-        for capability in capabilities
-        for unsafe in UNSAFE_CAPABILITY_PARTS
+        or binding["effective_tools_capabilities"]
+        != boundary["effective_tools_capabilities"]
     ):
         return False
     if host == "claude-code":
@@ -340,11 +334,21 @@ def _safe_materialized_candidate(candidate: Mapping[str, Any], host: str) -> boo
             and candidate["source_kind"] == "file"
             and binding["definition_source"] == str(PLUGIN_AGENT)
             and candidate["source"] == str(PLUGIN_AGENT)
-            and capabilities == ["Glob", "Grep", "Read"]
         )
     return (
         candidate["source_kind"] == "host-record"
-        and binding["definition_source"].startswith("host-registry://codex/")
+        and binding["profile_id"] == CODEX_DEFAULT_PROFILE_ID
+        and binding["definition_source"] == CODEX_DEFAULT_DEFINITION_SOURCE
+    )
+
+
+def _is_default_candidate(candidate: Mapping[str, Any], host: str) -> bool:
+    binding = candidate["binding"]
+    if host == "claude-code":
+        return binding["profile_id"] == CLAUDE_PROFILE_ID
+    return (
+        binding["profile_id"] == CODEX_DEFAULT_PROFILE_ID
+        and binding["definition_source"] == CODEX_DEFAULT_DEFINITION_SOURCE
     )
 
 
@@ -361,28 +365,45 @@ def resolve_document(document: Mapping[str, Any]) -> Dict[str, Any]:
 
     result_bindings = deepcopy(bindings)
     result_global = deepcopy(document["global_settings"])
-    valid = []
+    safe_candidates = []
     for candidate in document["candidates"]:
         try:
             materialized = _materialize_candidate(candidate)
         except (ContractError, OSError, UnicodeError):
             continue
         if _safe_materialized_candidate(materialized, host):
-            valid.append(materialized)
+            safe_candidates.append(materialized)
     explicit = bindings[host]
-    if isinstance(explicit, dict):
+    binding_absent = explicit is None or explicit == "not-configured"
+    if not binding_absent:
         matching = [
             candidate
-            for candidate in valid
+            for candidate in safe_candidates
             if candidate["binding"] == explicit
         ]
-        if len(matching) == 1:
+        if matching:
             return {
                 "status": "preserved",
                 "mutation": False,
                 "bindings": result_bindings,
                 "global_settings": result_global,
             }
+        return {
+            "status": "stale-invalid",
+            "mutation": False,
+            "bindings": result_bindings,
+            "global_settings": result_global,
+            "actionable": (
+                f"The existing {host} verifier binding is stale, invalid, or "
+                "not matched by authoritative live metadata. Reconcile it explicitly "
+                "before setup may select a replacement."
+            ),
+        }
+    valid = [
+        candidate
+        for candidate in safe_candidates
+        if _is_default_candidate(candidate, host)
+    ]
     if len(valid) == 1:
         result_bindings[host] = deepcopy(valid[0]["binding"])
         return {

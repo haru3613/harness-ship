@@ -82,10 +82,7 @@ class RoleBindingRuntimeTests(unittest.TestCase):
     def test_ambiguous_and_missing_candidates_fail_without_mutation(self) -> None:
         document = self.document("codex.json")
         second_raw = fixture("codex.json")["candidates"][0]
-        second_raw["profile"]["profile_id"] = "Codex/alternate-verifier"
-        second_raw["profile"]["definition_source"] = (
-            "host-registry://codex/alternate-verifier"
-        )
+        second_raw["profile"]["model"] = "alternate-host-assigned-model"
         second_raw["source"] = canonical_record(second_raw["profile"])
         document["candidates"].append(second_raw)
         original = deepcopy(document)
@@ -102,6 +99,94 @@ class RoleBindingRuntimeTests(unittest.TestCase):
         self.assertFalse(missing["mutation"])
         self.assertIn("actionable", missing)
         self.assertEqual(missing["bindings"], original["bindings"])
+
+    def test_codex_modes_and_capabilities_use_positive_allowlists(self) -> None:
+        for mode in ("not read-only", "read-only writable", "writable read-only"):
+            document = self.document("codex.json")
+            document["candidates"][0]["profile"]["mode_sandbox"] = mode
+            document["candidates"][0]["source"] = canonical_record(
+                document["candidates"][0]["profile"]
+            )
+            with self.subTest(mode=mode):
+                self.assertEqual(
+                    self.contract.resolve_document(document)["status"], "missing"
+                )
+
+        for capability in ("ApplyPatch", "apply_patch", "InspectAnything"):
+            document = self.document("codex.json")
+            capabilities = document["candidates"][0]["profile"][
+                "effective_tools_capabilities"
+            ]
+            capabilities.append(capability)
+            capabilities.sort()
+            document["candidates"][0]["source"] = canonical_record(
+                document["candidates"][0]["profile"]
+            )
+            with self.subTest(capability=capability):
+                persisted = self.contract.build_candidate(
+                    **document["candidates"][0]
+                )["binding"]
+                packet = {
+                    "persisted": persisted,
+                    "live": deepcopy(document["candidates"][0]),
+                    "launch_plan": deepcopy(document["candidates"][0]),
+                }
+                self.assertEqual(
+                    (
+                        self.contract.resolve_document(document)["status"],
+                        self.contract.preflight_document(packet)["status"],
+                    ),
+                    ("missing", "fail"),
+                )
+
+    def test_arbitrary_codex_identity_is_never_selected_or_preserved(self) -> None:
+        document = self.document("codex.json")
+        candidate = document["candidates"][0]
+        candidate["profile"]["profile_id"] = "Codex/arbitrary-purpose"
+        candidate["profile"]["definition_source"] = (
+            "host-registry://codex/arbitrary-purpose"
+        )
+        candidate["source"] = canonical_record(candidate["profile"])
+
+        self.assertEqual(
+            self.contract.resolve_document(document)["status"], "missing"
+        )
+
+        materialized = self.contract.build_candidate(**candidate)
+        document["bindings"]["codex"] = deepcopy(materialized["binding"])
+        stale = self.contract.resolve_document(document)
+        self.assertEqual(stale["status"], "stale-invalid")
+        self.assertFalse(stale["mutation"])
+
+    def test_invalid_existing_binding_is_actionable_and_never_replaced(self) -> None:
+        for name, host, other_host in (
+            ("claude.json", "claude-code", "codex"),
+            ("codex.json", "codex", "claude-code"),
+        ):
+            document = self.document(name)
+            document["bindings"][host] = {"stale": "unverifiable"}
+            original = deepcopy(document)
+
+            result = self.contract.resolve_document(document)
+
+            self.assertEqual(result["status"], "stale-invalid")
+            self.assertFalse(result["mutation"])
+            self.assertIn("actionable", result)
+            self.assertEqual(result["bindings"], original["bindings"])
+            self.assertEqual(
+                result["bindings"][other_host], original["bindings"][other_host]
+            )
+            self.assertEqual(result["global_settings"], original["global_settings"])
+
+    def test_null_and_not_configured_can_select_one_valid_default(self) -> None:
+        for name, host in (("claude.json", "claude-code"), ("codex.json", "codex")):
+            for absent in (None, "not-configured"):
+                document = self.document(name)
+                document["bindings"][host] = absent
+                result = self.contract.resolve_document(document)
+                with self.subTest(name=name, absent=absent):
+                    self.assertEqual(result["status"], "selected")
+                    self.assertTrue(result["mutation"])
 
     def test_same_name_wrong_claude_provenance_is_rejected(self) -> None:
         document = self.document("claude.json")
@@ -192,28 +277,40 @@ class RoleBindingRuntimeTests(unittest.TestCase):
             self.assertEqual(self.contract.preflight_document(packet)["status"], "pass")
             self.assertEqual(source_reader.call_count, 2)
 
-    def test_preflight_and_post_launch_require_persisted_live_loaded_match(self) -> None:
-        candidate = self.candidate("codex.json")
-        packet = {
-            "persisted": candidate["binding"],
-            "live": deepcopy(candidate),
-            "launch_plan": deepcopy(candidate),
-        }
-        self.assertEqual(self.contract.preflight_document(packet)["status"], "pass")
-        self.assertEqual(
-            self.contract.reconcile_post_launch(
-                candidate["binding"], deepcopy(candidate), deepcopy(candidate)
-            )["status"],
-            "pass",
-        )
+    def test_preflight_and_post_launch_require_both_hosts_to_match(self) -> None:
+        for name in ("claude.json", "codex.json"):
+            candidate = self.candidate(name)
+            packet = {
+                "persisted": candidate["binding"],
+                "live": deepcopy(candidate),
+                "launch_plan": deepcopy(candidate),
+            }
+            with self.subTest(name=name, state="match"):
+                self.assertEqual(
+                    self.contract.preflight_document(packet)["status"], "pass"
+                )
+                self.assertEqual(
+                    self.contract.reconcile_post_launch(
+                        candidate["binding"],
+                        deepcopy(candidate),
+                        deepcopy(candidate),
+                    )["status"],
+                    "pass",
+                )
 
-        drift = deepcopy(packet)
-        drift["live"]["binding"]["model"] = "drifted-model"
-        self.assertEqual(self.contract.preflight_document(drift)["status"], "fail")
+            drift = deepcopy(packet)
+            drift["live"]["binding"]["model"] = "drifted-model"
+            with self.subTest(name=name, state="drift"):
+                self.assertEqual(
+                    self.contract.preflight_document(drift)["status"], "fail"
+                )
 
-        missing = deepcopy(packet)
-        missing["launch_plan"] = None
-        self.assertEqual(self.contract.preflight_document(missing)["status"], "fail")
+            missing = deepcopy(packet)
+            missing["launch_plan"] = None
+            with self.subTest(name=name, state="missing"):
+                self.assertEqual(
+                    self.contract.preflight_document(missing)["status"], "fail"
+                )
 
     def test_multilingual_boundary_digest_matches_hardcoded_golden(self) -> None:
         golden = fixture("multilingual_golden.json")

@@ -91,7 +91,9 @@ Pass the helper exactly one current-host resolver document assembled from live r
 Preserve an explicit valid project binding only when the helper returns `preserved`. Apply a
 `selected` result only to the current host section. An `ambiguous` result presents the helper's one
 load-bearing candidate choice; a `missing` result presents its actionable missing-profile result.
-Both stop with zero mutation. Claude Code's eligible default is the exact scoped plugin ID
+Both stop with zero mutation. A `stale-invalid` result reports that the existing non-null binding
+does not exactly match an authoritative live candidate and also stops with zero mutation; never
+replace it with a discovered default. Claude Code's eligible default is the exact scoped plugin ID
 `harness-ship:harness-ship-independent-verifier` at canonical plugin provenance. Codex candidates
 must be authoritative live host profiles; do not hard-code a universal model family.
 
