@@ -95,6 +95,8 @@ do not execute: append raw `NOT RUN` → `NOT TESTED` with preflight evidence.
 - **CI workflow dispatch or job rerun:** run the preflight immediately, then dispatch or rerun only
   the positively classified QA job.
 - **Retry execution:** rerun the preflight immediately, then retry the same handoff-bound QA action.
+- **Scheduled regression execution:** after the timer launches, run the preflight as the **first
+  in-job gate**, then execute only the still-current, positively classified, handoff-bound QA job.
 
 Before each scenario, revalidate that the ledger's source SHA, exact artifact/environment revision,
 and artifact provenance receipt still match the handoff, and that the configured **QA evidence

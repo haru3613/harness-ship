@@ -324,6 +324,7 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
             "initial direct or manual execution",
             "ci workflow dispatch or job rerun",
             "retry execution",
+            "scheduled regression execution",
             "`not run` → `not tested`",
             "ownership drift",
         ):
@@ -335,13 +336,22 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
             "**ci workflow dispatch or job rerun:**", maxsplit=1
         )[1].split("**retry execution:**", maxsplit=1)[0]
         retry_execution = stage3.split("**retry execution:**", maxsplit=1)[1].split(
-            "then:", maxsplit=1
+            "**scheduled regression execution:**", maxsplit=1
         )[0]
-        for execution_path in (initial_execution, ci_execution, retry_execution):
+        scheduled_execution = stage3.split(
+            "**scheduled regression execution:**", maxsplit=1
+        )[1].split("before each scenario", maxsplit=1)[0]
+        for execution_path in (
+            initial_execution,
+            ci_execution,
+            retry_execution,
+            scheduled_execution,
+        ):
             self.assertLess(
                 execution_path.index("preflight"),
                 execution_path.index("then"),
             )
+        self.assertIn("first in-job gate", scheduled_execution)
 
     def test_anti_fake_green_rejection_is_appended_to_the_ledger(self) -> None:
         workflow = read("skills/testing-workflow/SKILL.md")
