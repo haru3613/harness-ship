@@ -197,7 +197,8 @@ class ImplementSkillContractTests(unittest.TestCase):
     def test_readme_and_manifests_advertise_the_current_minor_version(self) -> None:
         readme = read("README.md")
         self.assertRegex(readme, r"(?m)^\| \*\*`implement`\*\* \|")
-        self.assertIn("Test / lint / typecheck / build", readme)
+        self.assertIn("Versioned RD/QA commands", readme)
+        self.assertIn("Lint / typecheck / build", read("skills/setup/SKILL.md"))
 
         versions = set()
         for manifest in (

@@ -249,7 +249,7 @@ class AcceptanceDesignContractTests(unittest.TestCase):
 
         for heading in (
             "## Stage 2 — Route approved scenarios by ownership",
-            "## Stage 3 — Execute E2E",
+            "## Stage 3 — Execute QA scope",
             "## Stage 4 — Anti-fake-green gate",
             "## Stage 5 — Acceptance report",
             "## Stage 6 — Bug loopback",

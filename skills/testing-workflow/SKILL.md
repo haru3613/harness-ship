@@ -15,8 +15,9 @@ the bugs unit tests structurally can't. This workflow executes the **approved ac
 after the dev→QA handoff and produces a report the user can actually read and accept. Scenario
 ownership belongs to `acceptance-design`; this workflow must not author or redesign those scenarios.
 
-**Prerequisite:** read the project's `## harness-ship` config (test env, test/lint commands, tracker)
-in `AGENTS.md` / `CLAUDE.md`; run `setup` if it is absent.
+**Prerequisite:** read the project's versioned `## harness-ship` config (QA commands, QA
+environment, artifact-provenance source, evidence location, and tracker) in `AGENTS.md` /
+`CLAUDE.md`; run `setup` if it is absent or still uses the legacy unversioned format.
 
 ## Ownership + pyramid (settle first — prevents duplication)
 
@@ -46,30 +47,60 @@ to Stage 2. This redirect expires after one minor release; new workflow guidance
 
 ## Stage 2 — Route approved scenarios by ownership
 
-Resume here only after the dev→QA handoff. Confirm the handoff names the approved scenario set and
-the exact source commit and deployed artifact/environment revision under test; do not redesign
+Resume here only after the dev→QA handoff uses `qa-handoff-template.md`. Validate its handoff
+status, approved contract revision and SC-ID → AC-ID scope, **full 40-character source SHA**,
+**deployed artifact/environment revision**, **artifact-provenance source** and receipt,
+**fixtures/accounts**, **known risks**, access path, and **RD coverage summary**. Do not redesign
 scenarios to match what was built.
 
-- **RD tier** (may already be covered — check the handoff's "what unit+contract tests cover"): unit +
-  contract tests. Test the contract against the API schema; don't re-test at E2E what a contract test
-  already pins.
-- **QA tier**: integration + E2E → Stage 3.
+Any required field that is missing, still a placeholder, or mismatched makes the handoff **Not
+ready**. Do not start Stage 3. In particular, the provenance receipt must bind the exact deployed
+artifact to the full source SHA.
 
-## Stage 3 — Execute E2E
+- **RD coverage summary is informational only:** use it to **avoid duplicate testing**. QA does not
+  audit the TDD cycle and does not execute unit or API-contract tests. Missing or red RD
+  prerequisites return to RD; QA does not repair or rerun them.
+- **QA tier:** execute only the approved integration + E2E/user-journey and risk-selected checks in
+  Stage 3.
 
-Route by surface, using whatever runner fits the stack (web UI → a browser-automation runner such as
-Playwright; native app → the platform's integration-test harness). Then:
+## Stage 3 — Execute QA scope
+
+This stage is **QA execution only**. Use the configured QA commands and append every attempt to
+`execution-ledger-template.md`. The approved QA scope is limited to:
+
+- integration checks at real module/service boundaries;
+- E2E / user journeys through the approved surface; and
+- risk-selected manual, exploratory, or non-functional checks named by the approved assurance
+  profile or handoff risks.
+
+Route by surface and layer using the configured QA command (web UI → browser automation; native app
+→ its journey/integration harness; service seam → the configured integration runner). A QA
+capability is either an executable command, an explicit `manual: <steps + required evidence>`
+method, or `not-configured`. A `not-configured` capability cannot run: record **NOT TESTED** and make
+the result **Not ready**; never infer PASS from an unknown capability.
+
+Before each scenario, revalidate that the ledger's source SHA, exact artifact/environment revision,
+and artifact provenance receipt still match the handoff. Record the SC-ID, AC-ID, QA layer/risk
+probe, method/command or manual steps, result, and durable evidence for every attempt, including
+PASS.
+
+Then:
 
 - **Run against a test environment**, never production. Seed test data on staging/local only —
   **never write fake/seed data into a production database.**
-- **Flaky → quarantine** (skip + a linked issue), never delete; add a retry policy so one flaky test
-  can't red the whole run. Fix quarantined tests as their own tickets.
+- A bounded retry appends its complete **attempt history**. A failure followed by a green retry is
+  **retry-green** and must be reported as **FLAKY**, never rewritten as PASS.
+- A **P0** journey that is flaky, skipped, or quarantined **cannot be quarantined** to clear the
+  gate, **must not count as PASS**, and makes the verdict **Not ready**.
+- A non-P0 flaky check may be quarantined only with a linked QA-maintenance ticket; its current
+  result remains FLAKY or NOT TESTED rather than PASS.
 - **CI layering**: P0 journeys run on **every PR**; the full suite runs **nightly / pre-release**.
   E2E is too slow to run whole on every push.
 
 ## Stage 4 — Anti-fake-green gate
 
-Before trusting any green, audit the suite for tests that *look* like coverage but assert nothing:
+Before trusting any green, audit the executed QA checks in the ledger—not RD's unit/API-contract
+suite—for tests that *look* like coverage but assert nothing:
 
 - **> 50% static assertions** (status-200 / element-exists / title-only, no operation or flow) → reject.
 - **> 30% weak assertions** (no real assert, tautological, recomputes the expected value) → reject.
@@ -81,12 +112,14 @@ A green suite that fails this gate is worse than none — it manufactures false 
 ## Stage 5 — Acceptance report
 
 Produce a **plain-language report the user signs off on**, using `acceptance-report-template.md` in
-this folder. It must:
+this folder and deriving every result from the append-only execution ledger. It must:
 
 - List each **user journey** with ✅ / ⚠️ / ❌, in the user's words (not test-function names).
 - Name the acceptance-contract revision and map every result through **SC-ID → AC-ID → ticket** —
   "done" = the thing they asked for works, not "some tests passed".
-- For failures, link the **evidence** (screenshot / video / trace) and say what the user would see.
+- For every result, link the ledger attempt, exact artifact, method/steps, and **evidence**
+  (screenshot / video / trace / assertion); for failures, also say what the user would see.
+- Preserve retry-green as **FLAKY** and enforce the P0 Not-ready rule.
 - State coverage **honestly** — what's automated, what was checked manually, what was NOT tested.
 - End with a one-line **verdict**: ready to accept / accept-with-caveats / not ready + why.
 

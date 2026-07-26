@@ -112,6 +112,11 @@ Canonical direct commands are not compatibility aliases and remain after the v0.
 Codex uses `$harness-ship:acceptance-design` and `$harness-ship:testing-workflow`; Claude Code uses
 `/harness-ship:acceptance-design` and `/harness-ship:testing-workflow`.
 
+**Config v1 migration:** re-run `setup` once. It upgrades the existing block in place, preserves
+known values, separates RD unit/API-contract commands from QA integration/P0/full-suite commands,
+and records the QA environment, artifact provenance, and evidence location. Unknown QA capability
+stays `not-configured` or uses explicit manual steps; it never implies PASS.
+
 `setup` detects your stack, issue tracker, branch topology and test commands, asks only the few
 forks it can't infer, and writes a `## harness-ship` config block into your `AGENTS.md` (or
 `CLAUDE.md`). Every workflow reads that block, so nothing runs on generic guesses.
@@ -124,7 +129,10 @@ Then invoke the platform's `dev-workflow`, `acceptance-design`, `implement`, `td
 
 - **Issue tracker** — where `spec`/`tickets` publish (Jira via MCP, GitHub `gh`, Linear, local files…), its access method, and any forbidden tool. Issues and PRs may live in different systems.
 - **Branch topology** — integration vs protected release branch (workflows never merge the release branch); collapses to one branch when the repo has only `main`.
-- **Test / lint / typecheck / build commands** — per your stack.
+- **Versioned RD/QA commands** — separate RD unit/API-contract from QA
+  integration/P0/full-suite commands; unknown capabilities remain `not-configured`.
+- **QA evidence boundary** — the non-production QA environment, artifact provenance source, and
+  durable evidence location used by handoffs, execution ledgers, and acceptance reports.
 - **Agent role profiles** — maps work nature to host-defined profiles and records each profile's
   definition source, mode/sandbox, model, effort, write scope, MCP/plugin boundary, and no-spawn
   status. Portable requirements are shared, while Codex and Claude Code keep separate live bindings.

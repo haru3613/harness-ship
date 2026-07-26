@@ -27,6 +27,10 @@ the load-bearing forks** (don't interrogate).
   - `pubspec.yaml` → `flutter analyze` / `flutter test`.
   - `go.mod` → `go vet ./...` / `go test ./...`.
   - `Makefile` lint/test/check targets → prefer them if they exist.
+  - Classify commands by owner and seam only when scripts, paths, or framework configuration prove
+    the distinction: RD unit, RD API-contract, QA integration, QA P0, and QA full-suite. Unknown
+    capability is `not-configured`; an explicit manual QA path is
+    `manual: <steps + required evidence>`. Never infer PASS from a command's absence.
 - **Issue tracker** — infer the system AND its access method; they are separate questions:
   - a Jira/Atlassian MCP or `[A-Z]+-\d+` keys in commit messages → Jira via that MCP;
   - a Linear MCP/config → Linear;
@@ -92,17 +96,26 @@ with the user. After this, every harness-ship workflow consumes it automatically
 
 ## harness-ship
 
+- **Config version:** `1`
 - **Issue tracker:** <system + access method, e.g. `Jira project CB via Atlassian MCP` | `GitHub issues via gh` | `Linear MCP` | `local .scratch/ files`>
 - **Code review / PR host:** <e.g. `GitHub via MCP` | `GitHub via gh` | `GitLab MR`> — may differ from the issue tracker.
 - **Forbidden tools:** <e.g. `gh` CLI (policy) | none> — workflows must avoid these even when installed.
 - **Integration branch:** <e.g. `staging`> — feature PRs target this; never push to it directly. If the repo has only one branch, this equals the release branch below.
 - **Protected release branch:** <e.g. `main`> — human + release gate only; workflows never merge here.
-- **Test / lint / typecheck / build:** `<test cmd>` / `<lint cmd>` / `<typecheck cmd>` / `<build cmd>` — write `none` for any the project lacks; workflows skip a `none` step instead of flagging it missing.
+- **RD unit command:** `<command | not-configured>`
+- **RD API-contract command:** `<command | not-configured>`
+- **QA integration command:** `<command | manual: <steps + required evidence> | not-configured>`
+- **QA P0 command:** `<command | manual: <steps + required evidence> | not-configured>`
+- **QA full-suite command:** `<command | manual: <steps + required evidence> | not-configured>`
+- **Lint / typecheck / build:** `<lint cmd>` / `<typecheck cmd>` / `<build cmd>` — write `none` only when the project is known not to have that check.
+- **QA environment:** <non-production environment + URL/access + fixtures/accounts | not-configured>
+- **Artifact-provenance source:** <provider/API/build manifest that binds full source SHA to artifact revision | not-configured>
+- **QA evidence location:** <durable artifact store/path accessible from the tracker | not-configured>
 - **Ready criteria:** <label / status / sprint that makes a ticket eligible, e.g. `ready-for-agent`>
 - **Claim transition:** <atomic assignment + claimed/in-progress state with root/session identity, fencing generation, and initial recovery receipt | single-root/manual claim policy>
 - **Claim recovery:** <lease + heartbeat interval; ownership/fencing checks before mutations; write-ahead checkpoints; live-state reconciliation; same-owner resume; receipt validation; expired-claim takeover; release policy>
 - **Remote CI infrastructure retry:** <attempt limit + backoff | none> — applies only to unrelated infrastructure failures, never code/test failures.
-- **Deployment / test environment:** <environment + deploy/status access + exact source-SHA/artifact revision surface + URL/fixtures | manual/none>
+- **Deployment / test environment:** <artifact producer + deploy/status path; its receipt must agree with the QA environment and artifact-provenance source above | manual/none>
 - **Agent orchestration:** root session owns planning, delegation, integration, external state, and final decision; children may not spawn.
 - **Agent role requirements:** portable policy; host bindings below must satisfy it.
 
@@ -137,8 +150,24 @@ with the user. After this, every harness-ship workflow consumes it automatically
 
 </config-template>
 
+## Legacy configuration migration
+
+Treat a `## harness-ship` block without `Config version` as **legacy v0**. Upgrade exactly one
+`## harness-ship` block in place; never append a second block.
+
+- Preserve every known user choice and host binding. Split a legacy generic test command only when
+  current scripts/paths prove its owner and seam; otherwise preserve it in a migration note and set
+  each unknown RD/QA command to `not-configured`.
+- Use `manual: <steps + required evidence>` only when concrete manual steps and evidence are known.
+  `not-configured`, missing CI, or a manual method never infer PASS.
+- Add the QA environment, artifact-provenance source, and QA evidence location as
+  `not-configured` when they cannot be detected.
+- Set `Config version` to `1` after the complete block is written. On a **second run** with unchanged
+  repository and host inputs, the versioned block must be **byte-for-byte unchanged**.
+
 ## Idempotent
 
 Re-running `setup` re-detects and updates the existing `## harness-ship` block rather than
-duplicating it. Safe to run again after the stack, tracker, branch topology, deployment path, or
-host role definitions change.
+duplicating it. It changes a versioned field only when newly observed evidence or an explicit user
+choice changes the value. Safe to run again after the stack, tracker, branch topology, deployment
+path, QA capability, or host role definitions change.

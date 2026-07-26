@@ -109,16 +109,15 @@ protected-branch decisions stop safely under `implement`'s rules.
 
 ## Stage 6 — Hand to QA
 
-Write a **QA handoff** onto the PR/ticket (not a scratch file, not a "resume the work" note — QA
-needs to know what to *verify*):
+Write a **QA handoff** onto the PR/ticket using
+`testing-workflow/qa-handoff-template.md` (not a scratch file, not a "resume the work" note). It
+must name the approved contract and SC-ID → AC-ID scope, **full 40-character source SHA**, deployed
+artifact/environment revision, artifact-provenance source and receipt, access path,
+fixtures/accounts, and known risks.
 
-- **What changed** (user-facing behaviour, per ticket).
-- **The acceptance-contract revision**, approved scenario IDs, and each criterion to verify.
-- **The exact source commit and deployed artifact/environment revision** under test.
-- **How to reach it**: test URL / environment + fixtures/accounts + seed data.
-- **Known risks / edge cases** worth probing.
-- **The TDD receipt and what unit + contract tests cover** — so QA focuses on integration +
-  journeys, no duplication.
+Include an **RD coverage summary** of unit and API-contract coverage plus honest exclusions. It is
+informational: QA uses it to avoid duplication; QA does not audit the TDD cycle or execute RD tests.
+Mark an incomplete or mismatched handoff Not ready.
 
 Then resume **`testing-workflow` at Stage 2**; do not redesign the approved scenarios from the
 implementation. Its acceptance report is gate 5 — the user signs off. Bugs loop back as new tickets
