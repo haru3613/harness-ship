@@ -39,9 +39,9 @@
 > Include one row for every manual P0 exception. Use `none` only when the approved contract has no
 > manual P0 exception.
 
-| Scenario | Exception approval | Exception ticket | Approved QA automation owner | Live ticket assignee | Owner match | Exception expiry | Exception execution method | Exception required evidence | Exception produced evidence | Exception evaluation |
-|---|---|---|---|---|---|---|---|---|---|---|
-| <SC-001 / none> | <user approval record> | <open ticket link> | <approved name> | <current assignee> | <match / mismatch> | <deadline> | <exact-candidate method> | <required artifact/trace> | <produced artifact/trace> | <valid / incomplete / closed / expired / owner mismatch> |
+| Scenario | Exception approval | Exception ticket | Approved QA automation owner | Live ticket assignee | Owner match | Exception expiry | Exception execution method | Exception required evidence | Exception produced evidence | Exception validated at | Exception evaluation |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| <SC-001 / none> | <user approval record> | <open ticket link> | <approved name> | <current assignee> | <match / mismatch> | <deadline> | <exact-candidate method> | <required artifact/trace> | <produced artifact/trace> | <timestamp> | <valid / incomplete / closed / expired / owner mismatch> |
 
 ## What failed / caveats
 

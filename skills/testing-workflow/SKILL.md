@@ -78,16 +78,21 @@ Route by the approved QA assurance profile:
   such as Playwright; native app → the platform's journey/integration-test harness).
 
 Do not escalate an integration profile to E2E or replace an E2E journey with a narrower integration
-check. Then:
+check. Resolve the prerequisite and exact-artifact run through one branch:
 
-- **Independently execute the exact handed-off artifact.** Pre-merge automation evidence on the
-  implementation PR is a prerequisite, not a substitute for QA rerunning the approved profile
-  against the exact source and artifact/environment revision named in the handoff.
-- Before running a manual P0 exception, freshly validate its **current explicit user approval**,
-  that the **follow-up ticket exists and is open**, its **named owner**, its **unexpired deadline**,
-  the **exact-candidate execution method**, and the **required evidence**; verify the **live
-  follow-up-ticket assignee equals the approved QA automation owner**. Any invalid field or **owner
-  mismatch** is **Not ready** and returns through `dev-workflow` Stage 3.
+- **Without a manual exception:** require exact-PR-HEAD automation evidence for the approved
+  profile, then independently execute it against the **exact handed-off artifact**. PR evidence is
+  a prerequisite, not a substitute for this QA run.
+- **With an approved manual exception:** require a **fresh six-field-and-owner-match exception
+  receipt**. Revalidate its **current explicit user approval**, that the **follow-up ticket exists
+  and is open**, its **named owner**, its **unexpired deadline**, the **exact-candidate execution
+  method**, the **required evidence**, and that the **live follow-up-ticket assignee equals the
+  approved QA automation owner**. Any invalid field or **owner mismatch** is **Not ready** and
+  returns through `dev-workflow` Stage 3. If valid, execute the **manual exact-candidate method**
+  against the **exact handed-off artifact** and attach the produced evidence.
+
+Then:
+
 - **Run against a test environment**, never production. Seed test data on staging/local only —
   **never write fake/seed data into a production database.**
 - **Flaky quarantine is non-P0 only** (skip + a linked issue), never delete; add a retry policy so
@@ -112,6 +117,14 @@ Before trusting any green, audit the suite for tests that *look* like coverage b
 A green suite that fails this gate is worse than none — it manufactures false confidence.
 
 ## Stage 5 — Acceptance report
+
+Immediately before generating the report and verdict for any manual P0 exception, revalidate its
+**current explicit user approval**, that the **follow-up ticket exists and is open**, its
+**unexpired deadline**, the **exact-candidate execution method**, the **required evidence**, and
+that the **live follow-up-ticket assignee equals the approved QA automation owner**. Record the
+validation timestamp, observed assignee, and owner-match result. Any invalid field or **owner
+mismatch** makes the result **Not ready** and returns through `dev-workflow` Stage 3; a prior
+Stage 2/3 validation is not reusable.
 
 Produce a **plain-language report the user signs off on**, using `acceptance-report-template.md` in
 this folder. It must:

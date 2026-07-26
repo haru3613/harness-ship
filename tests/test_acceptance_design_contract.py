@@ -285,8 +285,51 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             "approved qa automation owner",
             "live ticket assignee",
             "owner match",
+            "exception validated at",
         ):
             self.assertIn(field, report)
+
+    def test_qa_prerequisites_branch_for_automated_and_excepted_p0(self) -> None:
+        testing = read("skills/testing-workflow/SKILL.md").lower()
+        stage3 = " ".join(
+            testing.split("## stage 3", maxsplit=1)[1]
+            .split("## stage 4", maxsplit=1)[0]
+            .split()
+        )
+
+        self.assertIn("without a manual exception", stage3)
+        self.assertIn("exact-pr-head automation evidence", stage3)
+        self.assertIn("with an approved manual exception", stage3)
+        self.assertIn("fresh six-field-and-owner-match exception receipt", stage3)
+        self.assertIn("exact handed-off artifact", stage3)
+        self.assertIn("manual exact-candidate method", stage3)
+        self.assertNotIn(
+            "pre-merge automation evidence on the implementation pr is a prerequisite",
+            stage3,
+        )
+
+    def test_qa_revalidates_exception_immediately_before_stage5_verdict(self) -> None:
+        testing = read("skills/testing-workflow/SKILL.md").lower()
+        stage5 = " ".join(
+            testing.split("## stage 5", maxsplit=1)[1]
+            .split("## stage 6", maxsplit=1)[0]
+            .split()
+        )
+        fields = (
+            "current explicit user approval",
+            "follow-up ticket exists and is open",
+            "unexpired deadline",
+            "exact-candidate execution method",
+            "required evidence",
+            "live follow-up-ticket assignee equals the approved qa automation owner",
+        )
+
+        self.assertIn("immediately before generating the report and verdict", stage5)
+        for field in fields:
+            self.assertIn(field, stage5)
+        self.assertIn("owner mismatch", stage5)
+        self.assertIn("not ready", stage5)
+        self.assertIn("validation timestamp", stage5)
 
     def test_qa_only_checks_rd_receipts_instead_of_running_rd_tests(self) -> None:
         testing = read("skills/testing-workflow/SKILL.md").lower()
@@ -390,6 +433,8 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             "produced evidence",
             "manual-exception six fields",
             "last validation time",
+            "observed live ticket assignee",
+            "owner-match result",
         ):
             self.assertIn(field, recovery)
 
@@ -413,6 +458,60 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         for field in fields:
             self.assertIn(field, remote)
         self.assertLess(remote.index("checkpointed proof"), remote.index("infrastructure retry"))
+
+    def test_premerge_rechecks_target_and_binds_both_heads(self) -> None:
+        implement = read("skills/implement/SKILL.md").lower()
+        publish = " ".join(
+            implement.split("## phase 4", maxsplit=1)[1]
+            .split("## stop and recovery", maxsplit=1)[0]
+            .split()
+        )
+        premerge = " ".join(
+            publish.split("6. ", maxsplit=1)[1].split("7. ", maxsplit=1)[0].split()
+        )
+
+        for marker in (
+            "fetch the target branch",
+            "exact pr head",
+            "expected target head",
+            "if either differs",
+            "return to phase 4 step 1",
+            "checkpoint the merge intent",
+            "cas/ref-lease",
+            "human merge receipt",
+            "observed merge derives from that exact pair",
+        ):
+            self.assertIn(marker, premerge)
+        self.assertLess(
+            premerge.index("fetch the target branch"),
+            premerge.index("checkpoint the merge intent"),
+        )
+        self.assertLess(
+            premerge.index("checkpoint the merge intent"),
+            premerge.index("merge only"),
+        )
+
+    def test_initial_prepush_revalidates_live_exception_state(self) -> None:
+        implement = read("skills/implement/SKILL.md").lower()
+        publish = " ".join(
+            implement.split("## phase 4", maxsplit=1)[1]
+            .split("## stop and recovery", maxsplit=1)[0]
+            .split()
+        )
+        phase4_source = implement.split("## phase 4", maxsplit=1)[1].split(
+            "## stop and recovery", maxsplit=1
+        )[0]
+        initial_push = " ".join(
+            phase4_source.split("\n2. ", maxsplit=1)[1]
+            .split("\n3. attach", maxsplit=1)[0]
+            .split()
+        )
+
+        self.assertIn("freshly re-read live exception state", initial_push)
+        self.assertIn("six fields", initial_push)
+        self.assertIn("live assignee", initial_push)
+        self.assertIn("owner match", initial_push)
+        self.assertIn("before push", initial_push)
 
     def test_tdd_seam_corrections_cannot_mutate_the_acceptance_contract(self) -> None:
         text = " ".join(read("skills/tdd/SKILL.md").lower().split())

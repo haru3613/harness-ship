@@ -261,9 +261,11 @@ Root alone:
    independent verification, and `review` against the new `fixed-point...HEAD` before publishing.
    Every rebase or conflict-resolution commit invalidates the prior P0 receipt: repeat Phase 3
    step 3 at the new exact HEAD and checkpoint its replacement evidence;
-2. before push, confirm the P0 receipt's HEAD matches the current HEAD and every exception validation
-   is current; otherwise repeat Phase 3 step 3. Then apply the fencing check and receipt write-ahead
-   protocol, push the feature branch, and open/update one PR targeting the integration branch;
+2. before push, confirm the P0 receipt's HEAD matches the current HEAD. For an exception, **freshly
+   re-read live exception state**—all **six fields**, the **live assignee**, and the **owner match**—
+   and checkpoint the observed values and time; a mismatch returns to Stage 3. Otherwise repeat
+   Phase 3 step 3. Then apply the fencing check and receipt write-ahead protocol, push the feature
+   branch, and open/update one PR targeting the integration branch;
 3. attach the contract revision, SC-ID → AC-ID trace, TDD receipts, fixed point, commit list, and
    verification results;
 4. run the **remote feedback loop** on the exact head SHA. Classify review change requests and CI
@@ -288,14 +290,22 @@ Root alone:
    **required evidence**; also verify the **live follow-up-ticket assignee equals the approved QA
    automation owner**. Any owner mismatch returns to `acceptance-design` through `dev-workflow`
    Stage 3; prior validation is not reusable;
-6. after a fresh fencing check and pre-mutation checkpoint, merge only under the configured branch
-   policy. Immediately before merge, re-read and verify all approved exception fields when an
-   exception is being used: **current explicit user approval**, that the **follow-up ticket exists
-   and is open**, its **named owner**, its **unexpired deadline**, the **exact-candidate execution
-   method**, and the **required evidence**; also verify the **live follow-up-ticket assignee equals
-   the approved QA automation owner**. Any invalid state or owner mismatch stops and returns to
-   `acceptance-design` through `dev-workflow` Stage 3. Never autonomously merge a protected release
-   branch or auto-merge a single-branch repository. Checkpoint the observed merge SHA immediately;
+6. immediately before merge authorization, **fetch the target branch** and require both the
+   **exact PR HEAD** and **expected target HEAD** to equal the pair bound to the latest P0,
+   review, and CI evidence. If either differs, return to Phase 4 step 1 to rebase, recompute the
+   fixed point, and rerun P0, review, and CI. Then perform the fresh fencing check and re-read all
+   approved exception fields when an exception is being used: **current explicit user approval**,
+   that the **follow-up ticket exists and is open**, its **named owner**, its **unexpired deadline**,
+   the **exact-candidate execution method**, and the **required evidence**; also verify the **live
+   follow-up-ticket assignee equals the approved QA automation owner**. Any invalid state or owner
+   mismatch stops and returns to `acceptance-design` through `dev-workflow` Stage 3.
+
+   Checkpoint the merge intent bound to that exact PR-HEAD/target-HEAD pair. Enforce it with
+   **CAS/ref-lease** where policy permits automation, or require a **human merge receipt** bound to
+   the same pair for a protected or single-branch repository. Only after that checkpoint, merge
+   only under the configured branch policy; never autonomously merge a protected release branch or
+   auto-merge a single-branch repository. Checkpoint the observed merge SHA and verify the
+   **observed merge derives from that exact pair**;
 7. run the idempotent **post-merge reconciliation** path: revalidate fencing, update the tracker to
    development-complete/awaiting-deployment, verify no process/session uses the clean merged feature
    worktree, then perform worktree **cleanup** immediately and checkpoint
@@ -331,5 +341,6 @@ termination recovery relies on the checkpoint protocol above rather than an inte
 - RED/GREEN/regression/static/full-suite commands and results;
 - review/CI state at the exact head SHA and any deployment/artifact receipt;
 - each P0 profile, its QA automation owner, exact-HEAD result and produced evidence, plus the
-  manual-exception six fields and their last validation time when an exception applies;
+  manual-exception six fields, observed live ticket assignee, owner-match result, and last
+  validation time when an exception applies;
 - blocker, next safe action, and any required human judgment.
