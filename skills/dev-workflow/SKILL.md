@@ -97,10 +97,12 @@ worktree.
 Then drive the frontier ticket (all blockers done). Per ticket, non-negotiable:
 
 - **one feature = one worktree = one PR**, based on the integration branch.
-- **TDD** at the spec's seams and against the approved scenarios — cover the behaviour and the edge
-  cases that matter, not a blanket coverage %.
+- **Run `tdd`** at the spec's approved seams and against the ticket's SC-ID → AC-ID mappings. Work
+  one behaviour slice at a time: prove a valid RED, add the smallest GREEN implementation, run the
+  relevant regression suite, and attach the TDD receipt. Do not substitute a blanket coverage %.
 - **Code review = `review`** (dual-axis Standards × Spec; enable its data-mutation safety gate if the
-  project has batch/cron DB writers).
+  project has batch/cron DB writers). Standards-only cleanup keeps tests green; a behaviour change
+  returns to a RED cycle.
 - **A pre-push gate** — typecheck / lint / test / review all green before push (skip any step the
   config marks `none`).
 - Merge to the **integration branch**. **NEVER** merge to a protected release branch — that's a human
@@ -121,8 +123,8 @@ needs to know what to *verify*):
 - **The exact source commit and deployed artifact/environment revision** under test.
 - **How to reach it**: test URL / environment + fixtures/accounts + seed data.
 - **Known risks / edge cases** worth probing.
-- **What unit + contract tests already cover** — so QA focuses on integration + journeys, no
-  duplication.
+- **The TDD receipt and what unit + contract tests cover** — so QA focuses on integration +
+  journeys, no duplication.
 
 Then resume **`testing-workflow` at Stage 2**; do not redesign the approved scenarios from the
 implementation. Its acceptance report is gate 5 — the user signs off. Bugs loop back as new tickets

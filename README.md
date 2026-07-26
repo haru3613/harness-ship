@@ -10,8 +10,8 @@ Codex and Claude Code. You pilot five judgment gates; AI runs everything between
 
 ## What's inside
 
-Two orchestration skills, plus the six self-contained blocks they drive. No external plugin
-dependencies — everything needed is in this repo.
+One bootstrap skill, two orchestration skills, plus seven self-contained blocks they drive. No
+external plugin dependencies — everything needed is in this repo.
 
 | Skill | Role |
 |---|---|
@@ -22,6 +22,7 @@ dependencies — everything needed is in this repo.
 | `spike` | time-boxed throwaway prototype that returns a feasible / not / needs-more verdict |
 | `spec` | synthesize the conversation into a spec/PRD with explicit AC at the highest test seam |
 | `tickets` | break an approved spec + acceptance contract into vertical-slice tracer-bullet tickets |
+| `tdd` | implement one ticket through evidence-backed RED → GREEN behaviour slices at approved seams |
 | `review` | dual-axis code review (Standards × Spec) with an optional data-mutation safety gate |
 | `diagnose` | red-repro-first bug diagnosis for the QA→dev loopback |
 
@@ -65,8 +66,9 @@ Start a new session after upgrading so Codex loads the refreshed skills.
 forks it can't infer, and writes a `## harness-ship` config block into your `AGENTS.md` (or
 `CLAUDE.md`). Every workflow reads that block, so nothing runs on generic guesses.
 
-Then invoke the platform's `dev-workflow` or `testing-workflow` skill — or just describe a feature
-and the skills trigger themselves. Re-run `setup` any time the stack, tracker, or branches change.
+Then invoke the platform's `dev-workflow`, `tdd`, or `testing-workflow` skill — or just describe a
+feature and the skills trigger themselves. Re-run `setup` any time the stack, tracker, or branches
+change.
 
 ## What `setup` configures
 
@@ -82,6 +84,8 @@ and the skills trigger themselves. Re-run `setup` any time the stack, tracker, o
 
 - **Composition, not monolith.** The workflows are thin orchestration layers; each block does one
   job and is usable on its own.
+- **Evidence, not ritual.** TDD requires a RED that fails for the missing behaviour and a GREEN that
+  passes at the same interface; harness or infrastructure failures do not count.
 - **Blocks were chosen after auditing quality.** Weak patterns (planning that yields a monolithic
   plan instead of tickets; feasibility "review" that emits no verdict) were deliberately left out.
 - **Two things are original to this pack** because nothing off-the-shelf did them: an explicit

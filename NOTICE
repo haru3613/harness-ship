@@ -10,3 +10,6 @@ feasibility spikes, and red-repro-first bug diagnosis.
 No third-party skill files are redistributed here. Where a practice was learned from
 another author's open-source skill, credit is due to that community; the text in this
 repository was written independently for this pack.
+
+The TDD block was informed by Matt Pocock's MIT-licensed `tdd` skill:
+https://github.com/mattpocock/skills/tree/ed37663cc5fbef691ddfecd080dff42f7e7e350d/skills/engineering/tdd
