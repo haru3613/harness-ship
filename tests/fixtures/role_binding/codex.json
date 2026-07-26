@@ -10,10 +10,12 @@
     {
       "profile": {
         "host": "codex",
+        "origin_scope": "builtin",
         "profile_id": "Codex/verifier",
-        "definition_source": "host-registry://codex/verifier",
+        "definition_source": "host-registry://codex/builtin/verifier",
         "mode_sandbox": "read-only",
         "model": "host-assigned-review-model",
+        "effective_model": "gpt-5.6-sol",
         "effort": "high",
         "work_nature": "independent verification",
         "write_scope": "no source edits",
@@ -23,7 +25,17 @@
         "mcp_plugins": []
       },
       "source_kind": "host-record",
-      "source": "{\"definition_source\":\"host-registry://codex/verifier\",\"effective_tools_capabilities\":[\"Glob\",\"Grep\",\"Read\"],\"effort\":\"high\",\"fresh_context\":true,\"host\":\"codex\",\"may_spawn\":false,\"mcp_plugins\":[],\"mode_sandbox\":\"read-only\",\"model\":\"host-assigned-review-model\",\"profile_id\":\"Codex/verifier\",\"work_nature\":\"independent verification\",\"write_scope\":\"no source edits\"}"
+      "source": "{\"definition_source\":\"host-registry://codex/builtin/verifier\",\"effective_model\":\"gpt-5.6-sol\",\"effective_tools_capabilities\":[\"Glob\",\"Grep\",\"Read\"],\"effort\":\"high\",\"fresh_context\":true,\"host\":\"codex\",\"may_spawn\":false,\"mcp_plugins\":[],\"mode_sandbox\":\"read-only\",\"model\":\"host-assigned-review-model\",\"origin_scope\":\"builtin\",\"profile_id\":\"Codex/verifier\",\"work_nature\":\"independent verification\",\"write_scope\":\"no source edits\"}",
+      "discovery_receipt": {
+        "adapter": "codex-runtime",
+        "host": "codex",
+        "origin_scope": "builtin",
+        "profile_id": "Codex/verifier",
+        "definition_source": "host-registry://codex/builtin/verifier",
+        "authoritative_definition_digest": "sha256:75d7ee412d999f577d028419c95b2f59bf14af7813a7bb2f108b4644cac9ae26",
+        "effective_model": "gpt-5.6-sol",
+        "host_default": true
+      }
     }
   ],
   "global_settings": {
