@@ -65,6 +65,7 @@ validate_current_install() {
   local required
   for required in \
     "agents/harness-ship-independent-verifier.md" \
+    "scripts/role_binding_contract.py" \
     "skills/bug-workflow/SKILL.md" \
     "skills/diagnose/diagnosis-receipt-template.md" \
     "skills/implement/defect-repair-receipt-template.md" \
@@ -72,56 +73,24 @@ validate_current_install() {
     test -f "${install_root}/${required}"
   done
 
-  python3 - "${install_root}" <<'PY'
-from pathlib import Path
-import re
-import sys
+  local agent_path
+  while IFS= read -r -d '' agent_path; do
+    python3 "${install_root}/scripts/role_binding_contract.py" \
+      validate-agent "${agent_path}" >/dev/null
+  done < <(find "${install_root}/agents" -mindepth 1 -maxdepth 1 -name '*.md' -print0)
 
-root = Path(sys.argv[1])
-agents = sorted((root / "agents").glob("*.md"))
-if not agents:
-    raise SystemExit("no agents discovered after install")
+  python3 "${install_root}/scripts/role_binding_contract.py" self-test >/dev/null
 
-required_fields = ("name", "description", "model", "effort", "tools")
-for agent in agents:
-    lines = agent.read_text(encoding="utf-8").splitlines()
-    if not lines or lines[0] != "---":
-        raise SystemExit(f"invalid agent frontmatter delimiters: {agent}")
-    try:
-        closing_index = lines.index("---", 1)
-    except ValueError:
-        raise SystemExit(f"invalid agent frontmatter delimiters: {agent}")
-
-    fields = {}
-    for line in lines[1:closing_index]:
-        if ":" not in line:
-            raise SystemExit(f"malformed agent frontmatter: {agent}")
-        key, value = (part.strip() for part in line.split(":", 1))
-        normalized_key = key.lower()
-        if not key or normalized_key in fields:
-            raise SystemExit(f"malformed agent frontmatter: {agent}")
-        fields[normalized_key] = value
-
-    if any(not fields.get(field) for field in required_fields):
-        raise SystemExit(f"malformed agent frontmatter: {agent}")
-    if not re.fullmatch(r"[a-z0-9-]+", fields["name"]):
-        raise SystemExit(f"undiscoverable agent name: {agent}")
-    if fields["name"] != agent.stem:
-        raise SystemExit(f"undiscoverable agent name: {agent}")
-    if not "\n".join(lines[closing_index + 1 :]).strip():
-        raise SystemExit(f"empty agent body: {agent}")
-
-    if fields["name"] == "harness-ship-independent-verifier":
-        expected_tools = ["Read", "Grep", "Glob"]
-        actual_tools = [tool.strip() for tool in fields["tools"].split(",")]
-        if fields["model"] != "inherit" or fields["effort"] != "high":
-            raise SystemExit(f"unsafe mandatory agent model or effort: {agent}")
-        if actual_tools != expected_tools:
-            raise SystemExit(f"unsafe mandatory agent tools: {agent}")
-        for forbidden_key in ("permissionmode", "mcpservers", "hooks"):
-            if forbidden_key in fields:
-                raise SystemExit(f"unsafe mandatory agent field {forbidden_key}: {agent}")
-PY
+  if command -v claude >/dev/null 2>&1; then
+    local claude_inventory
+    claude_inventory="$(
+      cd "${install_root}"
+      claude --plugin-dir . plugin details harness-ship
+    )"
+    grep -Eq \
+      'Agents \(1\).*harness-ship-independent-verifier' \
+      <<<"${claude_inventory}"
+  fi
 }
 
 archive_ref "${current_ref}" "${fresh_dir}"

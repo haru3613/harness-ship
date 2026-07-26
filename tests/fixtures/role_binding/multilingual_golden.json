@@ -1,0 +1,17 @@
+{
+  "profile": {
+    "host": "codex",
+    "profile_id": "Codex/驗證器",
+    "definition_source": "host-registry://codex/驗證器",
+    "authoritative_definition_digest": "sha256:264d06309cfa3b2281d74ce8e71f7cfc9ad446d0ca46a0001e8e3941c0a87465",
+    "mode_sandbox": "read-only",
+    "model": "模型-α",
+    "effort": "high",
+    "write_scope": "none",
+    "may_spawn": false,
+    "fresh_context": true,
+    "effective_tools_capabilities": ["Glob", "Read", "讀取"],
+    "mcp_plugins": []
+  },
+  "expected_boundary_digest": "sha256:f4305cf8ef26a3b166db90deefe5be38caeb91aecadfb20a69a28f8f396b2f4f"
+}

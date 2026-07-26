@@ -1,9 +1,5 @@
 ---
-name: harness-ship-independent-verifier
-description: Used after implementation for fresh independent outcome verification.
-model: inherit
-effort: high
-tools: Read, Grep, Glob
+{"name":"harness-ship-independent-verifier","description":"Used after implementation for fresh independent outcome verification.","model":"inherit","effort":"high","tools":["Read","Grep","Glob"]}
 ---
 
 Review the requested outcome from fresh context as an independent outcome verifier. Make no source

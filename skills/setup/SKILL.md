@@ -53,8 +53,9 @@ the load-bearing forks** (don't interrogate).
 - **Agent role profiles** — inspect the current host runtime's existing agent registry and
   project/global instructions. Keep portable **Agent role requirements** separate from
   host-specific bindings. Under the current host binding, record each useful profile's exact ID,
-  work nature, mode/sandbox, model, effort, write scope, MCP/plugin access, authoritative definition
-  source, and whether it may spawn children. Also record root's thread/depth limit when exposed.
+  work nature, mode/sandbox, model, effort, write scope, effective tools/capabilities, MCP/plugin
+  access, fresh-context status, authoritative definition source and digest, Boundary digest, and
+  whether it may spawn children. Also record root's thread/depth limit when exposed.
   - Route by nature: narrow lookup, exploration, mechanical implementation, judgment-bearing
     implementation, plan verification, independent verification, and security review/execution.
   - Profiles must already exist in the host. **Do not create or override** global agents, model
@@ -68,42 +69,40 @@ the load-bearing forks** (don't interrogate).
 
 #### Current-host independent-verifier resolver
 
+Use the packaged executable reference:
+
+```sh
+python3 <plugin-root>/scripts/role_binding_contract.py resolve --input <resolver-input.json>
+```
+
+It is authoritative for the fixed typed schema, canonical non-symlink definition-source bytes,
+host-registry record bytes, NFC and array ordering, the restricted RFC 8785-compatible canonical
+JSON subset, SHA-256 digests, safe host boundaries, and resolution outcomes. Do not reimplement
+those rules from prose. If the helper, authoritative source, host runtime metadata, or its result is
+unavailable or invalid, stop with zero mutation.
+
 Before any setup mutation, resolve either the sole existing config or a complete proposed config in
 memory, then require exactly one `## harness-ship` config and exactly one current-host binding
 section inside it. Duplicate configs, duplicate current-host sections, an incomplete proposed
 config, or an ambiguous host identity stop with zero mutation. Determine the current host from live
 runtime metadata, not from whichever binding happens to appear first.
 
-Resolve the mandatory independent-verification binding deterministically:
-
-1. Validate the semantic, effective live boundary and its authoritative source before you compute
-   its boundary digest. A syntactically present row is not sufficient. Preserve an explicit valid
-   project binding when its fully qualified ID, authoritative source, and effective live boundary
-   still validate.
-2. Otherwise enumerate only live-verifiable current-host candidates:
-   - For Claude Code, the plugin-shipped candidate is exactly
-     `harness-ship:harness-ship-independent-verifier`. Validate that scoped ID against the canonical
-     plugin source and canonical plugin digest, plus its effective loaded tool boundary.
-   - For Codex, a live host-provided verifier is eligible only when runtime metadata proves
-     read-only operation, no source edits, fresh context, high effort, `may_spawn=false`, its
-     effective tool/capability boundary, and authoritative source. Do not hard-code a universal
-     model family; validate the host's deliberate live assignment.
-3. One candidate selects deterministically. Multiple candidates require one load-bearing choice
-   from the user. No candidates emit an actionable missing-profile result and stop with zero
-   mutation.
+Pass the helper exactly one current-host resolver document assembled from live runtime evidence.
+Preserve an explicit valid project binding only when the helper returns `preserved`. Apply a
+`selected` result only to the current host section. An `ambiguous` result presents the helper's one
+load-bearing candidate choice; a `missing` result presents its actionable missing-profile result.
+Both stop with zero mutation. Claude Code's eligible default is the exact scoped plugin ID
+`harness-ship:harness-ship-independent-verifier` at canonical plugin provenance. Codex candidates
+must be authoritative live host profiles; do not hard-code a universal model family.
 
 Write the fully qualified ID, authoritative source, and semantically validated boundary digest.
 Update only the current host section and preserve the other host section plus all global agents,
 models, effort, permissions, MCP access, plugin settings, and unrelated project configuration.
 Setup never writes global agent or settings files.
 
-The boundary digest format is lowercase `sha256:<64 hex>` over UTF-8 canonical JSON with sorted
-keys and no insignificant whitespace. The canonical object contains exactly `host`, `profile_id`
-(the fully qualified profile ID), `definition_source`, `authoritative_definition_digest` (the
-authoritative source/definition digest), `mode_sandbox`, `model`, `effort`, `write_scope`,
-`effective_tools_capabilities`, `mcp_plugins`, and `may_spawn`. Validate every input's live
-semantics and the authoritative source/definition bytes first; only then compute and persist the
-boundary digest in the current-host binding. In other words, semantic validation precedes hashing.
+Persist the helper-returned fully qualified ID, authoritative source, authoritative definition
+digest, and Boundary digest in the current-host binding. The helper validates live semantics and
+source bytes before hashing. Preserve the other host section and every global setting structurally.
 
 ### 2. Propose, then ask only the forks
 
@@ -172,15 +171,15 @@ with the user. After this, every harness-ship workflow consumes it automatically
 
 - **Agent role bindings — Codex:** `not-configured`, or one live row per requirement:
 
-  | Work nature | Host / profile ID | Definition source | Mode / sandbox | Model | Effort | Write scope | MCP/plugins | May spawn | Boundary digest |
-  |---|---|---|---|---|---|---|---|---|---|
-  | `<requirement>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value or unsupported>` | `sha256:<64 hex>` |
+  | Work nature | Host / profile ID | Definition source | Definition digest | Mode / sandbox | Model | Effort | Write scope | Effective tools/capabilities | MCP/plugins | Fresh context | May spawn | Boundary digest |
+  |---|---|---|---|---|---|---|---|---|---|---|---|---|
+  | `<requirement>` | `<host value>` | `<host value>` | `sha256:<64 hex>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value or unsupported>` | `sha256:<64 hex>` |
 
 - **Agent role bindings — Claude Code:** `not-configured`, or one live row per requirement:
 
-  | Work nature | Host / profile ID | Definition source | Mode / sandbox | Model | Effort | Write scope | MCP/plugins | May spawn | Boundary digest |
-  |---|---|---|---|---|---|---|---|---|---|
-  | `<requirement>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value or unsupported>` | `sha256:<64 hex>` |
+  | Work nature | Host / profile ID | Definition source | Definition digest | Mode / sandbox | Model | Effort | Write scope | Effective tools/capabilities | MCP/plugins | Fresh context | May spawn | Boundary digest |
+  |---|---|---|---|---|---|---|---|---|---|---|---|---|
+  | `<requirement>` | `<host value>` | `<host value>` | `sha256:<64 hex>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value or unsupported>` | `sha256:<64 hex>` |
 
 - **Delegation limits — Codex:** <host max direct children / depth / root-only spawning | `not-configured`>
 - **Delegation limits — Claude Code:** <host max direct children / depth / root-only spawning | `not-configured`>

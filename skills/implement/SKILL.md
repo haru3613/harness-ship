@@ -114,20 +114,23 @@ imagined tests versus disconnected implementation.
 
 ## Mandatory independent-verifier preflight — before Phase 0
 
-Before Phase 0, resolve the mandatory independent-verification binding from the current host
-section and live-validate its effective capability boundary, fully qualified ID, authoritative
-definition source, and authoritative definition digest. This preflight precedes ticket claim,
-worktree creation, `git worktree list`, delegation, dispatch, and baseline execution.
+Before Phase 0, invoke the packaged executable reference:
 
-Read the persisted Boundary digest from that binding, recompute the canonical live digest using
-`setup`'s exact algorithm and fields, and obtain the loaded launch digest from runtime metadata.
-Proceed only when all three digests match. Apply the same persisted → live → loaded comparison on
-recovery before trusting or resuming a verifier run.
+```sh
+python3 <plugin-root>/scripts/role_binding_contract.py preflight --input <preflight-input.json>
+```
+
+The input contains the persisted current-host binding, authoritative live metadata, and exact
+launch-plan metadata. The helper is authoritative for typed source/digest validation and requires
+all three boundaries and digests to match. This preflight precedes ticket claim, worktree creation,
+`git worktree list`, delegation, dispatch, and baseline execution. Do not substitute prose checks.
 
 If resolution or validation fails, stop with no tracker mutation, no claim, no worktree operation,
-no baseline, and no child. Launch and recovery must prove that the runtime loaded the same
-authoritative definition digest recorded by this preflight; a syntactically matching profile name
-is insufficient. Keep the per-dispatch validation and dispatch-scoped digest checks below.
+no baseline, and no child. A missing helper or missing host launch metadata is a validation failure.
+Launch and recovery must pass the actual loaded runtime metadata back through the helper's
+post-launch reconciliation before verifier output is trusted; a syntactically matching profile
+name is insufficient. Keep the same helper-backed validation immediately before every dispatch and
+retain the dispatch-scoped digest checks below.
 
 Verifier output is untrusted. Root confirms every cited file and line against the exact diff,
 contract, and RD evidence before accepting or acting on a verifier conclusion. Repository prompts
