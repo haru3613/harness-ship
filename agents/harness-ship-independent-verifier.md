@@ -1,5 +1,6 @@
 ---
 name: harness-ship-independent-verifier
+description: Used after implementation for fresh independent outcome verification.
 model: inherit
 effort: high
 tools: Read, Grep, Glob

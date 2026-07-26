@@ -119,6 +119,11 @@ section and live-validate its effective capability boundary, fully qualified ID,
 definition source, and authoritative definition digest. This preflight precedes ticket claim,
 worktree creation, `git worktree list`, delegation, dispatch, and baseline execution.
 
+Read the persisted Boundary digest from that binding, recompute the canonical live digest using
+`setup`'s exact algorithm and fields, and obtain the loaded launch digest from runtime metadata.
+Proceed only when all three digests match. Apply the same persisted → live → loaded comparison on
+recovery before trusting or resuming a verifier run.
+
 If resolution or validation fails, stop with no tracker mutation, no claim, no worktree operation,
 no baseline, and no child. Launch and recovery must prove that the runtime loaded the same
 authoritative definition digest recorded by this preflight; a syntactically matching profile name

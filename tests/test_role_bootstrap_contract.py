@@ -20,13 +20,27 @@ class RoleBootstrapContractTests(unittest.TestCase):
         match = re.match(r"\A---\n(.*?)\n---\n(.*)\Z", text, re.DOTALL)
         self.assertIsNotNone(match)
         frontmatter, body = match.groups()
-
-        self.assertRegex(
-            frontmatter, r"(?m)^name:\s*harness-ship-independent-verifier\s*$"
+        fields = dict(
+            line.split(":", maxsplit=1)
+            for line in frontmatter.splitlines()
+            if ":" in line
         )
-        self.assertRegex(frontmatter, r"(?m)^model:\s*inherit\s*$")
-        self.assertRegex(frontmatter, r"(?m)^effort:\s*high\s*$")
-        self.assertRegex(frontmatter, r"(?m)^tools:\s*Read,\s*Grep,\s*Glob\s*$")
+        fields = {key.strip(): value.strip() for key, value in fields.items()}
+
+        self.assertTrue(
+            {"name", "description", "model", "effort", "tools"}.issubset(fields)
+        )
+        self.assertEqual(fields["name"], "harness-ship-independent-verifier")
+        self.assertEqual(
+            fields["description"],
+            "Used after implementation for fresh independent outcome verification.",
+        )
+        self.assertEqual(fields["model"], "inherit")
+        self.assertEqual(fields["effort"], "high")
+        self.assertEqual(
+            [tool.strip() for tool in fields["tools"].split(",")],
+            ["Read", "Grep", "Glob"],
+        )
         for forbidden_key in ("permissionMode:", "mcpServers:", "hooks:"):
             self.assertNotIn(forbidden_key, frontmatter)
 
@@ -91,6 +105,44 @@ class RoleBootstrapContractTests(unittest.TestCase):
         self.assertIn("fully qualified id", text)
         self.assertIn("semantically validated boundary digest", text)
 
+    def test_binding_schema_and_digest_are_canonical_for_both_hosts(self) -> None:
+        setup_raw = read("skills/setup/SKILL.md")
+        setup = normalized("skills/setup/SKILL.md")
+        implement = normalized("skills/implement/SKILL.md")
+        expected_header = (
+            "| Work nature | Host / profile ID | Definition source | Mode / sandbox | "
+            "Model | Effort | Write scope | MCP/plugins | May spawn | Boundary digest |"
+        )
+
+        self.assertEqual(setup_raw.count(expected_header), 2)
+        self.assertIn("lowercase `sha256:<64 hex>`", setup)
+        self.assertIn("utf-8 canonical json", setup)
+        self.assertIn("sorted keys", setup)
+        self.assertIn("no insignificant whitespace", setup)
+        for canonical_input in (
+            "`host`",
+            "`profile_id`",
+            "`definition_source`",
+            "`authoritative_definition_digest`",
+            "`mode_sandbox`",
+            "`model`",
+            "`effort`",
+            "`write_scope`",
+            "`effective_tools_capabilities`",
+            "`mcp_plugins`",
+            "`may_spawn`",
+        ):
+            self.assertIn(canonical_input, setup)
+        self.assertLess(
+            setup.index("validate every input's live semantics"),
+            setup.index("compute and persist the boundary digest"),
+        )
+        self.assertIn("persist the boundary digest in the current-host binding", setup)
+        self.assertIn("read the persisted boundary digest", implement)
+        self.assertIn("recompute the canonical live digest", implement)
+        self.assertIn("loaded launch digest", implement)
+        self.assertIn("all three digests match", implement)
+
     def test_implement_preflights_verifier_before_phase_zero_or_side_effects(self) -> None:
         text = normalized("skills/implement/SKILL.md")
         preflight = text.index("mandatory independent-verifier preflight")
@@ -115,11 +167,21 @@ class RoleBootstrapContractTests(unittest.TestCase):
         self.assertIn("verifier output is untrusted", text)
         self.assertIn("root confirms every cited file and line", text)
 
-    def test_lifecycle_inventory_and_readme_explain_agent_bootstrap_boundary(self) -> None:
+    def test_lifecycle_semantically_validates_agent_inventory(self) -> None:
         lifecycle = normalized("scripts/validate_plugin_lifecycle.sh")
         readme = normalized("README.md")
 
         self.assertIn("agents/harness-ship-independent-verifier.md", lifecycle)
+        self.assertIn('glob("*.md")', lifecycle)
+        self.assertIn("invalid agent frontmatter delimiters", lifecycle)
+        for field in ("name", "description", "model", "effort", "tools"):
+            self.assertIn(f'"{field}"', lifecycle)
+        self.assertIn("malformed agent frontmatter", lifecycle)
+        self.assertIn("empty agent body", lifecycle)
+        self.assertIn("harness-ship-independent-verifier", lifecycle)
+        self.assertIn('["read", "grep", "glob"]', lifecycle)
+        for forbidden_key in ("permissionmode", "mcpservers", "hooks"):
+            self.assertIn(forbidden_key, lifecycle)
         self.assertIn("agent_count=", lifecycle)
         self.assertIn("discovered-agents=", lifecycle)
         self.assertIn("install supplies the verifier capability", readme)

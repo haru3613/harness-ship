@@ -97,6 +97,14 @@ Update only the current host section and preserve the other host section plus al
 models, effort, permissions, MCP access, plugin settings, and unrelated project configuration.
 Setup never writes global agent or settings files.
 
+The boundary digest format is lowercase `sha256:<64 hex>` over UTF-8 canonical JSON with sorted
+keys and no insignificant whitespace. The canonical object contains exactly `host`, `profile_id`
+(the fully qualified profile ID), `definition_source`, `authoritative_definition_digest` (the
+authoritative source/definition digest), `mode_sandbox`, `model`, `effort`, `write_scope`,
+`effective_tools_capabilities`, `mcp_plugins`, and `may_spawn`. Validate every input's live
+semantics and the authoritative source/definition bytes first; only then compute and persist the
+boundary digest in the current-host binding. In other words, semantic validation precedes hashing.
+
 ### 2. Propose, then ask only the forks
 
 Present the detected config as an **Assumptions** list (each line with its *why*). Ask ONLY the
@@ -164,15 +172,15 @@ with the user. After this, every harness-ship workflow consumes it automatically
 
 - **Agent role bindings — Codex:** `not-configured`, or one live row per requirement:
 
-  | Work nature | Host / profile ID | Definition source | Mode / sandbox | Model | Effort | Write scope | MCP/plugins | May spawn |
-  |---|---|---|---|---|---|---|---|---|
-  | `<requirement>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value or unsupported>` |
+  | Work nature | Host / profile ID | Definition source | Mode / sandbox | Model | Effort | Write scope | MCP/plugins | May spawn | Boundary digest |
+  |---|---|---|---|---|---|---|---|---|---|
+  | `<requirement>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value or unsupported>` | `sha256:<64 hex>` |
 
 - **Agent role bindings — Claude Code:** `not-configured`, or one live row per requirement:
 
-  | Work nature | Host / profile ID | Definition source | Mode / sandbox | Model | Effort | Write scope | MCP/plugins | May spawn |
-  |---|---|---|---|---|---|---|---|---|
-  | `<requirement>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value or unsupported>` |
+  | Work nature | Host / profile ID | Definition source | Mode / sandbox | Model | Effort | Write scope | MCP/plugins | May spawn | Boundary digest |
+  |---|---|---|---|---|---|---|---|---|---|
+  | `<requirement>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value>` | `<host value or unsupported>` | `sha256:<64 hex>` |
 
 - **Delegation limits — Codex:** <host max direct children / depth / root-only spawning | `not-configured`>
 - **Delegation limits — Claude Code:** <host max direct children / depth / root-only spawning | `not-configured`>
