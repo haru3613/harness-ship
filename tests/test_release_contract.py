@@ -58,24 +58,32 @@ class ReleaseContractTests(unittest.TestCase):
                 if relative.endswith("plugin.json"):
                     payload = {"name": "harness-ship", "version": "0.6.3"}
                 else:
+                    def source(ref: str) -> dict[str, str]:
+                        if relative.startswith(".claude-plugin/"):
+                            return {
+                                "source": "github",
+                                "repo": "haru3613/harness-ship",
+                                "ref": ref,
+                            }
+                        return {
+                            "source": "url",
+                            "url": (
+                                "https://github.com/haru3613/"
+                                "harness-ship.git"
+                            ),
+                            "ref": ref,
+                        }
+
                     payload = {
                         "name": "harness-ship",
                         "plugins": [
                             {
                                 "name": "harness-ship",
-                                "source": {
-                                    "source": "url",
-                                    "url": "https://github.com/haru3613/harness-ship.git",
-                                    "ref": "v0.6.3",
-                                },
+                                "source": source("v0.6.3"),
                             },
                             {
                                 "name": "harness-ship-next",
-                                "source": {
-                                    "source": "url",
-                                    "url": "https://github.com/haru3613/harness-ship.git",
-                                    "ref": "main",
-                                },
+                                "source": source("main"),
                             },
                         ],
                     }
@@ -791,6 +799,45 @@ class ReleaseContractTests(unittest.TestCase):
 
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn("official Harness Ship", result.stderr)
+
+    def test_repository_channels_reject_cross_host_source_shapes(self) -> None:
+        cases = (
+            (
+                ".agents/plugins/marketplace.json",
+                {
+                    "source": "github",
+                    "repo": "haru3613/harness-ship",
+                    "ref": "v0.7.0",
+                },
+                "url",
+            ),
+            (
+                ".claude-plugin/marketplace.json",
+                {
+                    "source": "url",
+                    "url": "https://github.com/haru3613/harness-ship.git",
+                    "ref": "v0.7.0",
+                },
+                "github",
+            ),
+        )
+        for relative, swapped_source, expected_kind in cases:
+            with self.subTest(path=relative), tempfile.TemporaryDirectory() as directory:
+                repo, _ = self.make_repo(directory)
+                _, candidate = self.generate_candidate(repo)
+                path = repo / relative
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                payload["plugins"][0]["source"] = swapped_source
+                path.write_text(json.dumps(payload), encoding="utf-8")
+                swapped = self.commit(repo, "swap catalog source shape")
+
+                result = self.version_state_check(repo, swapped)
+
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(
+                    f"must use the {expected_kind} source shape",
+                    result.stderr,
+                )
 
     def test_release_workflow_is_attended_and_has_narrow_write_permission(
         self,

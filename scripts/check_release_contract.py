@@ -376,10 +376,19 @@ def load_policy(repo: Path, ref: str) -> ReleasePolicy:
     return ReleasePolicy(tuple(releases))
 
 
-def _remote_source(source: object, expected_ref: str, context: str) -> None:
+def _remote_source(
+    source: object,
+    expected_ref: str,
+    expected_kind: str,
+    context: str,
+) -> None:
     if not isinstance(source, dict) or source.get("ref") != expected_ref:
         raise ReleaseContractError(f"{context} must pin ref {expected_ref}")
     kind = source.get("source")
+    if kind != expected_kind:
+        raise ReleaseContractError(
+            f"{context} must use the {expected_kind} source shape"
+        )
     if kind == "url":
         if set(source) != {"source", "url", "ref"} or source.get("url") != (
             "https://github.com/haru3613/harness-ship.git"
@@ -400,7 +409,12 @@ def _remote_source(source: object, expected_ref: str, context: str) -> None:
         )
 
 
-def _catalog_channels(payload: object, context: str, version: Version) -> None:
+def _catalog_channels(
+    payload: object,
+    context: str,
+    version: Version,
+    expected_kind: str,
+) -> None:
     if not isinstance(payload, dict) or not isinstance(payload.get("plugins"), list):
         raise ReleaseContractError(f"{context} must contain plugins")
     plugins = payload["plugins"]
@@ -418,11 +432,13 @@ def _catalog_channels(payload: object, context: str, version: Version) -> None:
     _remote_source(
         by_name["harness-ship"].get("source"),
         f"v{version}",
+        expected_kind,
         f"{context} stable channel",
     )
     _remote_source(
         by_name["harness-ship-next"].get("source"),
         "main",
+        expected_kind,
         f"{context} next channel",
     )
 
@@ -447,7 +463,12 @@ def check_version_state(repo: Path, ref: str) -> str:
             f"does not match manifests {version}"
         )
     for catalog in CATALOGS:
-        _catalog_channels(read_json_at(repo, ref, catalog), f"{ref}:{catalog}", version)
+        _catalog_channels(
+            read_json_at(repo, ref, catalog),
+            f"{ref}:{catalog}",
+            version,
+            "github" if catalog.startswith(".claude-plugin/") else "url",
+        )
     changelog = read_text_at(repo, ref, CHANGELOG)
     heading = re.compile(rf"(?m)^## \[?{re.escape(str(version))}\]?(?:\s|$)")
     if len(heading.findall(changelog)) != 1:
