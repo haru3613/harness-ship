@@ -28,6 +28,9 @@ units an agent (or a person) can pick up one at a time in a fresh context.
 - **Blocked by** — the tickets that must finish first, or "None — can start immediately."
 - **Acceptance criteria** — a checklist. Each item is independently checkable and cites the
   approved contract revision, SC-ID, and spec AC-ID it implements.
+- **TDD starting point** — the approved seam/interface, the first smallest behaviour to prove RED,
+  and the SC-ID → AC-ID mapping it exercises. This is not a full test list; later cycles respond to
+  what implementation teaches.
 
 ## Wide refactors are the exception
 
