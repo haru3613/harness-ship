@@ -148,9 +148,26 @@ def read_text_at(repo: Path, ref: str, path: str) -> str:
     return git(repo, "show", f"{ref}:{path}")
 
 
+def _reject_duplicate_keys(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ReleaseContractError(f"duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
+def _reject_non_json_constant(value: str) -> object:
+    raise ReleaseContractError(f"non-JSON numeric constant: {value}")
+
+
 def read_json_at(repo: Path, ref: str, path: str) -> object:
     try:
-        return json.loads(read_text_at(repo, ref, path))
+        return json.loads(
+            read_text_at(repo, ref, path),
+            object_pairs_hook=_reject_duplicate_keys,
+            parse_constant=_reject_non_json_constant,
+        )
     except json.JSONDecodeError as error:
         raise ReleaseContractError(f"{ref}:{path} is not valid JSON") from error
 
@@ -364,13 +381,19 @@ def _remote_source(source: object, expected_ref: str, context: str) -> None:
         raise ReleaseContractError(f"{context} must pin ref {expected_ref}")
     kind = source.get("source")
     if kind == "url":
-        if not isinstance(source.get("url"), str) or not source["url"].startswith(
-            "https://"
+        if set(source) != {"source", "url", "ref"} or source.get("url") != (
+            "https://github.com/haru3613/harness-ship.git"
         ):
-            raise ReleaseContractError(f"{context} must use a remote git URL")
+            raise ReleaseContractError(
+                f"{context} must use the exact official Harness Ship git URL"
+            )
     elif kind == "github":
-        if not isinstance(source.get("repo"), str) or "/" not in source["repo"]:
-            raise ReleaseContractError(f"{context} must use a GitHub repository")
+        if set(source) != {"source", "repo", "ref"} or source.get("repo") != (
+            "haru3613/harness-ship"
+        ):
+            raise ReleaseContractError(
+                f"{context} must use the exact official Harness Ship GitHub repository"
+            )
     else:
         raise ReleaseContractError(
             f"{context} must use a remote url or github source object"

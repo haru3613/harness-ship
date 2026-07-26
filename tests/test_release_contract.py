@@ -1,10 +1,12 @@
 from pathlib import Path
+import importlib.util
 import json
 import shutil
 import subprocess
 import tempfile
 from typing import Optional
 import unittest
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,6 +22,15 @@ def run(command, cwd: Path, *, check: bool = True) -> subprocess.CompletedProces
         capture_output=True,
         check=check,
     )
+
+
+def load_publisher():
+    spec = importlib.util.spec_from_file_location("publish_release", PUBLISHER)
+    if spec is None or spec.loader is None:
+        raise AssertionError("publisher is not importable")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 class ReleaseContractTests(unittest.TestCase):
@@ -136,6 +147,24 @@ class ReleaseContractTests(unittest.TestCase):
                 str(repo),
                 base,
                 current,
+            ],
+            ROOT,
+            check=False,
+        )
+
+    def version_state_check(
+        self, repo: Path, ref: str
+    ) -> subprocess.CompletedProcess:
+        return run(
+            [
+                "python3",
+                str(CHECKER),
+                "version-state",
+                "check",
+                "--repo",
+                str(repo),
+                "--ref",
+                ref,
             ],
             ROOT,
             check=False,
@@ -308,6 +337,47 @@ class ReleaseContractTests(unittest.TestCase):
 
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("not valid json", result.stderr.lower())
+
+    def test_release_json_rejects_duplicate_keys_everywhere(self) -> None:
+        cases = (
+            (".changes/test-change.json", '"schema_version": 1,'),
+            ("release/policy.json", '"schema_version": 1,'),
+            (".codex-plugin/plugin.json", '"name": "harness-ship",'),
+            (".agents/plugins/marketplace.json", '"name": "harness-ship",'),
+        )
+        for relative, marker in cases:
+            with self.subTest(path=relative), tempfile.TemporaryDirectory() as directory:
+                repo, _ = self.make_repo(directory)
+                _, candidate = self.generate_candidate(repo)
+                path = repo / relative
+                raw = path.read_text(encoding="utf-8")
+                self.assertIn(marker, raw)
+                path.write_text(
+                    raw.replace(marker, f"{marker}\n  {marker}", 1),
+                    encoding="utf-8",
+                )
+                duplicate = self.commit(repo, f"duplicate JSON key in {relative}")
+
+                result = self.version_state_check(repo, duplicate)
+
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("duplicate JSON key", result.stderr)
+
+        with tempfile.TemporaryDirectory() as directory:
+            repo, _ = self.make_repo(directory)
+            _, candidate = self.generate_candidate(repo)
+            policy = repo / "release" / "policy.json"
+            raw = policy.read_text(encoding="utf-8")
+            policy.write_text(
+                raw.replace('"schema_version": 1', '"schema_version": NaN', 1),
+                encoding="utf-8",
+            )
+            non_json = self.commit(repo, "non-JSON numeric constant")
+
+            result = self.version_state_check(repo, non_json)
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("non-JSON numeric constant", result.stderr)
 
     def test_duplicate_declaration_coverage_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -689,6 +759,39 @@ class ReleaseContractTests(unittest.TestCase):
             docs,
         )
 
+    def test_repository_channels_reject_untrusted_origins_and_extra_fields(
+        self,
+    ) -> None:
+        cases = (
+            (
+                ".agents/plugins/marketplace.json",
+                {"source": "url", "url": "https://evil.example/repo.git", "ref": "v0.7.0"},
+            ),
+            (
+                ".claude-plugin/marketplace.json",
+                {
+                    "source": "github",
+                    "repo": "attacker/harness-ship",
+                    "ref": "v0.7.0",
+                    "unexpected": True,
+                },
+            ),
+        )
+        for relative, malicious_source in cases:
+            with self.subTest(path=relative), tempfile.TemporaryDirectory() as directory:
+                repo, _ = self.make_repo(directory)
+                _, candidate = self.generate_candidate(repo)
+                path = repo / relative
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                payload["plugins"][0]["source"] = malicious_source
+                path.write_text(json.dumps(payload), encoding="utf-8")
+                malicious = self.commit(repo, "redirect stable source")
+
+                result = self.version_state_check(repo, malicious)
+
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("official Harness Ship", result.stderr)
+
     def test_release_workflow_is_attended_and_has_narrow_write_permission(
         self,
     ) -> None:
@@ -706,8 +809,69 @@ class ReleaseContractTests(unittest.TestCase):
         self.assertNotIn("tag\", \"-d", publisher)
         self.assertIn("validate_plugin_lifecycle.sh", publisher)
         self.assertIn('"git", "tag", "--merged", candidate', publisher)
+        self.assertIn("tagName,url,isDraft,isPrerelease", publisher)
         contributing = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
         self.assertIn("does not infer the upgrade base", contributing)
+
+    def test_existing_matching_release_must_be_public_stable(self) -> None:
+        publisher = load_publisher()
+        stable = {
+            "tagName": "v0.7.0",
+            "url": "https://github.example/releases/v0.7.0",
+            "isDraft": False,
+            "isPrerelease": False,
+        }
+        for flag in ("isDraft", "isPrerelease"):
+            with self.subTest(flag=flag):
+                invalid = dict(stable)
+                invalid[flag] = True
+                with self.assertRaisesRegex(
+                    publisher.PublicationError,
+                    "not stable",
+                ):
+                    publisher.validate_existing_release(
+                        json.dumps(invalid), "v0.7.0"
+                    )
+
+        candidate = "a" * 40
+        commands = []
+
+        def fake_run(command, *, cwd, check=True):
+            commands.append(command)
+            if command[0] == "python3":
+                return subprocess.CompletedProcess(command, 0, "contract\n", "")
+            if command[0] == "bash":
+                return subprocess.CompletedProcess(command, 0, "lifecycle\n", "")
+            if command[:3] == ["gh", "release", "view"]:
+                return subprocess.CompletedProcess(
+                    command, 0, json.dumps(stable), ""
+                )
+            if command[:3] == ["git", "rev-parse", "--verify"]:
+                return subprocess.CompletedProcess(command, 0, candidate + "\n", "")
+            raise AssertionError(f"unexpected publisher command: {command}")
+
+        with (
+            mock.patch.object(publisher, "run", side_effect=fake_run),
+            mock.patch.object(
+                publisher,
+                "select_upgrade_base",
+                return_value=("v0.6.3", "b" * 40),
+            ),
+            mock.patch(
+                "sys.argv",
+                [
+                    "publish_release.py",
+                    "--candidate",
+                    candidate,
+                    "--tag",
+                    "v0.7.0",
+                ],
+            ),
+        ):
+            self.assertEqual(publisher.main(), 0)
+        self.assertFalse(
+            any(command[:3] == ["gh", "release", "create"] for command in commands)
+        )
 
     def test_publication_dry_run_uses_full_lifecycle_without_creating_tag(
         self,

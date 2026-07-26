@@ -595,12 +595,24 @@ class RoleBindingRuntimeTests(unittest.TestCase):
             writable_repo.chmod(0o777)
             (writable_repo / "AGENTS.md").write_bytes(source.read_bytes())
             cases.append(writable_repo)
+            for mode in (0o660, 0o666):
+                writable_target_repo = base / f"writable-target-{mode:o}"
+                writable_target_repo.mkdir(mode=0o700)
+                writable_target = writable_target_repo / "AGENTS.md"
+                writable_target.write_bytes(source.read_bytes())
+                writable_target.chmod(mode)
+                cases.append(writable_target_repo)
             for repo in cases:
                 with self.subTest(repo=repo.name):
+                    before = (repo / "AGENTS.md").read_bytes() if (
+                        repo / "AGENTS.md"
+                    ).is_file() else None
                     result = self.contract.plan_config_reconciliation(
                         repo, "AGENTS.md", "codex", candidates
                     )
                     self.assertEqual(result["status"], "invalid-config")
+                    if before is not None:
+                        self.assertEqual((repo / "AGENTS.md").read_bytes(), before)
 
     def test_apply_rejects_stale_target_and_candidate(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -717,6 +729,62 @@ class RoleBindingRuntimeTests(unittest.TestCase):
             self.assertEqual(result["status"], "applied-with-cleanup-error")
             self.assertIn("cleanup_errors", result)
 
+        with tempfile.TemporaryDirectory() as directory:
+            repo, _, planned = arrange(directory)
+            real_fsync = self.contract.os.fsync
+            directory_fsyncs = 0
+
+            def fail_cleanup_directory_fsync(fd):
+                nonlocal directory_fsyncs
+                if stat.S_ISDIR(self.contract.os.fstat(fd).st_mode):
+                    directory_fsyncs += 1
+                    if directory_fsyncs == 2:
+                        raise OSError("cleanup directory fsync failed")
+                return real_fsync(fd)
+
+            with mock.patch.object(
+                self.contract.os,
+                "fsync",
+                side_effect=fail_cleanup_directory_fsync,
+            ):
+                result = self.contract.apply_config_reconciliation(
+                    repo, "AGENTS.md", "codex", candidates,
+                    planned["plan"], planned["plan_id"],
+                )
+            self.assertEqual(result["status"], "applied-with-cleanup-error")
+            self.assertEqual(directory_fsyncs, 2)
+            self.assertIn("cleanup directory fsync failed", str(result))
+
+        with tempfile.TemporaryDirectory() as directory:
+            repo, _, planned = arrange(directory)
+            real_stat = self.contract.os.stat
+            guard_stat_failed = False
+
+            def fail_guard_validation(path, *args, **kwargs):
+                nonlocal guard_stat_failed
+                if (
+                    path == ".harness-ship-role-binding.lock"
+                    and not guard_stat_failed
+                ):
+                    guard_stat_failed = True
+                    raise OSError("guard validation failed")
+                return real_stat(path, *args, **kwargs)
+
+            with mock.patch.object(
+                self.contract.os,
+                "stat",
+                side_effect=fail_guard_validation,
+            ):
+                result = self.contract.apply_config_reconciliation(
+                    repo, "AGENTS.md", "codex", candidates,
+                    planned["plan"], planned["plan_id"],
+                )
+            self.assertEqual(result["status"], "apply-failed")
+            self.assertEqual(
+                sorted(path.name for path in repo.iterdir()),
+                ["AGENTS.md"],
+            )
+
     def test_apply_uses_unpredictable_lock_and_preserves_target_group(self) -> None:
         candidates = fixture("codex.json")["candidates"]
         with tempfile.TemporaryDirectory() as directory:
@@ -732,6 +800,7 @@ class RoleBindingRuntimeTests(unittest.TestCase):
             real_fchown = self.contract.os.fchown
             opened_names = []
             chown_calls = []
+            directory_fsyncs = 0
 
             def recording_open(path, *args, **kwargs):
                 opened_names.append(path)
@@ -741,12 +810,23 @@ class RoleBindingRuntimeTests(unittest.TestCase):
                 chown_calls.append((uid, gid))
                 return real_fchown(fd, uid, gid)
 
+            real_fsync = self.contract.os.fsync
+
+            def recording_fsync(fd):
+                nonlocal directory_fsyncs
+                if stat.S_ISDIR(self.contract.os.fstat(fd).st_mode):
+                    directory_fsyncs += 1
+                return real_fsync(fd)
+
             with (
                 mock.patch.object(
                     self.contract.os, "open", side_effect=recording_open
                 ),
                 mock.patch.object(
                     self.contract.os, "fchown", side_effect=recording_fchown
+                ),
+                mock.patch.object(
+                    self.contract.os, "fsync", side_effect=recording_fsync
                 ),
             ):
                 result = self.contract.apply_config_reconciliation(
@@ -771,6 +851,7 @@ class RoleBindingRuntimeTests(unittest.TestCase):
             )
             self.assertIn((self.contract.os.geteuid(), target_group), chown_calls)
             self.assertEqual(target.stat().st_gid, target_group)
+            self.assertEqual(directory_fsyncs, 2)
 
     def test_apply_fails_closed_when_cooperative_lock_is_held(self) -> None:
         candidates = fixture("codex.json")["candidates"]

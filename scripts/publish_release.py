@@ -37,16 +37,37 @@ def run(
     return result
 
 
+def _reject_duplicate_keys(
+    pairs: list[tuple[str, object]],
+) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise PublicationError(f"duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
+def _reject_non_json_constant(value: str) -> object:
+    raise PublicationError(f"non-JSON numeric constant: {value}")
+
+
+def strict_json(raw: str, context: str) -> object:
+    try:
+        return json.loads(
+            raw,
+            object_pairs_hook=_reject_duplicate_keys,
+            parse_constant=_reject_non_json_constant,
+        )
+    except json.JSONDecodeError as error:
+        raise PublicationError(f"{context} is not valid JSON") from error
+
+
 def stable_version_at(repo: Path, ref: str) -> str:
     versions: set[str] = set()
     for manifest in MANIFESTS:
         raw = run(["git", "show", f"{ref}:{manifest}"], cwd=repo).stdout
-        try:
-            payload = json.loads(raw)
-        except json.JSONDecodeError as error:
-            raise PublicationError(
-                f"{ref}:{manifest} is not valid JSON"
-            ) from error
+        payload = strict_json(raw, f"{ref}:{manifest}")
         version = payload.get("version") if isinstance(payload, dict) else None
         if not isinstance(version, str):
             raise PublicationError(f"{ref}:{manifest} has no string version")
@@ -96,6 +117,31 @@ def select_upgrade_base(
         )
     _, tag, sha = max(eligible)
     return tag, sha
+
+
+def validate_existing_release(raw: str, expected_tag: str) -> dict[str, object]:
+    payload = strict_json(raw, f"GitHub release {expected_tag}")
+    expected_keys = {"tagName", "url", "isDraft", "isPrerelease"}
+    if not isinstance(payload, dict) or set(payload) != expected_keys:
+        raise PublicationError(
+            f"GitHub release {expected_tag} returned an invalid state envelope"
+        )
+    if payload["tagName"] != expected_tag or not isinstance(payload["url"], str):
+        raise PublicationError(
+            f"GitHub release {expected_tag} identity does not match"
+        )
+    if (
+        type(payload["isDraft"]) is not bool
+        or type(payload["isPrerelease"]) is not bool
+    ):
+        raise PublicationError(
+            f"GitHub release {expected_tag} publication flags are invalid"
+        )
+    if payload["isDraft"] or payload["isPrerelease"]:
+        raise PublicationError(
+            f"existing release {expected_tag} is draft or prerelease, not stable"
+        )
+    return payload
 
 
 def main() -> int:
@@ -154,7 +200,7 @@ def main() -> int:
                 "view",
                 args.tag,
                 "--json",
-                "tagName,url",
+                "tagName,url,isDraft,isPrerelease",
             ],
             cwd=repo,
             check=False,
@@ -169,12 +215,16 @@ def main() -> int:
             check=False,
         ).stdout.strip()
         if release.returncode == 0:
+            release_state = validate_existing_release(release.stdout, args.tag)
             if tag_target != args.candidate:
                 raise PublicationError(
                     "existing release is not backed by the matching candidate tag"
                 )
             print(contract)
-            print(f"publication receipt: existing matching release {release.stdout.strip()}")
+            print(
+                "publication receipt: existing matching stable release "
+                f"{json.dumps(release_state, sort_keys=True)}"
+            )
             return 0
 
         if not tag_target:

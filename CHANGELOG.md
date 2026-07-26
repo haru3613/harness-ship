@@ -10,3 +10,5 @@
 - Adds repository-native change declarations, deterministic version-state checks, and an attended
   exact-SHA publication contract with immutable-tag mismatch protection, merge-strategy-independent
   previous-stable upgrade evidence, and provenance receipts.
+- Rejects untrusted marketplace origins, duplicate-key release JSON, writable Config targets,
+  non-durable lock cleanup, and draft/prerelease state masquerading as a stable release.

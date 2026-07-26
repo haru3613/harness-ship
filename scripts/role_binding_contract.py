@@ -1413,6 +1413,8 @@ def _open_target(dir_fd: int, basename: Any) -> tuple:
             raise ContractError("target hard links are not allowed")
         if st.st_uid != os.geteuid():
             raise ContractError("target must be owned by the executing user")
+        if st.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
+            raise ContractError("target must not be group/world writable")
         if st.st_mode & (stat.S_ISUID | stat.S_ISGID | stat.S_ISVTX):
             raise ContractError("target has unsupported special permission bits")
         if getattr(st, "st_flags", 0):
@@ -1850,6 +1852,7 @@ def apply_config_reconciliation(
             dst_dir_fd=dir_fd,
             follow_symlinks=False,
         )
+        lock_guard_identity = lock_identity
         lock_guard_stat = os.stat(
             lock_guard_name, dir_fd=dir_fd, follow_symlinks=False
         )
@@ -1860,7 +1863,6 @@ def apply_config_reconciliation(
             or lock_guard_stat.st_nlink != 2
         ):
             raise ContractError("cooperative lock guard failed identity validation")
-        lock_guard_identity = lock_identity
 
         temp_name = f".{target_basename}.harness-ship.{secrets.token_hex(32)}.tmp"
         temp_fd = os.open(
@@ -1987,6 +1989,10 @@ def apply_config_reconciliation(
                     _unlink_created(dir_fd, lock_name, lock_identity)
                 except (ContractError, OSError) as error:
                     cleanup_errors.append(f"lock cleanup: {error}")
+            try:
+                os.fsync(dir_fd)
+            except OSError as error:
+                cleanup_errors.append(f"cleanup directory fsync: {error}")
             try:
                 os.close(dir_fd)
             except OSError as error:

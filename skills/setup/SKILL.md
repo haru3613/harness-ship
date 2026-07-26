@@ -270,13 +270,15 @@ Before any setup mutation, let `plan-config` count headings and validate the ver
 
 The applier accepts only an executing-user-owned repository root that is not group/world writable.
 It pins the directory; rejects traversal, symlinks, non-regular targets, hard links, unexpected
-owners, and special permission bits; preserves ordinary permission bits; uses a cooperative lock
-with an unpredictable nonce and an unpredictable same-directory exclusive temporary file;
-completes and fsyncs the file; replaces relative to pinned directory descriptors; and fsyncs the
-directory. A directory-fsync failure after replace is **indeterminate** and reports the reread
-observed hash. Valid v2 is a byte-identical no-op with no lock, temp, or metadata mutation. This
-does not resist a hostile same-UID or root process able to rename entries concurrently; excluding
-untrusted writable directories is part of the safety boundary.
+owners, group/world-writable targets, and special permission bits; preserves safe ordinary
+permission bits; uses a cooperative lock with an unpredictable nonce and an unpredictable
+same-directory exclusive temporary file; completes and fsyncs the file; replaces relative to pinned
+directory descriptors; fsyncs the published target namespace; identity-safely removes its temporary
+and lock entries; and fsyncs the directory again after cleanup. A directory-fsync failure after
+replace is **indeterminate** and reports the reread observed hash; a cleanup or cleanup-fsync failure
+is explicit and never reported as a clean apply. Valid v2 is a byte-identical no-op with no lock,
+temp, or metadata mutation. This does not resist a hostile same-UID or root process able to rename
+entries concurrently; excluding untrusted writable directories is part of the safety boundary.
 
 ## Idempotent
 
