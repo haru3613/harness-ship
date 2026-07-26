@@ -153,10 +153,17 @@ with the user. After this, every harness-ship workflow consumes it automatically
 
 ## Legacy configuration migration
 
-Count exact `## harness-ship` headings before writing. If there is more than one existing block,
-stop and do not write or mutate any block; require explicit reconciliation of the duplicate active
-configuration. When the count is exactly one `## harness-ship` block and it has no `Config version`,
-treat it as **legacy v0** and upgrade that block in place; never append a second block.
+Before any setup mutation, count exact `## harness-ship` headings and apply one state:
+
+- **No existing block:** create one complete Config v1 block.
+- **More than one block:** stop with **zero mutation** and require explicit reconciliation of the
+  duplicate active configuration.
+- **Exactly one `## harness-ship` block** with no version or explicit `0`: treat it as **legacy v0**
+  and migrate that block in place to v1; never append a second block.
+- **Exactly one block at exactly `1`:** reconcile observed evidence and explicit user choices
+  idempotently.
+- **Any unsupported version:** stop with **zero mutation** and require explicit reconciliation;
+  never downgrade, overwrite, or guess a migration.
 
 - Preserve every known user choice and host binding. Split a legacy generic test command only when
   current scripts/paths prove its owner and seam; otherwise copy its prior field name and verbatim
@@ -174,6 +181,7 @@ treat it as **legacy v0** and upgrade that block in place; never append a second
 ## Idempotent
 
 Re-running `setup` re-detects and updates the existing `## harness-ship` block rather than
-duplicating it. It changes a versioned field only when newly observed evidence or an explicit user
-choice changes the value. Safe to run again after the stack, tracker, branch topology, deployment
-path, QA capability, or host role definitions change.
+duplicating it. For Config v1, it changes a field only when newly observed evidence or an explicit
+user choice changes the value. Unsupported versions and duplicate blocks remain zero-mutation
+stops. Safe to run again after the stack, tracker, branch topology, deployment path, QA capability,
+or host role definitions change.

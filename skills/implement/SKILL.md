@@ -231,8 +231,9 @@ remain.
 Root alone:
 
 Until the QA handoff is valid, rerun the **CI ownership preflight** immediately before every
-trigger-capable mutation: initial push, retry push, PR open/update, merge/integration push, and any
-deployment mutation. Inspect the current triggers and wiring at that moment. If a QA-owned or
+trigger-capable mutation: initial push, retry push, PR open/update, merge/integration push,
+deployment mutation, workflow dispatch, job rerun, and infrastructure retry. Immediately before
+each, re-read the current Config v1 and the current remote workflow and job wiring. If a QA-owned or
 **unclassified test job** would launch, stop before the mutation; only positively classified RD
 verification jobs and automatic non-QA branch-required checks may proceed.
 
@@ -251,9 +252,10 @@ verification jobs and automatic non-QA branch-required checks may proceed.
 3. attach the contract revision, SC-ID → AC-ID trace, TDD receipts, fixed point, commit list, and
    verification results;
 4. run the **remote feedback loop** on the exact head SHA. Before handoff, only **RD-owned CI**
-   verification jobs may be actively triggered or counted as RD test evidence. Triggering a QA
-   integration, P0, or full-suite job here is an **ownership violation**: stop, and do not trigger or
-   consume any QA command or job as merge evidence. Automatically triggered **non-QA
+   verification jobs may be actively triggered or counted as RD test evidence. Rerun the CI
+   ownership preflight immediately before every workflow dispatch or job rerun. Triggering a QA
+   integration, P0, or full-suite job here is an **ownership violation**: stop, and do not trigger
+   or consume any QA command or job as merge evidence. Automatically triggered **non-QA
    branch-required checks**—such as security, license, provenance, or policy—may run and must pass,
    but are not RD test evidence. Classify review change requests and RD-owned CI failures before
    editing: approved-behaviour defects use a bounded RED → GREEN slice;
@@ -261,8 +263,9 @@ verification jobs and automatic non-QA branch-required checks may proceed.
    gate. Commit valid fixes and rerun affected plus the full RD verification gate. Rerun the
    **independent outcome verifier** and two fresh review runs under the same **RD-only pre-handoff
    review boundary**; they must not run or consume any QA command or job. Rerun the CI ownership
-   preflight immediately, then push a new HEAD and wait again. Retry unrelated infrastructure
-   failures only within the configured bound, then stop with evidence;
+   preflight immediately, then push a new HEAD and wait again. Rerun the CI ownership preflight
+   immediately before each infrastructure retry. Retry unrelated infrastructure failures only
+   within the configured bound, then stop with evidence;
 5. proceed only when required review, RD-owned CI, and all other non-QA branch-required checks are
    green on the new **exact head SHA**—stale green checks and QA-owned jobs do not count;
 6. rerun the CI ownership preflight immediately before merge. After a fresh fencing check and

@@ -170,9 +170,14 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
             "pr open/update",
             "merge/integration push",
             "deployment",
+            "workflow dispatch",
+            "job rerun",
+            "infrastructure retry",
         ):
             self.assertIn(trigger, phase4)
         self.assertIn("unclassified test job", phase4)
+        self.assertIn("re-read the current config v1", phase4)
+        self.assertIn("current remote workflow and job wiring", phase4)
         remote_loop = phase4.split("remote feedback loop", maxsplit=1)[1].split(
             "5. proceed", maxsplit=1
         )[0]
@@ -185,6 +190,10 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
         self.assertLess(
             remote_loop.index("rerun the ci ownership preflight"),
             remote_loop.index("push a new head"),
+        )
+        self.assertLess(
+            remote_loop.rindex("rerun the ci ownership preflight"),
+            remote_loop.index("retry unrelated"),
         )
         self.assertLess(
             merge_path.index("the ci ownership preflight"),
@@ -418,6 +427,14 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
             r"more than one.{0,120}(stop|do not write|do not mutate)",
         )
         self.assertIn("require explicit reconciliation", migration)
+        for marker in (
+            "no existing block",
+            "explicit `0`",
+            "exactly `1`",
+            "unsupported version",
+            "zero mutation",
+        ):
+            self.assertIn(marker, migration)
 
     def test_dev_handoff_uses_template_and_keeps_rd_summary_informational(self) -> None:
         dev = read("skills/dev-workflow/SKILL.md")
