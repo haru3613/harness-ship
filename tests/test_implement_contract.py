@@ -47,7 +47,7 @@ class ImplementSkillContractTests(unittest.TestCase):
         self.assertIn("serialize all write-capable", text)
 
     def test_implementation_closes_the_delivery_loop(self) -> None:
-        text = read("skills/implement/SKILL.md").lower()
+        text = " ".join(read("skills/implement/SKILL.md").lower().split())
 
         for marker in (
             "fixed point",
@@ -71,6 +71,11 @@ class ImplementSkillContractTests(unittest.TestCase):
             "workflow phase",
             "deployment-only resume",
             "independent outcome verifier",
+            "claim generation / fencing token",
+            "durable checkpoint protocol",
+            "post-merge reconciliation",
+            "worktree-disposed=true",
+            "<repo-root>/.worktrees/<task-slug>",
         ):
             self.assertIn(marker, text)
 
@@ -84,6 +89,36 @@ class ImplementSkillContractTests(unittest.TestCase):
         self.assertIn("standards-only", remote_loop)
         self.assertIn("keep tests green", remote_loop)
         self.assertIn("independent outcome verifier", remote_loop)
+
+    def test_recovery_checkpoints_and_fences_external_mutations(self) -> None:
+        text = " ".join(read("skills/implement/SKILL.md").lower().split())
+
+        self.assertIn("there must be no claimed-without-receipt window", text)
+        self.assertIn("immediately before every external mutation", text)
+        self.assertIn("owner, lease, contract revision, and fencing token", text)
+        self.assertIn("before each external mutation", text)
+        self.assertIn("after each external mutation", text)
+        self.assertIn("does not repeat the operation blindly", text)
+        self.assertLess(
+            text.index("post-merge reconciliation", text.index("root alone:")),
+            text.index("obtain a **deployment receipt**"),
+        )
+
+    def test_profiles_are_revalidated_for_every_dispatch(self) -> None:
+        text = " ".join(read("skills/implement/SKILL.md").lower().split())
+
+        self.assertIn("immediately before every dispatch", text)
+        self.assertIn("immutable digest", text)
+        self.assertIn("must match that digest", text)
+
+    def test_worktrees_use_the_repository_local_nested_location(self) -> None:
+        text = " ".join(read("skills/implement/SKILL.md").lower().split())
+
+        self.assertIn("<repo-root>/.worktrees/<task-slug>", text)
+        self.assertIn("git worktree list", text)
+        self.assertIn(".git/info/exclude", text)
+        self.assertIn("detached head at the exact source sha", text)
+        self.assertIn("never create sibling worktrees", text)
 
     def test_setup_records_runtime_role_profiles_without_owning_them(self) -> None:
         text = read("skills/setup/SKILL.md").lower()
@@ -121,7 +156,7 @@ class ImplementSkillContractTests(unittest.TestCase):
         self.assertLess(stage.index("cleanup"), stage.index("deployment evidence"))
 
     def test_review_pins_a_fixed_point_and_reviews_committed_work(self) -> None:
-        text = read("skills/review/SKILL.md").lower()
+        text = " ".join(read("skills/review/SKILL.md").lower().split())
 
         self.assertIn("fixed point", text)
         self.assertIn("merge-base", text)
@@ -130,6 +165,8 @@ class ImplementSkillContractTests(unittest.TestCase):
         self.assertIn("commit list", text)
         self.assertIn("two fresh child runs", text)
         self.assertIn("blocked", text)
+        self.assertIn("self-contained block", text)
+        self.assertIn("independence: not established", text)
 
     def test_readme_and_manifests_advertise_the_new_minor_version(self) -> None:
         readme = read("README.md")
@@ -150,7 +187,20 @@ class ImplementSkillContractTests(unittest.TestCase):
 
     def test_every_skill_has_matching_frontmatter_name(self) -> None:
         skill_files = sorted((ROOT / "skills").glob("*/SKILL.md"))
-        self.assertEqual(len(skill_files), 11)
+        required_skills = {
+            "clarify",
+            "dev-workflow",
+            "diagnose",
+            "implement",
+            "review",
+            "setup",
+            "spec",
+            "spike",
+            "tdd",
+            "testing-workflow",
+            "tickets",
+        }
+        self.assertTrue(required_skills.issubset({path.parent.name for path in skill_files}))
 
         for skill_file in skill_files:
             match = re.search(r"(?m)^name:\s+([a-z0-9-]+)$", skill_file.read_text())
@@ -164,6 +214,7 @@ class ImplementSkillContractTests(unittest.TestCase):
         self.assertIn("jq empty", workflow)
         self.assertIn("${{ github.event.before }}", workflow)
         self.assertIn("git cat-file -e", workflow)
+        self.assertIn("git log --check head", workflow.lower())
 
 
 if __name__ == "__main__":
