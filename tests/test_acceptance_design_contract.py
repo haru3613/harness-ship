@@ -123,6 +123,8 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         self.assertIn("p0 assurance profile", design)
         self.assertIn("automated on every pr", design)
         self.assertIn("qa automation owner", design)
+        self.assertIn("approved exception owner", design)
+        self.assertIn("equals the qa automation owner", design)
         self.assertIn("explicit user approval", design)
         self.assertIn("follow-up ticket", design)
         self.assertIn("expiry", design)
@@ -243,6 +245,7 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             "exact-candidate execution method",
             "required evidence",
             "live follow-up-ticket assignee equals the approved qa automation owner",
+            "approved exception owner equals the approved qa automation owner",
         )
 
         for phase in (premerge, integrate, publish):
@@ -318,10 +321,12 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         fields = (
             "current explicit user approval",
             "follow-up ticket exists and is open",
+            "named owner",
             "unexpired deadline",
             "exact-candidate execution method",
             "required evidence",
             "live follow-up-ticket assignee equals the approved qa automation owner",
+            "approved exception owner equals the approved qa automation owner",
         )
 
         self.assertIn("immediately before generating the report and verdict", stage5)
@@ -435,6 +440,9 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             "last validation time",
             "observed live ticket assignee",
             "owner-match result",
+            "exact pr-head/expected-target-head pair",
+            "merge-intent enforcement",
+            "observed-derivation state",
         ):
             self.assertIn(field, recovery)
 
@@ -490,6 +498,59 @@ class AcceptanceDesignContractTests(unittest.TestCase):
             premerge.index("checkpoint the merge intent"),
             premerge.index("merge only"),
         )
+
+    def test_p0_review_and_ci_producers_checkpoint_the_target_pair(self) -> None:
+        implement = read("skills/implement/SKILL.md").lower()
+        publish = " ".join(
+            implement.split("## phase 4", maxsplit=1)[1]
+            .split("## stop and recovery", maxsplit=1)[0]
+            .split()
+        )
+        remote = " ".join(
+            publish.split("4. run the **remote feedback loop**", maxsplit=1)[1]
+            .split("5. proceed only", maxsplit=1)[0]
+            .split()
+        )
+
+        self.assertIn("checkpoint the expected target head", publish)
+        self.assertIn("alongside every pre-publication p0/review evidence set", publish)
+        self.assertIn("exact pr head + expected target head", remote)
+        self.assertIn("p0/review/ci evidence set", remote)
+
+    def test_postmerge_recovery_replays_pair_bound_authorization(self) -> None:
+        implement = read("skills/implement/SKILL.md").lower()
+        phase0 = " ".join(
+            implement.split("## phase 0", maxsplit=1)[1]
+            .split("## durable checkpoint protocol", maxsplit=1)[0]
+            .split()
+        )
+
+        for marker in (
+            "pair-bound merge intent",
+            "authorization receipt",
+            "actual merge derivation",
+            "applicable exception state",
+            "fail closed",
+            "human reconciliation",
+        ):
+            self.assertIn(marker, phase0)
+
+    def test_report_separates_pr_automation_from_artifact_qa_evidence(self) -> None:
+        template = " ".join(
+            read("skills/testing-workflow/acceptance-report-template.md")
+            .lower()
+            .split("## journeys", maxsplit=1)[1]
+            .split("## manual p0 exceptions", maxsplit=1)[0]
+            .split()
+        )
+
+        for field in (
+            "exact pr head",
+            "pr automation/ci evidence",
+            "handed-off source/artifact revision",
+            "independent qa evidence",
+        ):
+            self.assertIn(field, template)
 
     def test_initial_prepush_revalidates_live_exception_state(self) -> None:
         implement = read("skills/implement/SKILL.md").lower()

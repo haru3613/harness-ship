@@ -59,10 +59,11 @@ For every manual P0 exception, validate its **current explicit user approval**, 
 **follow-up ticket exists and is open**, its **named owner**, its **unexpired deadline**, the
 **exact-candidate execution method**, and the **required evidence**; verify the **live
 follow-up-ticket assignee equals the approved QA automation owner** copied unchanged from the
-approved contract. Any incomplete, closed, expired, or **owner mismatch** makes the handoff **Not
-ready**: do not execute it, and return to `acceptance-design` through `dev-workflow` Stage 3 for a
-revised approved contract. Preserve all six fields, both owner values, and this evaluation in the
-acceptance report.
+approved contract and the **approved exception owner equals the approved QA automation owner**.
+Any incomplete, closed, expired, or **owner mismatch** makes the handoff **Not ready**: do not
+execute it, and return to `acceptance-design` through `dev-workflow` Stage 3 for a revised approved
+contract. Preserve all six fields, all three owner values, and this evaluation in the acceptance
+report.
 
 - **RD tier is a handoff prerequisite:** verify the RD unit/contract receipt and its exact-HEAD
   results. If RD coverage is missing or red, return to RD; QA does not write or execute those tests.
@@ -87,9 +88,10 @@ check. Resolve the prerequisite and exact-artifact run through one branch:
   receipt**. Revalidate its **current explicit user approval**, that the **follow-up ticket exists
   and is open**, its **named owner**, its **unexpired deadline**, the **exact-candidate execution
   method**, the **required evidence**, and that the **live follow-up-ticket assignee equals the
-  approved QA automation owner**. Any invalid field or **owner mismatch** is **Not ready** and
-  returns through `dev-workflow` Stage 3. If valid, execute the **manual exact-candidate method**
-  against the **exact handed-off artifact** and attach the produced evidence.
+  approved QA automation owner**; also verify the **approved exception owner equals the approved QA
+  automation owner**. Any invalid field or **owner mismatch** is **Not ready** and returns through
+  `dev-workflow` Stage 3. If valid, execute the **manual exact-candidate method** against the **exact
+  handed-off artifact** and attach the produced evidence.
 
 Then:
 
@@ -120,11 +122,12 @@ A green suite that fails this gate is worse than none — it manufactures false 
 
 Immediately before generating the report and verdict for any manual P0 exception, revalidate its
 **current explicit user approval**, that the **follow-up ticket exists and is open**, its
-**unexpired deadline**, the **exact-candidate execution method**, the **required evidence**, and
-that the **live follow-up-ticket assignee equals the approved QA automation owner**. Record the
-validation timestamp, observed assignee, and owner-match result. Any invalid field or **owner
-mismatch** makes the result **Not ready** and returns through `dev-workflow` Stage 3; a prior
-Stage 2/3 validation is not reusable.
+**named owner**, its **unexpired deadline**, the **exact-candidate execution method**, the
+**required evidence**, and that the **live follow-up-ticket assignee equals the approved QA
+automation owner**; also verify the **approved exception owner equals the approved QA automation
+owner**. Record the validation timestamp, all owner values, and both owner-match results. Any invalid
+field or **owner mismatch** makes the result **Not ready** and returns through `dev-workflow`
+Stage 3; a prior Stage 2/3 validation is not reusable.
 
 Produce a **plain-language report the user signs off on**, using `acceptance-report-template.md` in
 this folder. It must:

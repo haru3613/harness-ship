@@ -104,8 +104,9 @@ before policy-allowed merge. It performs cleanup immediately after merge. It the
 deployment evidence for the configured non-production environment before QA handoff and writes a durable
 implementation receipt so an interrupted ticket resumes from evidence rather than conversation.
 
-For every approved P0 integration/E2E automation profile, `implement` records a **QA automation
-owner** in the ticket/receipt before PR creation. Without an approved manual exception, that owner
+For every approved P0 integration/E2E automation profile, `implement` copies the approved **QA
+automation owner** unchanged into the ticket/receipt before PR creation; reassignment returns to
+Stage 3 for a new contract revision. Without an approved manual exception, that owner
 implements the automation through the profile's named harness and runs it locally against the clean
 committed feature-branch HEAD before publication. With an exception, that owner owns its follow-up
 automation ticket. When the PR opens, `implement` attaches the ownership and pre-publication
