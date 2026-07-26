@@ -705,6 +705,9 @@ class ReleaseContractTests(unittest.TestCase):
         self.assertNotIn("--force", publisher)
         self.assertNotIn("tag\", \"-d", publisher)
         self.assertIn("validate_plugin_lifecycle.sh", publisher)
+        self.assertIn('"git", "tag", "--merged", candidate', publisher)
+        contributing = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+        self.assertIn("does not infer the upgrade base", contributing)
 
     def test_publication_dry_run_uses_full_lifecycle_without_creating_tag(
         self,
@@ -721,13 +724,41 @@ class ReleaseContractTests(unittest.TestCase):
             run(["git", "init", "-q"], repo)
             run(["git", "config", "user.name", "Harness Ship Test"], repo)
             run(["git", "config", "user.email", "test@example.invalid"], repo)
+            for manifest in (
+                ".codex-plugin/plugin.json",
+                ".claude-plugin/plugin.json",
+            ):
+                payload = json.loads((repo / manifest).read_text(encoding="utf-8"))
+                payload["version"] = "0.6.3"
+                (repo / manifest).write_text(json.dumps(payload), encoding="utf-8")
+            for catalog in (
+                ".agents/plugins/marketplace.json",
+                ".claude-plugin/marketplace.json",
+            ):
+                payload = json.loads((repo / catalog).read_text(encoding="utf-8"))
+                payload["plugins"][0]["source"]["ref"] = "v0.6.3"
+                (repo / catalog).write_text(json.dumps(payload), encoding="utf-8")
             run(["git", "add", "."], repo)
-            run(["git", "commit", "-qm", "release state"], repo)
-            (repo / "README.md").write_text(
-                (repo / "README.md").read_text(encoding="utf-8") + "\n",
+            run(["git", "commit", "-qm", "previous stable release"], repo)
+            previous = run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+            run(["git", "tag", "v0.6.3", previous], repo)
+
+            shutil.copytree(
+                ROOT,
+                repo,
+                dirs_exist_ok=True,
+                ignore=shutil.ignore_patterns(
+                    ".git", ".worktrees", "__pycache__", "*.pyc"
+                ),
+            )
+            self.commit(repo, "merged v0.7.0 release state")
+            helper = repo / "scripts" / "role_binding_contract.py"
+            helper.write_text(
+                helper.read_text(encoding="utf-8")
+                + "\n# Final bootstrap checkpoint.\n",
                 encoding="utf-8",
             )
-            candidate = self.commit(repo, "merged main candidate")
+            candidate = self.commit(repo, "final bootstrap checkpoint")
             run(["git", "branch", "-M", "main"], repo)
 
             result = run(
@@ -751,6 +782,7 @@ class ReleaseContractTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("publication dry-run: zero mutation", result.stdout)
             self.assertIn("fresh-install receipt:", result.stdout)
+            self.assertIn(f"upgrade-base=v0.6.3:{previous}", result.stdout)
             self.assertNotEqual(
                 run(
                     ["git", "rev-parse", "--verify", "refs/tags/v0.7.0"],

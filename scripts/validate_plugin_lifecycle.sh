@@ -3,8 +3,18 @@ set -euo pipefail
 
 base_ref="${1:-HEAD^}"
 current_ref="${2:-HEAD}"
+lifecycle_mode="${3:-pr}"
 repo_root="$(git rev-parse --show-toplevel)"
 lifecycle_tmp_dir="$(mktemp -d)"
+
+case "${lifecycle_mode}" in
+  pr|release)
+    ;;
+  *)
+    echo "lifecycle mode must be pr or release" >&2
+    exit 2
+    ;;
+esac
 
 cleanup_lifecycle_tmp() {
   rm -rf "${lifecycle_tmp_dir}"
@@ -105,8 +115,14 @@ archive_ref "${base_ref}" "${upgrade_dir}"
 base_version="$(manifest_version "${upgrade_dir}")"
 current_version="$(manifest_version "${fresh_dir}")"
 
-python3 "${repo_root}/scripts/check_release_contract.py" \
-  pr --repo "${repo_root}" "${base_ref}" "${current_ref}"
+if test "${lifecycle_mode}" = "pr"; then
+  python3 "${repo_root}/scripts/check_release_contract.py" \
+    pr --repo "${repo_root}" "${base_ref}" "${current_ref}"
+else
+  python3 "${repo_root}/scripts/check_release_contract.py" \
+    version-state check --repo "${repo_root}" --ref "${current_ref}"
+  test "${base_version}" != "${current_version}"
+fi
 
 validate_current_install "${fresh_dir}"
 validate_generic_install "${upgrade_dir}" >/dev/null

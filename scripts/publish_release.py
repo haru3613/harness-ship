@@ -9,13 +9,19 @@ idempotently. Tags are never moved, deleted, or rolled back.
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
+import re
 import subprocess
 import sys
 
 
 class PublicationError(RuntimeError):
     pass
+
+
+TAG_RE = re.compile(r"^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$")
+MANIFESTS = (".codex-plugin/plugin.json", ".claude-plugin/plugin.json")
 
 
 def run(
@@ -29,6 +35,67 @@ def run(
             result.stderr.strip() or result.stdout.strip() or "command failed"
         )
     return result
+
+
+def stable_version_at(repo: Path, ref: str) -> str:
+    versions: set[str] = set()
+    for manifest in MANIFESTS:
+        raw = run(["git", "show", f"{ref}:{manifest}"], cwd=repo).stdout
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError as error:
+            raise PublicationError(
+                f"{ref}:{manifest} is not valid JSON"
+            ) from error
+        version = payload.get("version") if isinstance(payload, dict) else None
+        if not isinstance(version, str):
+            raise PublicationError(f"{ref}:{manifest} has no string version")
+        versions.add(version)
+    if len(versions) != 1:
+        raise PublicationError(f"{ref} has unsynchronized plugin versions")
+    return versions.pop()
+
+
+def select_upgrade_base(
+    repo: Path, candidate: str, release_tag: str
+) -> tuple[str, str]:
+    current_match = TAG_RE.fullmatch(release_tag)
+    if current_match is None:
+        raise PublicationError("release tag must be strict semver")
+    current_version = tuple(int(part) for part in current_match.groups())
+    eligible: list[tuple[tuple[int, int, int], str, str]] = []
+    tags = run(
+        ["git", "tag", "--merged", candidate, "--list", "v*"],
+        cwd=repo,
+    ).stdout.splitlines()
+    for tag in tags:
+        match = TAG_RE.fullmatch(tag)
+        if match is None or tag == release_tag:
+            continue
+        version = tuple(int(part) for part in match.groups())
+        if version > current_version:
+            raise PublicationError(
+                f"candidate contains newer stable tag {tag}; refusing older publication"
+            )
+        if version == current_version:
+            raise PublicationError(
+                f"candidate contains duplicate stable version tag {tag}"
+            )
+        if stable_version_at(repo, tag) != tag[1:]:
+            raise PublicationError(
+                f"stable tag {tag} disagrees with its plugin manifests"
+            )
+        sha = run(
+            ["git", "rev-parse", "--verify", f"refs/tags/{tag}^{{}}"],
+            cwd=repo,
+        ).stdout.strip()
+        eligible.append((version, tag, sha))
+    if not eligible:
+        raise PublicationError(
+            "no prior reachable strict-semver stable tag is available for upgrade proof"
+        )
+    _, tag, sha = max(eligible)
+    return tag, sha
 
 
 def main() -> int:
@@ -60,20 +127,22 @@ def main() -> int:
             "--dry-run",
         ]
         contract = run(preflight, cwd=repo).stdout.strip()
-        parent = run(
-            ["git", "rev-parse", f"{args.candidate}^"], cwd=repo
-        ).stdout.strip()
+        upgrade_tag, upgrade_sha = select_upgrade_base(
+            repo, args.candidate, args.tag
+        )
         lifecycle = run(
             [
                 "bash",
                 str(repo / "scripts" / "validate_plugin_lifecycle.sh"),
-                parent,
+                upgrade_tag,
                 args.candidate,
+                "release",
             ],
             cwd=repo,
         ).stdout.strip()
         if args.dry_run:
             print(contract)
+            print(f"upgrade-base={upgrade_tag}:{upgrade_sha}")
             print(lifecycle)
             print("publication dry-run: zero mutation")
             return 0
@@ -139,6 +208,7 @@ def main() -> int:
             cwd=repo,
         )
         print(contract)
+        print(f"upgrade-base={upgrade_tag}:{upgrade_sha}")
         print(
             f"publication receipt: channel={args.channel} tag={args.tag} "
             f"sha={args.candidate}"
