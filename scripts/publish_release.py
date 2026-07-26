@@ -180,7 +180,7 @@ def main() -> int:
             [
                 "bash",
                 str(repo / "scripts" / "validate_plugin_lifecycle.sh"),
-                upgrade_tag,
+                upgrade_sha,
                 args.candidate,
                 "release",
             ],

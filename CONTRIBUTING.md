@@ -83,6 +83,6 @@ Pull requests are reviewed but merged by a maintainer. A green check does not au
 automatic merge, tag, GitHub release, or repository visibility change. Publication is a separate,
 attended `workflow_dispatch` action against the intended full merged `main` SHA. The publication
 preflight selects the highest reachable earlier strict-semver stable tag whose Codex and Claude
-manifests match that tag, records its exact SHA, and runs the upgrade lifecycle from that release.
-It does not infer the upgrade base from the candidate's immediate parent, so squash, merge-commit,
-and rebase histories do not change the release evidence.
+manifests match that tag, records its exact SHA, and runs the upgrade lifecycle from that captured
+SHA rather than resolving the tag again. It does not infer the upgrade base from the candidate's
+immediate parent, so squash, merge-commit, and rebase histories do not change the release evidence.

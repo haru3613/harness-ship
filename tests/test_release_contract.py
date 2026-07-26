@@ -994,6 +994,7 @@ class ReleaseContractTests(unittest.TestCase):
             self.assertIn("publication dry-run: zero mutation", result.stdout)
             self.assertIn("fresh-install receipt:", result.stdout)
             self.assertIn(f"upgrade-base=v0.6.3:{previous}", result.stdout)
+            self.assertIn(f"upgrade receipt: from={previous}:0.6.3", result.stdout)
             self.assertNotEqual(
                 run(
                     ["git", "rev-parse", "--verify", "refs/tags/v0.7.0"],
