@@ -317,6 +317,31 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
         self.assertRegex(stage3, r"p0.{0,160}every classification except pass.{0,120}not ready")
         self.assertIn("qa evidence location", stage3)
         self.assertIn("still writable", stage3)
+        for marker in (
+            "qa execution ownership preflight",
+            "re-read the current config v1",
+            "current command, workflow, and job wiring",
+            "initial direct or manual execution",
+            "ci workflow dispatch or job rerun",
+            "retry execution",
+            "`not run` → `not tested`",
+            "ownership drift",
+        ):
+            self.assertIn(marker, stage3)
+        initial_execution = stage3.split(
+            "**initial direct or manual execution:**", maxsplit=1
+        )[1].split("**ci workflow dispatch or job rerun:**", maxsplit=1)[0]
+        ci_execution = stage3.split(
+            "**ci workflow dispatch or job rerun:**", maxsplit=1
+        )[1].split("**retry execution:**", maxsplit=1)[0]
+        retry_execution = stage3.split("**retry execution:**", maxsplit=1)[1].split(
+            "then:", maxsplit=1
+        )[0]
+        for execution_path in (initial_execution, ci_execution, retry_execution):
+            self.assertLess(
+                execution_path.index("preflight"),
+                execution_path.index("then"),
+            )
 
     def test_anti_fake_green_rejection_is_appended_to_the_ledger(self) -> None:
         workflow = read("skills/testing-workflow/SKILL.md")

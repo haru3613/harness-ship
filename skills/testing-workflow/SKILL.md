@@ -84,6 +84,18 @@ capability is either an executable command, an explicit `manual: <steps + requir
 method, or `not-configured`. A `not-configured` capability cannot run: record **NOT TESTED** and make
 the result **Not ready**; never infer PASS from an unknown capability.
 
+Run a fail-closed **QA execution ownership preflight** immediately before every trigger-capable QA
+action. Re-read the current Config v1, the capability's QA ownership, and the current command,
+workflow, and job wiring; revalidate the handoff-bound source/artifact/provenance and evidence
+destination. On configuration or ownership drift, an RD-owned/unclassified action, or a mismatch,
+do not execute: append raw `NOT RUN` → `NOT TESTED` with preflight evidence.
+
+- **Initial direct or manual execution:** run the preflight immediately, then start the configured
+  QA command or approved manual steps.
+- **CI workflow dispatch or job rerun:** run the preflight immediately, then dispatch or rerun only
+  the positively classified QA job.
+- **Retry execution:** rerun the preflight immediately, then retry the same handoff-bound QA action.
+
 Before each scenario, revalidate that the ledger's source SHA, exact artifact/environment revision,
 and artifact provenance receipt still match the handoff, and that the configured **QA evidence
 location** is still writable. Record the SC-ID, AC-ID, QA layer/risk probe, method/command or manual
