@@ -13,9 +13,11 @@ description: >-
 Implement **one approved ticket** from ready state to merged evidence. The main/root session is the
 orchestrator; subagents are bounded specialists, not competing controllers.
 
-**Prerequisite:** read the project's `## harness-ship` config in `AGENTS.md` / `CLAUDE.md`. It must
-identify the tracker and PR access paths, branch topology, configured checks, and **Agent role
-profiles**. If the block is absent or lacks role profiles, run `setup` before delegating.
+**Prerequisite:** read the project's `## harness-ship` **Config version 1** block in `AGENTS.md` /
+`CLAUDE.md`. It must identify the tracker and PR access paths, branch topology, classified RD/QA
+commands, configured checks, and **Agent role profiles**. If it is absent, legacy or unversioned,
+or lacks role profiles, run `setup` and stop before delegating or running a baseline. Do not
+reinterpret a legacy generic test command.
 
 ## Root ownership — never delegate the control plane
 
@@ -77,6 +79,8 @@ Every child receives exactly one task with:
 5. behavioural and operational **constraints**, including forbidden tools;
 6. a concrete **verification** command or evidence request;
 7. an instruction not to spawn agents, commit, push, mutate tracker/PR state, or expand scope.
+8. for **every pre-handoff child**, a hard constraint: do not run or consume any QA integration,
+   P0, or full-suite command or job; use only its authorized RD command/check scope.
 
 Use **one writer** for any file set or worktree region. **Serialize all write-capable** children in
 the ticket worktree—even when their planned files are disjoint—so root can inspect and checkpoint a
@@ -122,8 +126,12 @@ Root:
    worktree.
 6. Record the exact integration-branch SHA and `git merge-base HEAD <integration-ref>` as the
    **fixed point**, plus the branch, worktree path, and starting `git status`.
-7. Run a narrow **baseline** at each approved seam and the cheapest configured static check.
-   Pre-existing failures stop the ticket; record them without rewriting the contract.
+7. Run a narrow **baseline** using only the applicable configured **RD unit** and
+   **RD API-contract** commands at approved RD seams, plus the cheapest configured static check.
+   Do not run or consume any QA integration, P0, or full-suite command before the dev→QA handoff.
+   An applicable `not-configured` RD command is reported as missing; it is never replaced with a QA
+   command or inferred PASS. Pre-existing failures stop the ticket; record them without rewriting
+   the contract.
 
 Refresh the claim **heartbeat** during long phases. Every implementation receipt records claim
 owner, lease/heartbeat, claim-generation fencing token, and the permitted
@@ -199,40 +207,71 @@ acceptance-contract gate. Standards-only refactoring keeps tests green; it does 
 When all slices are integrated:
 
 1. require a clean working tree and inspect every commit plus `git diff <fixed-point>...HEAD`;
-2. run the **full configured suite** once, plus configured typecheck/lint/build steps (`none` skips);
-3. dispatch the mandatory independent-verification profile against the ticket, contract, exact
-   diff, and commands; it may create test artifacts but must not edit source code;
+2. run the full configured **RD verification gate** once: the RD unit command, RD API-contract
+   command, and configured typecheck/lint/build steps (`none` skips). Do not run or consume any QA
+   integration, P0, or full-suite command before the dev→QA handoff. An applicable
+   `not-configured` RD command is reported as missing, never replaced with a QA command or inferred
+   PASS;
+3. dispatch the mandatory **RD-owned independent verification** profile against the ticket,
+   contract, exact diff, and the configured RD verification-gate commands. It may create RD
+   verification artifacts but must not edit source code. It must not run or consume any QA
+   integration, P0, or full-suite command or job before the dev→QA handoff;
 4. run `review` with two fresh child runs from the mapped verification profile, the fixed point,
    originating ticket/spec/contract, repository standards, and data-mutation/security gates that
-   apply.
+   apply. Each is an **RD-owned pre-handoff review**: it may inspect the diff, RD verification
+   evidence, and non-QA checks, but must not run or consume any QA command or job.
 
 Blocking verification/review findings return to a bounded executor or root. Behaviour fixes restart
 a RED → GREEN slice; standards-only fixes keep tests green. Commit fixes, rerun affected checks,
-the full configured gate when impact warrants it, and independent review until no blockers remain.
+the full RD verification gate when impact warrants it, and independent review until no blockers
+remain.
 
 ## Phase 4 — Publish exact evidence
 
 Root alone:
 
+Until the QA handoff is valid, rerun the **CI ownership preflight** immediately before every
+trigger-capable mutation: initial push, retry push, PR open/update, merge/integration push,
+deployment mutation, workflow dispatch, job rerun, and infrastructure retry. Immediately before
+each, re-read the current Config v1 and the current remote workflow and job wiring. If a QA-owned or
+**unclassified test job** would launch, stop before the mutation; only positively classified RD
+verification jobs and automatic non-QA branch-required checks may proceed.
+
 1. fetch the integration branch. If it advanced, rebase safely, **recompute the fixed point** from
    the new integration head, and treat the prior review/verification evidence as superseded. After
-   any rebase or conflict resolution, require a clean tree and rerun the full configured gate,
-   independent verification, and `review` against the new `fixed-point...HEAD` before publishing;
-2. apply the fencing check and receipt write-ahead protocol, then push the feature branch and
-   open/update one PR targeting the integration branch;
+   any rebase or conflict resolution, require a clean tree and rerun the full RD verification gate,
+   independent verification, and `review` against the new `fixed-point...HEAD` before publishing.
+   Apply the same **RD-only pre-handoff review boundary**: these runs must not run or consume any QA
+   command or job;
+2. before any push or PR mutation, run a **CI ownership preflight**: inspect the exact workflow
+   triggers and job-command wiring plus the Config v1 QA command mappings. If pushing the branch or
+   opening/updating the PR would automatically launch a QA integration, P0, or full-suite job, stop
+   before the mutation. Automatically triggered non-QA branch-required checks remain allowed. Once
+   the preflight passes, apply the fencing check and receipt write-ahead protocol, then push the
+   feature branch and open/update one PR targeting the integration branch;
 3. attach the contract revision, SC-ID → AC-ID trace, TDD receipts, fixed point, commit list, and
    verification results;
-4. run the **remote feedback loop** on the exact head SHA. Classify review change requests and CI
-   failures before editing: approved-behaviour defects use a bounded RED → GREEN slice;
+4. run the **remote feedback loop** on the exact head SHA. Before handoff, only **RD-owned CI**
+   verification jobs may be actively triggered or counted as RD test evidence. Rerun the CI
+   ownership preflight immediately before every workflow dispatch or job rerun. Triggering a QA
+   integration, P0, or full-suite job here is an **ownership violation**: stop, and do not trigger
+   or consume any QA command or job as merge evidence. Automatically triggered **non-QA
+   branch-required checks**—such as security, license, provenance, or policy—may run and must pass,
+   but are not RD test evidence. Classify review change requests and RD-owned CI failures before
+   editing: approved-behaviour defects use a bounded RED → GREEN slice;
    **standards-only** fixes keep tests green; requested contract changes return to the acceptance
-   gate. Commit valid fixes and rerun affected plus full configured checks. Rerun the
-   **independent outcome verifier** and two fresh review runs, push a new HEAD, and wait again. Retry unrelated
-   infrastructure failures only within the configured bound, then stop with evidence;
-5. proceed only when required review and CI are green on the new **exact head SHA**—stale green
-   checks do not count;
-6. after a fresh fencing check and pre-mutation checkpoint, merge only under the configured branch
-   policy. Never autonomously merge a protected release branch or auto-merge a single-branch
-   repository. Checkpoint the observed merge SHA immediately;
+   gate. Commit valid fixes and rerun affected plus the full RD verification gate. Rerun the
+   **independent outcome verifier** and two fresh review runs under the same **RD-only pre-handoff
+   review boundary**; they must not run or consume any QA command or job. Rerun the CI ownership
+   preflight immediately, then push a new HEAD and wait again. Rerun the CI ownership preflight
+   immediately before each infrastructure retry. Retry unrelated infrastructure failures only
+   within the configured bound, then stop with evidence;
+5. proceed only when required review, RD-owned CI, and all other non-QA branch-required checks are
+   green on the new **exact head SHA**—stale green checks and QA-owned jobs do not count;
+6. rerun the CI ownership preflight immediately before merge. After a fresh fencing check and
+   pre-mutation checkpoint, merge only under the configured branch policy. Never autonomously merge
+   a protected release branch or auto-merge a single-branch repository. Checkpoint the observed
+   merge SHA immediately;
 7. run the idempotent **post-merge reconciliation** path: revalidate fencing, update the tracker to
    development-complete/awaiting-deployment, verify no process/session uses the clean merged feature
    worktree, then perform worktree **cleanup** immediately and checkpoint
@@ -240,10 +279,12 @@ Root alone:
    disposal on resume; do not skip it or recreate/reuse the merged branch. If a later local build is
    required, use a detached build-only worktree under `<repo-root>/.worktrees/` at the exact merged
    SHA and remove it after artifact production;
-8. obtain a **deployment receipt** for the configured non-production test environment: deployed
-   source SHA, artifact/environment revision, status, URL/access path, and fixtures. Verify the
-   artifact was built from the merged source. If deployment is manual or unavailable, mark the
-   ticket `awaiting deployment` and stop before QA until an external receipt supplies this evidence;
+8. obtain a **deployment receipt** for the configured non-production test environment. Before any
+   deployment-triggering mutation, rerun the CI ownership preflight and stop on a QA-owned or
+   unclassified test job. Record deployed source SHA, artifact/environment revision, status,
+   URL/access path, and fixtures. Verify the artifact was built from the merged source. If
+   deployment is manual or unavailable, mark the ticket `awaiting deployment` and stop before QA
+   until an external receipt supplies this evidence;
 9. update the tracker with PR/merge/deployment evidence and the awaiting-QA state—do not close
    acceptance early.
 
@@ -265,6 +306,6 @@ termination recovery relies on the checkpoint protocol above rather than an inte
 - workflow phase, PR, merge SHA, deployment state, and whether the feature worktree was disposed;
 - fixed point, branch, worktree, current HEAD, and clean/dirty state;
 - completed/current/remaining slices and assigned role profiles;
-- RED/GREEN/regression/static/full-suite commands and results;
+- RD unit/API-contract RED/GREEN/regression commands plus static-check commands and results;
 - review/CI state at the exact head SHA and any deployment/artifact receipt;
 - blocker, next safe action, and any required human judgment.

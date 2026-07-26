@@ -16,12 +16,21 @@ execution after handoff.
 
 ## Inputs — inherit the approved contract
 
+Read the project's `## harness-ship` **Config version 1** block before a baseline or edit. If it is
+absent, legacy or unversioned, run `setup` and stop until the upgrade completes. Do not reinterpret
+a legacy generic test command.
+
 Before editing code, read:
 
 - the ticket's acceptance criteria and approved contract revision,
 - its SC-ID → AC-ID traceability,
 - the test seams and interfaces chosen in the spec,
-- the repository's test commands and conventions.
+- the configured **RD unit** and **RD API-contract** commands and repository conventions.
+
+TDD consumes only those RD commands. Do not run or consume any configured QA command before the
+dev→QA handoff; QA integration, P0, and full-suite commands belong to `testing-workflow`. If an
+applicable RD command is `not-configured`, report the missing capability instead of substituting a
+QA command or inferring PASS.
 
 Do not ask the user to approve the seams again. They were settled with the spec and acceptance
 contract. If implementation reveals a different seam but does not change observable behaviour,
@@ -47,8 +56,8 @@ See [tests.md](tests.md) for examples and [mocking.md](mocking.md) for adapter g
 
 ### 0. Baseline
 
-Run the narrowest relevant existing test command. If it is already red for an unrelated reason,
-stop and report the pre-existing failure; do not bury it under the new change.
+Run the narrowest relevant configured RD unit or RD API-contract command. If it is already red for
+an unrelated reason, stop and report the pre-existing failure; do not bury it under the new change.
 
 ### 1. Choose one behaviour slice
 
@@ -73,7 +82,7 @@ assertion is insensitive; do not manufacture a failure.
 ### 3. GREEN — add the smallest implementation
 
 Change only enough production code to satisfy that behaviour. Do not anticipate later slices or
-add speculative options. Run the focused test, then the relevant surrounding suite.
+add speculative options. Run the focused test, then the relevant surrounding RD suite.
 
 ### 4. Repeat
 
@@ -83,8 +92,8 @@ one test → one implementation increment → one verified outcome.
 ## Refactoring and review
 
 Do not mix structural redesign into GREEN. After the behaviour slices pass, run `review`; any
-standards-only cleanup must keep the relevant suite green. If review changes observable behaviour,
-start a new RED cycle. A wide prefactor remains its own ticket as defined by `tickets`.
+standards-only cleanup must keep the relevant RD suite green. If review changes observable
+behaviour, start a new RED cycle. A wide prefactor remains its own ticket as defined by `tickets`.
 
 A pure refactor ticket has no honest missing-behaviour RED. State that exception, establish
 characterization or existing regression coverage, and keep it green throughout instead of creating

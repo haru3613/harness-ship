@@ -16,9 +16,11 @@ Take a feature from a **rough idea** to **merged code**. The shape is deliberate
 > UI 定稿, acceptance contract, ticket granularity, acceptance). Everything between them is
 > automated.
 
-**Prerequisite:** read the project's `## harness-ship` config (tracker, integration vs protected
-branch, test/lint commands, safety gate) in `AGENTS.md` / `CLAUDE.md`. If it is absent, run `setup`
-first — otherwise the stages below fall back to generic guesses.
+**Prerequisite:** read the project's `## harness-ship` **Config version 1** block (tracker,
+integration vs protected branch, RD/QA commands, and safety gate) in `AGENTS.md` / `CLAUDE.md`. If
+it is absent, legacy or unversioned, run `setup` and stop until the upgrade completes. Do not
+reinterpret a legacy generic test command—the stages below must consume only classified Config v1
+fields.
 
 ## Operating principle — bring out the 90%
 
@@ -109,16 +111,16 @@ protected-branch decisions stop safely under `implement`'s rules.
 
 ## Stage 6 — Hand to QA
 
-Write a **QA handoff** onto the PR/ticket (not a scratch file, not a "resume the work" note — QA
-needs to know what to *verify*):
+Write a **QA handoff** onto the PR/ticket using the
+[QA handoff template](../testing-workflow/qa-handoff-template.md) (not a scratch file, not a
+"resume the work" note). It
+must name the approved contract and SC-ID → AC-ID scope, **full 40-character source SHA**, deployed
+artifact/environment revision, artifact-provenance source and receipt, access path,
+fixtures/accounts, and known risks.
 
-- **What changed** (user-facing behaviour, per ticket).
-- **The acceptance-contract revision**, approved scenario IDs, and each criterion to verify.
-- **The exact source commit and deployed artifact/environment revision** under test.
-- **How to reach it**: test URL / environment + fixtures/accounts + seed data.
-- **Known risks / edge cases** worth probing.
-- **The TDD receipt and what unit + contract tests cover** — so QA focuses on integration +
-  journeys, no duplication.
+Include an **RD coverage summary** of unit and API-contract coverage plus honest exclusions. It is
+informational: QA uses it to avoid duplication; QA does not audit the TDD cycle or execute RD tests.
+Mark an incomplete or mismatched handoff Not ready.
 
 Then resume **`testing-workflow` at Stage 2**; do not redesign the approved scenarios from the
 implementation. Its acceptance report is gate 5 — the user signs off. Bugs loop back as new tickets
