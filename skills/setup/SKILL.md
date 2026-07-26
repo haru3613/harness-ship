@@ -102,6 +102,15 @@ replace it with a discovered default. Claude Code's eligible default is the exac
 `harness-ship:harness-ship-independent-verifier` at canonical plugin provenance. Codex candidates
 must be authoritative live host profiles; do not hard-code a universal model family.
 
+When the helper returns `reason_code=unsafe-verifier-boundary`, surface its structured `observed`,
+`required`, and ordered `remediation` fields together with `mutation=false`; do not collapse this
+result into a generic missing or stale-profile error. The remediation order is: upgrade and
+activate the current Harness Ship release, restart the host, configure or select a safe live
+verifier, explicitly clear or repair only the project's current-host binding after reviewing the
+reported mismatch, rerun setup, and rerun preflight. This is operator guidance, not authorization
+for setup to mutate any global profile, settings file, or project binding before the operator
+chooses the repair.
+
 Write the fully qualified ID, authoritative source, and semantically validated boundary digest.
 Update only the current host section and preserve the other host section plus all global agents,
 models, effort, permissions, MCP access, plugin settings, and unrelated project configuration.

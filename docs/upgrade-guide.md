@@ -12,6 +12,12 @@ codex plugin add harness-ship@harness-ship
 
 Start a new Codex session before running `$harness-ship:setup`.
 
+**v0.6.4 migration:** upgrade and activate the plugin, then restart Codex. If the verifier
+diagnostic reports an unsafe boundary, configure or select one **safe live verifier** with
+host-enforced read-only permissions. Harness Ship performs **zero mutation** of global profiles or
+an unsafe persisted binding: after reviewing the mismatch, explicitly clear or repair only the
+project's **current-host binding**, rerun setup, then rerun preflight before implementation.
+
 **v0.6.3 migration:** every Config v1 project must run `$harness-ship:setup` once after install or
 upgrade. Raw-text reconciliation upgrades the legacy binding row, preserves an exact valid binding
 across plugin relocation, and changes only the current-host payload. Re-run setup after a profile
@@ -32,6 +38,12 @@ claude plugin update harness-ship@harness-ship
 ```
 
 Restart Claude Code before running `/harness-ship:setup`.
+
+**v0.6.4 migration:** upgrade the plugin, then restart Claude Code. If the verifier diagnostic
+reports an unsafe boundary, configure or select one **safe live verifier** with host-enforced
+read-only permissions. Harness Ship performs **zero mutation** of global profiles or an unsafe
+persisted binding: after reviewing the mismatch, explicitly clear or repair only the project's
+**current-host binding**, rerun setup, then rerun preflight before implementation.
 
 **v0.6.3 migration:** every Config v1 project must run `/harness-ship:setup` once after install or
 upgrade. Raw-text reconciliation upgrades the legacy binding row, preserves an exact valid binding

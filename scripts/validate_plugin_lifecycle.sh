@@ -94,26 +94,20 @@ validate_current_install() {
 }
 
 archive_ref "${current_ref}" "${fresh_dir}"
-validate_current_install "${fresh_dir}"
-
 archive_ref "${base_ref}" "${upgrade_dir}"
-validate_generic_install "${upgrade_dir}" >/dev/null
 base_version="$(manifest_version "${upgrade_dir}")"
+current_version="$(manifest_version "${fresh_dir}")"
+
+python3 "${repo_root}/scripts/check_release_contract.py" \
+  --repo "${repo_root}" "${base_ref}" "${current_ref}"
+
+validate_current_install "${fresh_dir}"
+validate_generic_install "${upgrade_dir}" >/dev/null
 
 rm -rf "${upgrade_dir}"
 mkdir -p "${upgrade_dir}"
 archive_ref "${current_ref}" "${upgrade_dir}"
 validate_current_install "${upgrade_dir}"
-current_version="$(manifest_version "${upgrade_dir}")"
-
-python3 - "${base_version}" "${current_version}" <<'PY'
-import sys
-
-base = tuple(int(part) for part in sys.argv[1].split("."))
-current = tuple(int(part) for part in sys.argv[2].split("."))
-if current < base:
-    raise SystemExit(f"version regressed: {base} -> {current}")
-PY
 
 current_sha="$(git -C "${repo_root}" rev-parse "${current_ref}")"
 base_sha="$(git -C "${repo_root}" rev-parse "${base_ref}")"

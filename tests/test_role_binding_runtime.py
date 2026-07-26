@@ -1070,6 +1070,109 @@ class RoleBindingRuntimeTests(unittest.TestCase):
                         self.contract.preflight_document(packet)["status"], "fail"
                     )
 
+    def test_unsafe_boundary_diagnostic_is_complete_and_nonmutating(self) -> None:
+        original_raw = fixture("codex.json")["candidates"][0]
+        safe = self.contract.build_candidate(**original_raw)
+        unsafe_raw = deepcopy(original_raw)
+        unsafe_raw["profile"]["mode_sandbox"] = "workspace-write"
+        unsafe_raw["profile"]["write_scope"] = "workspace"
+        unsafe_raw["profile"]["effective_tools_capabilities"] = [
+            "Bash",
+            "Glob",
+            "Grep",
+            "Read",
+        ]
+        unsafe_raw["source"] = canonical_record(unsafe_raw["profile"])
+        refresh_receipt(unsafe_raw)
+        unsafe = self.contract.build_candidate(**unsafe_raw)
+
+        packets = {
+            "persisted": {
+                "persisted": unsafe["binding"],
+                "live": deepcopy(safe),
+                "launch_plan": deepcopy(safe),
+            },
+            "live": {
+                "persisted": safe["binding"],
+                "live": deepcopy(unsafe),
+                "launch_plan": deepcopy(safe),
+            },
+            "launch_plan": {
+                "persisted": safe["binding"],
+                "live": deepcopy(safe),
+                "launch_plan": deepcopy(unsafe),
+            },
+        }
+        for source, packet in packets.items():
+            with self.subTest(source=source):
+                result = self.contract.preflight_document(packet)
+                self.assertEqual(result["status"], "fail")
+                self.assertEqual(result["reason_code"], "unsafe-verifier-boundary")
+                self.assertFalse(result["mutation"])
+                self.assertEqual(result["error"], "unsafe verifier boundary")
+                self.assertIn(source, result["observed"])
+                violations = result["observed"][source]["violations"]
+                self.assertIn("mode_sandbox", violations)
+                self.assertEqual(
+                    result["required"]["mode_sandbox"],
+                    "read-only",
+                )
+                self.assertEqual(
+                    result["required"]["effective_tools_capabilities"],
+                    ["Glob", "Grep", "Read"],
+                )
+                self.assertGreaterEqual(len(result["remediation"]), 4)
+                remediation = " ".join(result["remediation"]).lower()
+                for marker in (
+                    "restart",
+                    "safe live verifier",
+                    "current-host binding",
+                    "rerun setup",
+                    "rerun preflight",
+                ):
+                    self.assertIn(marker, remediation)
+
+    def test_setup_reports_unsafe_candidate_without_mutation(self) -> None:
+        document = self.document("codex.json")
+        unsafe_raw = deepcopy(document["candidates"][0])
+        unsafe_raw["profile"]["mode_sandbox"] = "workspace-write"
+        unsafe_raw["profile"]["write_scope"] = "workspace"
+        unsafe_raw["source"] = canonical_record(unsafe_raw["profile"])
+        refresh_receipt(unsafe_raw)
+        document["candidates"] = [unsafe_raw]
+
+        result = self.contract.resolve_document(document)
+
+        self.assertEqual(result["status"], "missing")
+        self.assertFalse(result["mutation"])
+        self.assertEqual(result["reason_code"], "unsafe-verifier-boundary")
+        self.assertIn("candidates", result["observed"])
+        self.assertEqual(result["required"]["mode_sandbox"], "read-only")
+        self.assertIn("rerun setup", " ".join(result["remediation"]).lower())
+
+        original = self.config_text("codex_not_configured.md")
+        reconciled = self.contract.reconcile_config_text(
+            original,
+            "codex",
+            [unsafe_raw],
+        )
+        self.assertEqual(reconciled["status"], "missing")
+        self.assertFalse(reconciled["mutation"])
+        self.assertEqual(reconciled["config_text"], original)
+        self.assertEqual(
+            reconciled["reason_code"],
+            "unsafe-verifier-boundary",
+        )
+        self.assertIn("candidates", reconciled["observed"])
+        self.assertEqual(
+            reconciled["required"]["mode_sandbox"],
+            "read-only",
+        )
+        self.assertIn(
+            "rerun preflight",
+            " ".join(reconciled["remediation"]).lower(),
+        )
+
     def test_multilingual_boundary_digest_matches_hardcoded_golden(self) -> None:
         golden = fixture("multilingual_golden.json")
         actual = self.contract.boundary_digest(golden["profile"])

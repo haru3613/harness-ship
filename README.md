@@ -8,7 +8,7 @@ exact-artifact QA, and a human release decision.
 > Harness Ship is a workflow plugin, not a test framework, autonomous controller, hosted service,
 > or security boundary. It coordinates the tools and role profiles already available in your host.
 
-Current release: **v0.6.3** · License: **MIT** · Repository status: **private pre-release review**
+Current release: **v0.6.4** · License: **MIT** · Repository status: **private pre-release review**
 
 ## Why Harness Ship
 
@@ -145,7 +145,7 @@ Canonical direct commands remain available:
 
 Upgrading from an earlier release? Both hosts must install the refreshed plugin, start a new
 session, and re-run setup. Follow the [upgrade guide](docs/upgrade-guide.md); every current Config
-v1 project must re-run setup once after installing v0.6.3.
+v1 project must re-run setup once after installing v0.6.4.
 
 ### Codex
 
