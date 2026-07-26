@@ -194,7 +194,7 @@ class ImplementSkillContractTests(unittest.TestCase):
         self.assertIn("self-contained block", text)
         self.assertIn("independence: not established", text)
 
-    def test_readme_and_manifests_advertise_the_new_minor_version(self) -> None:
+    def test_readme_and_manifests_advertise_the_current_minor_version(self) -> None:
         readme = read("README.md")
         self.assertRegex(readme, r"(?m)^\| \*\*`implement`\*\* \|")
         self.assertIn("Test / lint / typecheck / build", readme)
@@ -204,7 +204,7 @@ class ImplementSkillContractTests(unittest.TestCase):
             ".claude-plugin/plugin.json",
         ):
             payload = json.loads(read(manifest))
-            self.assertEqual(payload["version"], "0.5.0")
+            self.assertEqual(payload["version"], "0.6.0")
 
         marketplace = json.loads(read(".claude-plugin/marketplace.json"))
         listing = marketplace["plugins"][0]

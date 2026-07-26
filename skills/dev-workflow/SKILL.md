@@ -72,8 +72,9 @@ acceptance criteria. It does not re-interview — Stage 0 did that.
 
 ## Stage 3 — Acceptance contract
 
-Run **Stage 1 of `testing-workflow`** against the current spec: turn its acceptance criteria into
-platform-neutral Given/When/Then scenarios, negative assertions, and a P0/P1 matrix. Publish the
+Run **`acceptance-design`** against the current spec: turn its acceptance criteria into a named
+`<spec-id>/acceptance-vN` set of platform-neutral Given/When/Then scenarios, negative assertions,
+QA-executable seams, fixture/data needs, QA assurance profiles, and a P0/P1 matrix. Publish the
 scenario set alongside the spec.
 
 **Stop after scenario design. Do not implement or generate test-runner code yet. Gate:** the user

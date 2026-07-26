@@ -1,7 +1,7 @@
 {
   "name": "harness-ship",
-  "version": "0.5.0",
-  "description": "Idea → shipped, humans on the ends. A root-orchestrated dev + testing workflow for Claude Code: clarify → feasibility → spec → acceptance contract → role-routed implementation → QA → acceptance.",
+  "version": "0.6.0",
+  "description": "Idea → shipped, humans on the ends. A root-orchestrated dev + QA workflow for Claude Code: clarify → feasibility → spec → acceptance design → role-routed implementation → QA execution → acceptance.",
   "author": {
     "name": "haru3613",
     "url": "https://github.com/haru3613"
@@ -11,6 +11,7 @@
   "keywords": [
     "workflow",
     "dev-workflow",
+    "acceptance-design",
     "testing-workflow",
     "qa",
     "spec",
