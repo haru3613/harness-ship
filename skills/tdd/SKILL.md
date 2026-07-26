@@ -16,6 +16,10 @@ execution after handoff.
 
 ## Inputs — inherit the approved contract
 
+Read the project's `## harness-ship` **Config version 1** block before a baseline or edit. If it is
+absent, legacy or unversioned, run `setup` and stop until the upgrade completes. Do not reinterpret
+a legacy generic test command.
+
 Before editing code, read:
 
 - the ticket's acceptance criteria and approved contract revision,

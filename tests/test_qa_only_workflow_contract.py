@@ -98,6 +98,29 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
         self.assertNotIn("repository's test commands", tdd)
         self.assertNotIn("full configured suite", implement)
 
+        for path in (
+            "skills/dev-workflow/SKILL.md",
+            "skills/implement/SKILL.md",
+            "skills/tdd/SKILL.md",
+        ):
+            entrypoint = " ".join(read(path).lower().split())
+            self.assertIn("config version", entrypoint)
+            self.assertIn("legacy or unversioned", entrypoint)
+            self.assertIn("run `setup`", entrypoint)
+            self.assertIn("do not reinterpret", entrypoint)
+            self.assertIn("generic test command", entrypoint)
+
+        dispatch = section(
+            implement_raw,
+            "## Dispatch contract",
+            "## Phase 0",
+        )
+        self.assertIn("every pre-handoff child", dispatch)
+        self.assertRegex(
+            dispatch,
+            r"(do not|must not|never).{0,120}(run|invoke|consume).{0,100}qa.{0,80}(command|job)",
+        )
+
         phase0 = section(
             implement_raw,
             "## Phase 0 — Resolve the work and pin the fixed point",
@@ -133,8 +156,13 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
         )
         self.assertIn("non-qa branch-required checks", phase4)
         self.assertIn("security, license, provenance, or policy", phase4)
+        preflight = phase4.index("ci ownership preflight")
+        self.assertLess(preflight, phase4.index("push the feature branch"))
+        self.assertLess(preflight, phase4.index("open/update one pr"))
+        self.assertIn("workflow triggers", phase4)
+        self.assertIn("stop before the mutation", phase4)
         rebase_review = phase4.split("rebase or conflict resolution", maxsplit=1)[1].split(
-            "2. apply", maxsplit=1
+            "2. before any push", maxsplit=1
         )[0]
         remote_review = phase4.split("remote feedback loop", maxsplit=1)[1].split(
             "5. proceed", maxsplit=1
@@ -246,6 +274,21 @@ class QAOnlyWorkflowContractTests(unittest.TestCase):
         self.assertIn("pr smoke gate", stage3)
         self.assertIn("rd-owned", stage3)
         self.assertNotRegex(stage3, r"p0.{0,50}every pr")
+
+    def test_anti_fake_green_rejection_is_appended_to_the_ledger(self) -> None:
+        workflow = read("skills/testing-workflow/SKILL.md")
+        stage4 = section(workflow, "## Stage 4", "## Stage 5")
+
+        for marker in (
+            "append",
+            "blocked",
+            "every affected scenario",
+            "preserve",
+            "not ready",
+            "repaired",
+            "new attempt",
+        ):
+            self.assertIn(marker, stage4)
 
     def test_acceptance_report_keeps_plain_verdict_and_ledger_evidence(self) -> None:
         report = read("skills/testing-workflow/acceptance-report-template.md")

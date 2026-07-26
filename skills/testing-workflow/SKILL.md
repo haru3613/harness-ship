@@ -119,6 +119,10 @@ suite—for tests that *look* like coverage but assert nothing:
 - "Verified only what's visible → marked PASS" → reject.
 
 A green suite that fails this gate is worse than none — it manufactures false confidence.
+For every affected scenario, append a new raw `BLOCKED` observation and `BLOCKED` scenario
+classification to the execution ledger with the audit evidence. Preserve every earlier PASS and
+attempt; never rewrite them. The verdict is **Not ready**. After the QA check is repaired, execute
+it again and append a new attempt with new evidence before that scenario can return to PASS.
 
 ## Stage 5 — Acceptance report
 

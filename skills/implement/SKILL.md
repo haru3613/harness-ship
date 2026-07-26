@@ -13,9 +13,11 @@ description: >-
 Implement **one approved ticket** from ready state to merged evidence. The main/root session is the
 orchestrator; subagents are bounded specialists, not competing controllers.
 
-**Prerequisite:** read the project's `## harness-ship` config in `AGENTS.md` / `CLAUDE.md`. It must
-identify the tracker and PR access paths, branch topology, configured checks, and **Agent role
-profiles**. If the block is absent or lacks role profiles, run `setup` before delegating.
+**Prerequisite:** read the project's `## harness-ship` **Config version 1** block in `AGENTS.md` /
+`CLAUDE.md`. It must identify the tracker and PR access paths, branch topology, classified RD/QA
+commands, configured checks, and **Agent role profiles**. If it is absent, legacy or unversioned,
+or lacks role profiles, run `setup` and stop before delegating or running a baseline. Do not
+reinterpret a legacy generic test command.
 
 ## Root ownership — never delegate the control plane
 
@@ -77,6 +79,8 @@ Every child receives exactly one task with:
 5. behavioural and operational **constraints**, including forbidden tools;
 6. a concrete **verification** command or evidence request;
 7. an instruction not to spawn agents, commit, push, mutate tracker/PR state, or expand scope.
+8. for **every pre-handoff child**, a hard constraint: do not run or consume any QA integration,
+   P0, or full-suite command or job; use only its authorized RD command/check scope.
 
 Use **one writer** for any file set or worktree region. **Serialize all write-capable** children in
 the ticket worktree—even when their planned files are disjoint—so root can inspect and checkpoint a
@@ -232,8 +236,12 @@ Root alone:
    independent verification, and `review` against the new `fixed-point...HEAD` before publishing.
    Apply the same **RD-only pre-handoff review boundary**: these runs must not run or consume any QA
    command or job;
-2. apply the fencing check and receipt write-ahead protocol, then push the feature branch and
-   open/update one PR targeting the integration branch;
+2. before any push or PR mutation, run a **CI ownership preflight**: inspect the exact workflow
+   triggers and job-command wiring plus the Config v1 QA command mappings. If pushing the branch or
+   opening/updating the PR would automatically launch a QA integration, P0, or full-suite job, stop
+   before the mutation. Automatically triggered non-QA branch-required checks remain allowed. Once
+   the preflight passes, apply the fencing check and receipt write-ahead protocol, then push the
+   feature branch and open/update one PR targeting the integration branch;
 3. attach the contract revision, SC-ID → AC-ID trace, TDD receipts, fixed point, commit list, and
    verification results;
 4. run the **remote feedback loop** on the exact head SHA. Before handoff, only **RD-owned CI**

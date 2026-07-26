@@ -16,9 +16,11 @@ Take a feature from a **rough idea** to **merged code**. The shape is deliberate
 > UI 定稿, acceptance contract, ticket granularity, acceptance). Everything between them is
 > automated.
 
-**Prerequisite:** read the project's `## harness-ship` config (tracker, integration vs protected
-branch, test/lint commands, safety gate) in `AGENTS.md` / `CLAUDE.md`. If it is absent, run `setup`
-first — otherwise the stages below fall back to generic guesses.
+**Prerequisite:** read the project's `## harness-ship` **Config version 1** block (tracker,
+integration vs protected branch, RD/QA commands, and safety gate) in `AGENTS.md` / `CLAUDE.md`. If
+it is absent, legacy or unversioned, run `setup` and stop until the upgrade completes. Do not
+reinterpret a legacy generic test command—the stages below must consume only classified Config v1
+fields.
 
 ## Operating principle — bring out the 90%
 
