@@ -97,14 +97,34 @@ class AcceptanceDesignContractTests(unittest.TestCase):
 
     def test_v06_preimplementation_calls_redirect_without_starting_qa(self) -> None:
         text = " ".join(read("skills/testing-workflow/SKILL.md").split())
+        version = json.loads(read(".codex-plugin/plugin.json"))["version"]
+        major, minor, _patch = (int(part) for part in version.split("."))
+
+        if (major, minor) >= (0, 7):
+            self.assertNotIn("v0.6 compatibility", text)
+            return
+
+        self.assertEqual((major, minor), (0, 6))
         compatibility = text.split("v0.6 compatibility", maxsplit=1)[1].split(
             "## Stage 2", maxsplit=1
         )[0]
-
         self.assertIn("pre-implementation", compatibility)
         self.assertIn("`acceptance-design`", compatibility)
         self.assertRegex(compatibility.lower(), r"do not (begin|start|run) qa execution")
         self.assertIn("one minor release", compatibility.lower())
+        self.assertIn("v0.6 compatibility", text)
+
+    def test_v06_missing_contract_recovery_never_infers_from_implementation(self) -> None:
+        text = " ".join(read("skills/testing-workflow/SKILL.md").split())
+        compatibility = text.split("v0.6 compatibility", maxsplit=1)[1].split(
+            "## Stage 2", maxsplit=1
+        )[0]
+
+        self.assertIn("implementation already exists", compatibility)
+        self.assertIn("no approved acceptance contract", compatibility)
+        self.assertIn("original or current stable spec", compatibility)
+        self.assertIn("never infer expected behaviour from code", compatibility.lower())
+        self.assertIn("stop", compatibility.lower())
 
     def test_existing_execution_stage_ids_and_references_remain_stable(self) -> None:
         text = read("skills/testing-workflow/SKILL.md")
@@ -125,6 +145,7 @@ class AcceptanceDesignContractTests(unittest.TestCase):
         self.assertRegex(readme, r"(?m)^\| `acceptance-design` \|")
         self.assertIn("eight self-contained blocks", readme)
         self.assertIn("v0.6.0 migration", readme)
+        self.assertIn("$harness-ship:acceptance-design", readme)
 
         for manifest in (
             ".codex-plugin/plugin.json",

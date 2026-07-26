@@ -78,9 +78,9 @@ Start a new Codex session after installing or upgrading so Codex loads the refre
 host's pre-defined agent role profiles. Later plugin updates do not require setup unless the stack,
 tracker, branches, or host agent profiles change.
 
-**v0.6.0 migration:** call `acceptance-design` for pre-implementation scenario design.
-`testing-workflow` redirects legacy pre-implementation calls there for this minor release and
-otherwise starts only after the dev→QA handoff.
+**v0.6.0 migration:** call `$harness-ship:acceptance-design` for pre-implementation scenario design.
+`$harness-ship:testing-workflow` redirects legacy pre-implementation and missing-contract calls
+there for this minor release and otherwise starts only after the dev→QA handoff.
 
 ### Claude Code
 
@@ -105,8 +105,8 @@ host's pre-defined agent role profiles. Later plugin updates do not require setu
 tracker, branches, or host agent profiles change.
 
 **v0.6.0 migration:** call `/acceptance-design` for pre-implementation scenario design.
-`/testing-workflow` redirects legacy pre-implementation calls there for this minor release and
-otherwise starts only after the dev→QA handoff.
+`/testing-workflow` redirects legacy pre-implementation and missing-contract calls there for this
+minor release and otherwise starts only after the dev→QA handoff.
 
 `setup` detects your stack, issue tracker, branch topology and test commands, asks only the few
 forks it can't infer, and writes a `## harness-ship` config block into your `AGENTS.md` (or
