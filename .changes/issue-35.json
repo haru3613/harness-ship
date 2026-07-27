@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "issue-35",
+  "classification": "minor",
+  "migration": "recommended",
+  "summary": "Bind the TDD receipt's RED claim to a committed failing state that root can verify.",
+  "paths": [
+    "scripts/check_release_contract.py",
+    "scripts/tdd_receipt.py",
+    "scripts/validate_plugin_lifecycle.sh",
+    "skills/implement/SKILL.md",
+    "skills/tdd/SKILL.md"
+  ]
+}

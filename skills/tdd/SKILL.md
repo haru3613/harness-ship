@@ -28,15 +28,14 @@ Before editing code, read:
 - the test seams and interfaces chosen in the spec,
 - the configured **RD unit** and **RD API-contract** commands and repository conventions.
 
-TDD consumes only those RD commands. Do not run or consume any configured QA command before the
-dev→QA handoff; QA integration, P0, and full-suite commands belong to `testing-workflow`. If an
-applicable RD command is `not-configured`, report the missing capability instead of substituting a
-QA command or inferring PASS.
+TDD consumes only those RD commands; QA integration, P0, and full-suite belong to
+`testing-workflow`. If an applicable RD command is `not-configured`, report the missing capability
+rather than substituting a QA command or inferring PASS.
 
-Do not ask the user to approve the seams again. They were settled with the spec and acceptance
-contract. If implementation reveals a different seam but does not change observable behaviour,
-record the test-decision correction on the ticket. If it changes expected behaviour, stop and return
-to `dev-workflow` Stage 3 for a revised acceptance contract.
+Do not ask the user to approve the seams again; they were settled with the spec and acceptance
+contract. A different seam that preserves observable behaviour is a test-decision correction
+recorded on the ticket. One that changes expected behaviour stops and returns to `dev-workflow`
+Stage 3 for a revised contract.
 
 For a bug-loopback ticket, the confirmed reproduction and regression criterion are the contract
 when no new product behaviour is being introduced.
@@ -80,6 +79,9 @@ tests are **invalid REDs**. Repair the test harness and rerun until the failure 
 gap. If the new test passes immediately, determine whether the behaviour already exists or the
 assertion is insensitive; do not manufacture a failure.
 
+**Commit the RED before writing any implementation** — failing test, no production code. Its SHA is
+what makes the receipt checkable rather than a claim.
+
 ### 3. GREEN — add the smallest implementation
 
 Change only enough production code to satisfy that behaviour. Do not anticipate later slices or
@@ -87,8 +89,8 @@ add speculative options. Run the focused test, then the relevant surrounding RD 
 
 ### 4. Repeat
 
-Record the cycle, select the next behaviour slice, and return to RED. Keep the ticket vertical:
-one test → one implementation increment → one verified outcome.
+Select the next behaviour slice and return to RED — the receipt records the cycle. Keep the ticket
+vertical: one test → one implementation increment → one verified outcome.
 
 ## Refactoring and review
 
@@ -102,19 +104,30 @@ a fake failing test.
 
 ## TDD receipt
 
-Attach this concise evidence to the ticket or PR before review:
+Attach to the ticket or PR before review:
 
-```markdown
+````markdown
 ## TDD receipt
 - Contract: <spec-id>/acceptance-vN
 - Slice: <SC-ID> → <AC-ID> (or regression criterion)
 - Seam/interface: <where behaviour is observed>
-- RED: `<command>` — failed because <expected missing behaviour>
+- RED commit: `<sha>`
+- RED: `<command>` — first 20 lines of the failing output, verbatim:
+```
+<paste>
+```
+- GREEN commit: `<sha>`
 - GREEN: `<command>` — passed
 - Regression: `<command>` — passed
-- Tests changed: <behaviours covered>
 - Not covered: <honest exclusions>
+````
+
+Root checks it mechanically; a non-zero exit rejects the slice:
+
+```sh
+python3 <plugin-root>/scripts/tdd_receipt.py check --receipt <file> --repo <worktree>
 ```
 
-One receipt may list multiple cycles, but every behaviour-changing slice needs its own RED and GREEN
-evidence. The receipt is implementation evidence, not the final acceptance report.
+It confirms RED adds a test and no implementation, GREEN adds implementation, and RED precedes
+GREEN. Whether the failure was for the *right* reason stays with the invalid-RED rules above. Every
+behaviour-changing slice needs its own pair.
