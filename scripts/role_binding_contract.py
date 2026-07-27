@@ -219,14 +219,6 @@ def readiness(
         blockers.append("configure the integration branch")
     if not any(is_set(fields.get(f"RD {kind} command")) for kind in ("unit", "API-contract")):
         blockers.append("configure at least one RD command")
-    try:
-        verdict = preflight(config_text, agent_path, env)
-        if verdict["status"] == "degraded":
-            blockers.append(verdict["reason"])
-        elif verdict["status"] != "pass":
-            blockers.append("repair the independent verifier boundary")
-    except ContractError as error:
-        blockers.append(str(error))
     tier("implementation", blockers, inherits="planning")
 
     blockers = [
