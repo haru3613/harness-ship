@@ -19,9 +19,10 @@ Take a feature from a **rough idea** to **merged code**. The shape is deliberate
 **Prerequisite:** read the project's `## harness-ship` block in `AGENTS.md` / `CLAUDE.md` — tracker,
 integration vs protected branch, RD/QA commands, and safety gate. The **Config version** is the
 compatibility gate; the plugin version records what wrote the block and is not one, so a patch or
-compatible minor release never invalidates a configured project. If the block is absent, duplicated,
-or on an unsupported Config version, run `setup` and stop until it is regenerated. Do not
-reinterpret a legacy generic test command.
+compatible minor release never invalidates a configured project. If the block is absent or on an
+unsupported Config version, run `setup` and stop until it is regenerated. Reconcile duplicate
+blocks directly; setup must not guess which one to replace. Do not reinterpret a legacy generic
+test command.
 
 ## Operating principle — bring out the 90%
 

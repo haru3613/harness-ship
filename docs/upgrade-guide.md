@@ -124,5 +124,5 @@ unit/API-contract commands remain separate from QA integration/P0/full-suite com
 regenerated block keeps the QA environment, artifact provenance, and evidence location;
 unavailable capabilities remain `not-configured`.
 
-Harness Ship updates only the current host section. It does not replace global agents or settings;
-reviewer identity is resolved from the running host when review starts.
+Harness Ship updates only the single `## harness-ship` block. It does not replace global agents or
+settings; reviewer identity is resolved from the running host when review starts.

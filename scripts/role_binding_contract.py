@@ -46,7 +46,9 @@ HIGH_OR_HIGHER = {"high", "xhigh", "max", "ultra"}
 # wrote the block and is deliberately not a gate: a patch or compatible minor
 # release must not invalidate a configured project.
 SUPPORTED_CONFIG_VERSION = 3
-CONFIG_VERSION_RE = re.compile(r"(?mi)^\s*[-*]\s*\*\*Config version:\*\*\s*`?(?P<version>\d+)`?\s*$")
+CONFIG_VERSION_RE = re.compile(
+    r"(?mi)^\s*[-*]\s*\*\*Config version:\*\*\s*(?P<version>.*?)\s*$"
+)
 
 AGENT_FIELDS = {"name", "description", "model", "effort", "tools"}
 FRONTMATTER_RE = re.compile(r"\A---\n(.*?)\n---\n", re.S)
@@ -127,7 +129,10 @@ def read_config_version(config_text: str) -> int:
     matches = list(CONFIG_VERSION_RE.finditer(config_text))
     if len(matches) != 1:
         raise ContractError(f"config must declare exactly one Config version; found {len(matches)}")
-    version = int(matches[0].group("version"))
+    raw_version = matches[0].group("version").strip().strip("`").strip()
+    if not re.fullmatch(r"\d+", raw_version):
+        raise ContractError(f"Config version must be an integer; found {raw_version!r}")
+    version = int(raw_version)
     if version != SUPPORTED_CONFIG_VERSION:
         raise ContractError(
             f"config is version {version}, this release reads version "

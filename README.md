@@ -127,8 +127,9 @@ Run `$harness-ship:setup` in Codex or `/harness-ship:setup` in Claude Code. Setu
 target repository and writes a `## harness-ship` Config v3 block into its `AGENTS.md` or
 `CLAUDE.md`.
 
-Review that block before delivery work begins. Re-run setup after changing the stack, tracker,
-branch model, test commands, QA environment, or artifact path.
+Review that block before delivery work begins. Re-run setup after changing its first-run inputs:
+stack, tracker or PR host, branch model, RD commands/checks, risk gate, or UI convention. Later
+workflows own QA, deployment, evidence, ready, and claim fields at the point of use.
 
 ### 4. Deliver and verify
 
@@ -244,12 +245,11 @@ bundled skills. They share one evidence model but remain usable as focused comma
 
 - **Tracker and branch topology** — issue/PR systems, integration branch, and protected release
   branch.
-- **Versioned RD/QA commands** — RD unit/API-contract commands stay separate from QA
-  integration/P0/full-suite commands.
-- **QA evidence boundary** — QA environment, artifact provenance, and durable evidence location.
-- **Ready and claim rules** — ticket eligibility, owner/session claim, recovery, and fencing.
-- **Deployment path** — how QA obtains an exact-source deployment or artifact receipt.
+- **RD commands and checks** — unit/API-contract, lint, typecheck, and build commands.
 - **Risk gates** — optional data-mutation checks and the repository UI convention.
+
+Later workflows append QA commands/environment, artifact and evidence paths, deployment, ready, and
+claim fields only when they need them.
 
 **A block from an earlier Config version:** re-run `setup` once. There is no automatic migration —
 a block whose `Config version` is not the one this release supports is a zero-mutation stop, and
