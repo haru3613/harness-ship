@@ -166,6 +166,17 @@ class ConfigVersionTests(unittest.TestCase):
         with self.assertRaises(gate.ContractError):
             gate.preflight(config, env=CLAUDE)
 
+    def test_duplicate_config_versions_fail_in_either_order(self) -> None:
+        duplicates = (
+            CONFIG.replace("## harness-ship\n", "## harness-ship\n- **Config version:** `2`\n"),
+            CONFIG + "- **Config version:** `2`\n",
+        )
+        for duplicate in duplicates:
+            with self.subTest(duplicate=duplicate):
+                with self.assertRaises(gate.ContractError) as caught:
+                    gate.preflight(duplicate, env=CLAUDE)
+                self.assertIn("exactly one Config version", str(caught.exception))
+
     def test_the_verdict_reports_the_config_version(self) -> None:
         self.assertEqual(gate.preflight(CONFIG, env=CLAUDE)["config_version"], gate.SUPPORTED_CONFIG_VERSION)
 

@@ -211,6 +211,17 @@ class CliTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertIn("exactly one ## harness-ship block", result.stderr)
 
+    def test_duplicate_config_versions_exit_two_in_either_order(self) -> None:
+        duplicates = (
+            QA.replace("## harness-ship\n", "## harness-ship\n- **Config version:** `2`\n"),
+            QA + "- **Config version:** `2`\n",
+        )
+        for duplicate in duplicates:
+            with self.subTest(duplicate=duplicate):
+                result = self.run_cli(duplicate)
+                self.assertEqual(result.returncode, 2)
+                self.assertIn("exactly one Config version", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
