@@ -188,6 +188,16 @@ class CliTests(unittest.TestCase):
 
         self.assertEqual(self.run_cli(config).returncode, 2)
 
+    def test_an_unsupported_config_version_exits_two(self) -> None:
+        stale = PLANNING.replace(
+            f"- **Config version:** `{gate.SUPPORTED_CONFIG_VERSION}`",
+            "- **Config version:** `2`",
+        )
+        result = self.run_cli(stale)
+
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("config is version 2", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
