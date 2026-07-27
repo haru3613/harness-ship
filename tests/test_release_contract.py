@@ -850,6 +850,12 @@ class ReleaseContractTests(unittest.TestCase):
         self.assertNotIn("\n  push:", workflow)
         self.assertIn("permissions:\n  contents: read", workflow)
         self.assertIn("    permissions:\n      contents: write", workflow)
+        self.assertIn("GIT_COMMITTER_NAME: github-actions[bot]", workflow)
+        self.assertIn(
+            "GIT_COMMITTER_EMAIL: "
+            "41898282+github-actions[bot]@users.noreply.github.com",
+            workflow,
+        )
         self.assertIn("--candidate \"$CANDIDATE_SHA\"", workflow)
         publisher = PUBLISHER.read_text(encoding="utf-8")
         self.assertNotIn("--force", publisher)

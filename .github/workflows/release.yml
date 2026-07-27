@@ -44,6 +44,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           CANDIDATE_SHA: ${{ inputs.candidate_sha }}
           RELEASE_TAG: ${{ inputs.tag }}
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
         run: >-
           python3 scripts/publish_release.py
           --candidate "$CANDIDATE_SHA"
