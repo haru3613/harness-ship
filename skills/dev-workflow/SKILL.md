@@ -96,7 +96,8 @@ acceptance criteria traced to the approved scenarios — and publish to the trac
 
 Run **`implement`** once per frontier ticket. It is the only implementation orchestrator: the
 main/root session owns planning, role routing, integration, Git/tracker/PR state, and the final
-decision; bounded work is delegated through the capabilities the running host exposes.
+decision; bounded implementation and security work uses the host's pre-defined role profiles,
+while reviewer identity is resolved when review starts.
 
 `implement` pins the exact base/fixed point, creates one repository-local worktree and PR, drives
 approved behaviour slices through `tdd`, integrates clean GREEN checkpoint commits, runs
@@ -105,10 +106,10 @@ before policy-allowed merge. It performs cleanup immediately after merge. It the
 deployment evidence for the configured non-production environment before QA handoff and writes a durable
 implementation receipt so an interrupted ticket resumes from evidence rather than conversation.
 
-No extra human gate is added here. Observable behaviour changes return to Stage 3; invalid
-baselines/REDs and protected-branch decisions stop safely under `implement`'s rules. A missing named
-reviewer profile never adds a setup loop: `implement` resolves children at invocation and records
-the assurance it can observe.
+No extra human gate is added here. Observable behaviour changes return to Stage 3; missing or
+drifted required non-review profiles, invalid baselines/REDs, and protected-branch decisions stop
+safely under `implement`'s rules. A missing named reviewer profile never adds a setup loop:
+`implement` resolves reviewers at invocation and records the assurance it can observe.
 
 ## Stage 6 — Hand to QA
 

@@ -91,6 +91,17 @@ Resolve reviewer identity from the subagent types the running host exposes now; 
 persist a project/global profile. Prefer a purpose-built read-only verifier. If none exists, use a
 fresh `generic`, `default`, `worker`, or equivalent host child for each axis.
 
+On `claude-code`, run the packaged diagnostic at invocation:
+
+```sh
+python3 <plugin-root>/scripts/role_binding_contract.py preflight --config <AGENTS.md|CLAUDE.md>
+```
+
+Exit `0` selects `harness-ship:harness-ship-independent-verifier` for both axes with
+`host-enforced` assurance. On any other exit, do not use the failed packaged verifier; fall back to
+another available child and record the diagnostic plus `independence: not established`. Other
+hosts skip this Claude-specific diagnostic.
+
 Dispatch the two axes in one message so they run in parallel and neither pollutes the other's
 context. Each brief carries the diff command, commit list, its own sources, a **400-word cap**, and
 instructions not to edit source, mutate external state, or spawn children. They receive the same
@@ -101,8 +112,10 @@ enforceable read-only boundary; otherwise record `independence: not established`
 the review. If no child capability exists, root performs both axes sequentially with that label.
 
 Before and after every run, compare `git rev-parse HEAD`, `git rev-parse HEAD^{tree}`, and
-`git status --porcelain`. Any source edit, commit, external-state mutation, nested child dispatch,
-or false `host-enforced` claim invalidates the review receipt and stops the handoff.
+`git status --porcelain`, then inspect the host activity trace. Any source edit, commit,
+external-state mutation, nested child dispatch, or false `host-enforced` claim invalidates the
+review receipt and stops the handoff. If the host exposes no activity trace, record that limitation
+under `independence: not established`.
 
 ## Optional: data-mutation safety gate
 

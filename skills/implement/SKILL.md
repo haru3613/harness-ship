@@ -2,10 +2,10 @@
 name: implement
 description: >-
   Implement one approved ticket through a root-owned, role-routed delivery loop: establish an exact
-  baseline, delegate bounded TDD slices through the running host, integrate and review committed
-  work, then push, verify CI, merge, update the tracker, and clean up. Use after a spec, acceptance
-  contract, and ticket are approved. Triggers: "/implement", "implement this ticket", "build this
-  ticket", "start the next ready ticket".
+  baseline, delegate bounded TDD slices only to pre-defined host agent profiles, integrate and
+  review committed work, then push, verify CI, merge, update the tracker, and clean up. Use after a
+  spec, acceptance contract, and ticket are approved. Triggers: "/implement", "implement this
+  ticket", "build this ticket", "start the next ready ticket".
 ---
 
 # implement
@@ -61,6 +61,26 @@ Children **must not spawn** more agents. They start without MCP/plugins unless a
 deliberately created a task-specific profile. Never pass credentials or personal data through a
 child prompt.
 
+## Role-profile gate
+
+For planning, implementation, and security work, dispatch only to a **pre-defined role profile**
+that already exists in the host runtime. Route by work nature, not by memorized profile names.
+
+- Do not create, override, or silently downgrade a role's model / effort / mode while implementing.
+- Do not substitute an undefined `generic`, `default`, or `worker` profile for non-review work.
+- If a mapped non-review profile is missing or drifted, keep safe work in root and report the
+  mismatch.
+
+| Work nature | Required boundary | Typical effort |
+|---|---|---|
+| one narrow lookup | read-only, no MCP | low |
+| cross-module exploration | read-only, no MCP | medium |
+| specification-complete mechanical edit | bounded workspace write | medium |
+| implementation needing local judgment | bounded workspace write | medium or higher |
+| high-risk plan challenge | read-only, independent | high |
+| security/trust-boundary review | dedicated read-only security profile | highest configured |
+| already-scoped security fix | dedicated bounded-write security profile | highest configured |
+
 ## Invocation-time reviewer routing
 
 Reviewer identity is runtime state, not project configuration. When verification or review starts:
@@ -70,6 +90,17 @@ Reviewer identity is runtime state, not project configuration. When verification
   equivalent host child when no specialised reviewer exists;
 - never create, overwrite, or require a global agent profile;
 - record the actual type, run identity, and observed assurance in the implementation receipt.
+
+On `claude-code`, run the packaged diagnostic at invocation:
+
+```sh
+python3 <plugin-root>/scripts/role_binding_contract.py preflight --config <AGENTS.md|CLAUDE.md>
+```
+
+Exit `0` selects `harness-ship:harness-ship-independent-verifier` with `host-enforced` assurance.
+On any other exit, do not use the failed packaged verifier; fall back to another available child
+and record the diagnostic plus `independence: not established`. Other hosts skip this
+Claude-specific diagnostic.
 
 Use `host-enforced` only when the host exposes an enforceable read-only boundary. Otherwise use
 `independence: not established`; the honest label does not block review or implementation. If the
@@ -122,22 +153,21 @@ resume/takeover. With a single root, none of it applies.
 
 Root decomposes the ticket into vertical behaviour slices sized for one bounded child task.
 
-- Use lookup or exploration children only when the answer materially changes the plan.
+- Use lookup or exploration profiles only when the answer materially changes the plan.
 - Send high-risk migrations, concurrency, destructive operations, and cross-system changes to an
-  available plan-verification child before any writer starts.
+  available plan-verification profile before any writer starts.
 - Route auth, secrets, payments, permissions, and destructive trust boundaries through a dedicated
-  security child when the host exposes one; otherwise keep that work in root.
+  security reviewer; use a security executor only once the fix is scoped.
 - Keep trivial or tightly coupled work in root when delegation would cost more than it saves.
 
 No child chooses its own role, risk tier, acceptance meaning, or next ticket.
 
 ## Phase 2 — Execute TDD slices
 
-Root dispatches an available bounded writer with the dispatch contract above, or keeps a tightly
-coupled slice in root. The writer runs `tdd` at the approved seam and produces **two commits inside
-the ticket worktree**: a RED commit containing the failing test and no production code, then a GREEN
-commit containing the smallest implementation, with the focused test and surrounding regression
-rerun.
+Root dispatches the mapped executor with the dispatch contract above. The executor runs `tdd` at the
+approved seam and produces **two commits inside the ticket worktree**: a RED commit containing the
+failing test and no production code, then a GREEN commit containing the smallest implementation,
+with the focused test and surrounding regression rerun.
 
 Root verifies the receipt mechanically before accepting the slice — a non-zero exit rejects it:
 
@@ -159,9 +189,8 @@ When all slices are integrated:
 1. require a clean working tree; inspect every commit and `git diff <fixed-point>...HEAD`;
 2. run the full configured **RD verification gate** once — RD unit, RD API-contract, and configured
    typecheck/lint/build (`none` skips);
-3. dispatch a fresh host-provided child against the ticket, contract, exact diff, and those
-   commands. Prefer a specialised verifier but allow a generic host child. It may create
-   verification artifacts; it must not edit source;
+3. dispatch the verifier selected by the invocation-time routing above against the ticket, contract,
+   exact diff, and those commands. It may create verification artifacts; it must not edit source;
 4. run `review` as two fresh invocation-time child runs, with the fixed point, originating
    ticket/spec/contract, repository standards, and whichever data-mutation and security gates
    apply. If no child capability exists, root runs the axes sequentially and records
