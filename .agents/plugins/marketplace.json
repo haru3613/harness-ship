@@ -9,7 +9,7 @@
       "source": {
         "source": "url",
         "url": "https://github.com/haru3613/harness-ship.git",
-        "ref": "v0.7.0"
+        "ref": "v1.0.0"
       },
       "policy": {
         "installation": "AVAILABLE",

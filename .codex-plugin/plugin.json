@@ -1,6 +1,6 @@
 {
   "name": "harness-ship",
-  "version": "0.7.0",
+  "version": "1.0.0",
   "description": "QA-led, evidence-driven software delivery for Codex: acceptance contracts before code, role-routed RD implementation, exact-artifact QA, and human release decisions.",
   "author": {
     "name": "haru3613",

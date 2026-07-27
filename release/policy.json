@@ -6,6 +6,22 @@
       "declarations": [
         "issue-27"
       ]
+    },
+    {
+      "version": "1.0.0",
+      "declarations": [
+        "issue-27-release-identity",
+        "issue-34",
+        "issue-35",
+        "issue-36",
+        "issue-37",
+        "issue-38",
+        "issue-39",
+        "issue-47",
+        "issue-50",
+        "issue-52",
+        "release-1-0-0-docs"
+      ]
     }
   ]
 }

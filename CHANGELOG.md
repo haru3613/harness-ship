@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.0
+
+- [issue-27-release-identity] Provide an explicit tagger identity to the attended release publisher. (classification: patch; migration: none).
+- [issue-34] Replace the verifier binding fortress with a boundary gate and a one-line binding. (classification: breaking; migration: required).
+- [issue-35] Bind the TDD receipt's RED claim to a committed failing state that root can verify. (classification: minor; migration: recommended).
+- [issue-36] Recompute the anti-fake-green verdict from an enumerated assertion audit in the ledger. (classification: minor; migration: recommended).
+- [issue-37] Defer later-tier config to its point of use and report planning/implementation/QA readiness separately. (classification: minor; migration: recommended).
+- [issue-38] Gate on the Config version only; the plugin version becomes informational. (classification: breaking; migration: required).
+- [issue-39] Move implement's multi-root claim machinery and defect-repair entry into opt-in references. (classification: minor; migration: none).
+- [issue-47] An explained not-configured value is still unset in the readiness gate. (classification: patch; migration: none).
+- [issue-50] Resolve the independent verifier from the running host and stop persisting it in project config. (classification: breaking; migration: recommended).
+- [issue-52] Give the Standards axis a named smell baseline and bound each axis brief. (classification: minor; migration: none).
+- [release-1-0-0-docs] Name the pending breaking release v1.0.0, mirror its migration note for Claude Code, and read the asserted version from the release policy ledger. (classification: patch; migration: none).
+
 ## 0.7.0
 
 - Migrates generated project configuration from Config v1 to Config v2 through an explicit
