@@ -47,7 +47,7 @@ HIGH_OR_HIGHER = {"high", "xhigh", "max", "ultra"}
 # release must not invalidate a configured project.
 SUPPORTED_CONFIG_VERSION = 3
 CONFIG_VERSION_RE = re.compile(
-    r"(?mi)^\s*[-*]\s*\*\*Config version:\*\*\s*(?P<version>.*?)\s*$"
+    r"(?mi)^[ \t]*[-*][ \t]*\*\*Config version:\*\*[ \t]*(?P<version>.*?)[ \t]*$"
 )
 
 AGENT_FIELDS = {"name", "description", "model", "effort", "tools"}
