@@ -167,7 +167,7 @@ class ConfigVersionTests(unittest.TestCase):
             gate.preflight(config, env=CLAUDE)
 
     def test_a_malformed_config_version_fails(self) -> None:
-        for value in ("`banana`", "3.0", "`3``", "``3``", "`3"):
+        for value in ("`banana`", "3.0", "`3``", "``3``", "`3", "\n3", "\n`3`"):
             with self.subTest(value=value):
                 malformed = CONFIG.replace(
                     f"`{gate.SUPPORTED_CONFIG_VERSION}`", value, 1
