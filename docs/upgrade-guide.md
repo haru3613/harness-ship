@@ -28,6 +28,24 @@ codex plugin marketplace add haru3613/harness-ship --ref main
 codex plugin add harness-ship-next@harness-ship
 ```
 
+**v0.8.0 migration (breaking):** the verifier binding format changed. The 13-column host binding
+table, the `Verifier binding-contract version` field, and the discovery-receipt input are gone.
+Re-run setup once per configured project to regenerate the `## harness-ship` block; setup writes a
+single `Independent verifier:` line in their place. Nothing else in the block changes, and no
+automatic migration is attempted — the machinery that migrated the old table was removed along with
+the digest chain it existed to preserve, and reconstructing it would cost more than re-running
+setup.
+
+Verify with `python3 <plugin-root>/scripts/role_binding_contract.py preflight --config AGENTS.md`.
+A project still carrying the old table fails closed with `config declares no Independent verifier`,
+which is the intended detection: the gate parses the binding directly, so it needs no version field
+to notice an unreadable one.
+
+The gate now reports an `assurance` field. `host-enforced` (Claude Code) means the packaged agent
+definition was read at check time and its tools, model and effort matched. `operator-declared`
+(Codex) means the boundary you wrote down was re-asserted — correct as written, but Codex exposes
+no live profile metadata, so it cannot be checked against the running profile.
+
 **v0.7.0 migration:** setup proposes Config v1 → v2 without writing it. Review the complete plan
 and exact configuration diff, correct unsafe or unknown bindings, and explicitly confirm that exact
 proposal. Only then apply it. If repository state or the proposal changes, discard the old

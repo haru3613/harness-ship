@@ -17,7 +17,7 @@ execution after handoff.
 ## Inputs — inherit the approved contract
 
 Read the project's `## harness-ship` block before a baseline or edit and require exact **Plugin
-version 0.7.0**, **Config version 2**, and **Verifier binding-contract version 2** fields. If it is
+version 0.7.0**, **Config version 2** fields. If it is
 absent, Config v1, legacy, unversioned, duplicated, unsupported, or mismatched, run `setup` and stop
 until the upgrade completes. Do not reinterpret a legacy generic test command.
 

@@ -17,7 +17,7 @@ Take a feature from a **rough idea** to **merged code**. The shape is deliberate
 > automated.
 
 **Prerequisite:** read the project's `## harness-ship` block and require exact **Plugin version
-0.7.0**, **Config version 2**, and **Verifier binding-contract version 2** fields (tracker,
+0.7.0**, **Config version 2** fields (tracker,
 integration vs protected branch, RD/QA commands, and safety gate) in `AGENTS.md` / `CLAUDE.md`. If
 it is absent, Config v1, legacy, unversioned, duplicated, unsupported, or mismatched, run `setup`
 and stop until the upgrade completes. Do not reinterpret a legacy generic test command—the stages

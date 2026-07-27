@@ -189,9 +189,12 @@ codex plugin add harness-ship@harness-ship
 The marketplace upgrade refreshes the Git source; the second command activates the refreshed
 plugin. Start a new Codex session afterward.
 
-Codex installation supplies skills only; it does not supply an independent verifier. Setup binds
-only a validated existing live host profile and fails closed when none is available. It never
-creates or overwrites global agents or settings.
+Codex installation supplies skills only; it does not supply an independent verifier. You bind an
+existing live Codex profile and write down its boundary, and the preflight gate re-asserts that
+declaration before `implement` runs — `assurance: operator-declared`. **No Codex interface exposes
+live profile metadata, so the gate can prove the declaration is correct but not that the live
+profile matches it.** This is a genuinely weaker guarantee than Claude Code's; it is stated plainly
+rather than dressed up. Setup never creates or overwrites global agents or settings.
 
 If installation reports `could not read Username for 'https://github.com'` while the repository is
 private, run `gh auth setup-git`, verify that
@@ -210,9 +213,12 @@ The marketplace update refreshes the catalog; the plugin update installs the ref
 Restart Claude Code afterward.
 
 Install supplies the verifier capability as the scoped Claude plugin agent
-`harness-ship:harness-ship-independent-verifier`; project setup performs the current-host binding
-after validating the effective live boundary. Harness Ship never copies agents into
-`~/.claude/agents` and never overwrites global agents or settings.
+`harness-ship:harness-ship-independent-verifier`. The preflight gate reads that agent definition at
+check time and compares its tools, model and effort against the required boundary —
+`assurance: host-enforced`. Because the tool whitelist is `Read`, `Grep`, `Glob`, the permission
+layer makes the boundary physical: the verifier cannot edit source and has no tool with which to
+dispatch a child. Harness Ship never copies agents into `~/.claude/agents` and never overwrites
+global agents or settings.
 
 ## The 13 bundled skills
 
@@ -262,7 +268,7 @@ PASS.
 | Boundary | Codex | Claude Code |
 |---|---|---|
 | Bundled skills | Yes | Yes |
-| Bundled independent verifier | No — bind a validated live host profile | Yes — scoped plugin agent |
+| Bundled independent verifier | No — bind a live profile, `operator-declared` | Yes — scoped plugin agent, `host-enforced` |
 | Global agent/settings mutation | Never | Never |
 | Controller/runtime | Supplied by the host | Supplied by the host |
 | Evidence authority | Live repository, tracker, CI, and artifact receipts | Live repository, tracker, CI, and artifact receipts |

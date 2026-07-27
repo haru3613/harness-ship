@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "id": "issue-34",
+  "classification": "breaking",
+  "migration": "required",
+  "summary": "Replace the verifier binding fortress with a boundary gate and a one-line binding.",
+  "paths": [
+    "docs/upgrade-guide.md",
+    "scripts/role_binding_contract.py",
+    "skills/dev-workflow/SKILL.md",
+    "skills/implement/SKILL.md",
+    "skills/setup/SKILL.md",
+    "skills/tdd/SKILL.md",
+    "skills/testing-workflow/SKILL.md"
+  ]
+}
