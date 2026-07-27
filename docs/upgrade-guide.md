@@ -59,11 +59,8 @@ removed in v1.0.0; a block on an unsupported Config version is now regenerated, 
 versions supersede that binding with invocation-time reviewer routing; do not create or repair a
 profile when upgrading now.
 
-**v0.6.3 migration:** every Config v1 project must run `$harness-ship:setup` once after install or
-upgrade. Raw-text reconciliation upgrades the legacy binding row, preserves an exact valid binding
-across plugin relocation, and changes only the current-host payload. Re-run setup after a profile
-change or profile removal. A collision, stale source, ambiguous default, or drift stops unchanged;
-repair or explicitly choose the safe live profile, then rerun setup.
+**v0.6.3 migration (historical):** Config v1 projects ran `$harness-ship:setup` to reconcile the
+legacy binding row. That profile-selection flow was removed in v1.0.0.
 
 **v0.5.0 migration (historical):** setup began recording host role profiles; current versions do
 not.
@@ -105,11 +102,8 @@ removed in v1.0.0; a block on an unsupported Config version is now regenerated, 
 versions resolve reviewers at invocation; the packaged Claude verifier remains preferred without a
 project binding.
 
-**v0.6.3 migration:** every Config v1 project must run `/harness-ship:setup` once after install or
-upgrade. Raw-text reconciliation upgrades the legacy binding row, preserves an exact valid binding
-across plugin relocation, and changes only the current-host payload. Re-run setup after a profile
-change or profile removal. A collision, stale source, ambiguous default, or drift stops unchanged;
-repair or explicitly choose the safe live profile, then rerun setup.
+**v0.6.3 migration (historical):** Config v1 projects ran `/harness-ship:setup` to reconcile the
+legacy binding row. That profile-selection flow was removed in v1.0.0.
 
 **v0.5.0 migration (historical):** setup began recording host role profiles; current versions do
 not.

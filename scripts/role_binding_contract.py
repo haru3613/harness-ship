@@ -202,6 +202,7 @@ def readiness(
     A capability that is absent blocks only the tier that needs it. Nothing is
     ever reported ready on the strength of a missing field.
     """
+    read_config_version(config_text)
     fields = read_fields(config_text)
     result: Dict[str, Any] = {}
 

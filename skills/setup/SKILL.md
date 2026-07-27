@@ -168,6 +168,6 @@ was removed with the digest machinery it existed to protect. The block is writte
 edit, and the recovery from a bad write is `git checkout AGENTS.md` — the file is version-controlled
 by design. Say so rather than implying an atomicity that is no longer there.
 
-Safe to run again after the stack, tracker, branch topology, or host role definitions change. A
-later tier's fields are added when its workflow first needs them, so reaching QA does not mean
-re-running setup from scratch.
+Safe to run again after the stack, tracker, or branch topology changes. A later tier's fields are
+added when its workflow first needs them, so reaching QA does not mean re-running setup from
+scratch.
