@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "id": "post-v1-0-0-pins",
+  "classification": "patch",
+  "migration": "none",
+  "summary": "Point the stable channel documentation at the published v1.0.0 tag and describe the current fail-closed Config stop instead of the removed v1 to v2 migration.",
+  "paths": [
+    "docs/upgrade-guide.md",
+    "skills/testing-workflow/SKILL.md"
+  ]
+}

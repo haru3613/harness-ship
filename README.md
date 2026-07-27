@@ -8,7 +8,7 @@ exact-artifact QA, and a human release decision.
 > Harness Ship is a workflow plugin, not a test framework, autonomous controller, hosted service,
 > or security boundary. It coordinates the tools and role profiles already available in your host.
 
-Current release: **v0.7.0** · License: **MIT** · Repository status: **private pre-release review**
+Current release: **v1.0.0** · License: **MIT** · Repository status: **private pre-release review**
 
 ## Why Harness Ship
 
@@ -124,7 +124,7 @@ claude plugin install harness-ship@harness-ship
 ### 3. Start a new session and configure the target repository
 
 Run `$harness-ship:setup` in Codex or `/harness-ship:setup` in Claude Code. Setup inspects the
-target repository and writes a `## harness-ship` Config v2 block into its `AGENTS.md` or
+target repository and writes a `## harness-ship` Config v3 block into its `AGENTS.md` or
 `CLAUDE.md`.
 
 Review that block before delivery work begins. Re-run setup after changing the stack, tracker,
@@ -150,11 +150,11 @@ version is a fail-closed stop, not an automatic migration — re-run setup once 
 
 ### Stable, next, and editable source
 
-The managed `harness-ship` channel is stable and pinned to release tag `v0.7.0`.
+The managed `harness-ship` channel is stable and pinned to release tag `v1.0.0`.
 `harness-ship-next` is an explicit opt-in that follows `main`. Tag immutability is enforced by the
 publication mismatch guard and channel + tag + full-SHA + version receipts; it is not assumed from
 the tag name. The marketplace catalog itself is deliberately refreshed from `main`, so a later
-stable entry such as `v0.7.1` can be discovered without replacing a frozen catalog registration.
+stable entry such as `v1.0.1` can be discovered without replacing a frozen catalog registration.
 Both channels use that same mutable catalog but expose the same underlying plugin namespace, so
 never install or activate both in one host. Remove the current channel before switching, then
 restart or reload the host and begin a new session.
@@ -226,7 +226,7 @@ bundled skills. They share one evidence model but remain usable as focused comma
 
 | Skill | Stage | Responsibility |
 |---|---|---|
-| **`setup`** | Bootstrap | Detect the repository and write the Config v2 block every workflow reads |
+| **`setup`** | Bootstrap | Detect the repository and write the Config v3 block every workflow reads |
 | **`dev-workflow`** | Orchestrate | Move an idea through the four pre-QA human gates and into a valid QA handoff |
 | **`implement`** | Orchestrate | Route one claimed ticket through TDD, review, exact-SHA evidence, and PR/CI delivery |
 | **`testing-workflow`** | Orchestrate | Execute approved QA scenarios against the handed-off artifact and report acceptance |
@@ -253,14 +253,13 @@ bundled skills. They share one evidence model but remain usable as focused comma
 - **Deployment path** — how QA obtains an exact-source deployment or artifact receipt.
 - **Risk gates** — optional data-mutation checks and the repository UI convention.
 
-**Config v1 migration to v2:** re-run `setup` once. Setup first produces a proposed migration plan
-without applying it. Review the complete proposed block and exact diff, correct any unsafe or
-unknown binding, then give an exact confirmation for that proposal. Only that confirmation permits
-apply; changed input or a changed proposal requires another review and confirmation. The migration
-preserves known values, separates RD unit/API-contract commands from QA
-integration/P0/full-suite commands, and records the QA environment, artifact provenance, evidence
-location, and role-boundary provenance. Unknown capability stays `not-configured`; it never implies
-PASS.
+**A block from an earlier Config version:** re-run `setup` once. There is no automatic migration —
+a block whose `Config version` is not the one this release supports is a zero-mutation stop, and
+setup regenerates it. The regenerated block preserves known values, separates RD unit/API-contract
+commands from QA integration/P0/full-suite commands, and records the QA environment, artifact
+provenance, and evidence location. Unknown capability stays
+`not-configured`; it never implies PASS. Per-release migration notes live in the
+[upgrade guide](docs/upgrade-guide.md).
 
 ## Host and trust boundaries
 
