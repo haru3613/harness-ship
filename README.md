@@ -144,9 +144,9 @@ Canonical direct commands remain available:
 ## Install and update details
 
 Upgrading from an earlier release? Both hosts must install the refreshed plugin, restart or reload
-the real host process, start a new session, and re-run setup. Follow the
-[upgrade guide](docs/upgrade-guide.md); a project whose block does not match the current Config
-version is a fail-closed stop, not an automatic migration — re-run setup once to regenerate it.
+the real host process, and start a new session. Re-run setup only when the installed release does
+not support the project's Config version. Follow the [upgrade guide](docs/upgrade-guide.md); an
+unsupported block is a fail-closed stop, not an automatic migration.
 
 ### Stable, next, and editable source
 

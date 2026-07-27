@@ -1,7 +1,8 @@
 # Upgrade guide
 
 Choose one channel, upgrade its marketplace source, install the refreshed plugin, restart or reload
-the real host process, start a new session, and re-run setup in every configured project.
+the real host process, and start a new session. Re-run setup only when the installed release does
+not support the project's Config version.
 
 `harness-ship` is the stable channel pinned to `v1.0.0`; `harness-ship-next` is an explicit
 unreleased channel pinned to `main`. Both resolve to the same underlying plugin namespace and are

@@ -136,13 +136,27 @@ def read_config_version(config_text: str) -> int:
     return version
 
 
+def read_config_block(config_text: str) -> str:
+    """Return the one Harness Ship block, excluding later top-level sections."""
+    matches = list(SECTION_RE.finditer(config_text))
+    if len(matches) != 1:
+        raise ContractError(
+            f"config must contain exactly one ## harness-ship block; found {len(matches)}"
+        )
+    match = matches[0]
+    tail = config_text[match.end() :]
+    next_section = re.search(r"(?m)^##\s+", tail)
+    end = match.end() + next_section.start() if next_section else len(config_text)
+    return config_text[match.start() : end]
+
+
 def preflight(
     config_text: str,
     agent_path: Path = PLUGIN_AGENT,
     env: Optional[Mapping[str, str]] = None,
 ) -> Dict[str, Any]:
     """Inspect the packaged Claude verifier when the running host can load it."""
-    config_version = read_config_version(config_text)
+    config_version = read_config_version(read_config_block(config_text))
     host = detect_host(env)
     base = {"config_version": config_version, "host": host}
 
@@ -202,8 +216,9 @@ def readiness(
     A capability that is absent blocks only the tier that needs it. Nothing is
     ever reported ready on the strength of a missing field.
     """
-    read_config_version(config_text)
-    fields = read_fields(config_text)
+    config_block = read_config_block(config_text)
+    read_config_version(config_block)
+    fields = read_fields(config_block)
     result: Dict[str, Any] = {}
 
     def tier(name: str, blockers: List[str], inherits: Optional[str] = None) -> None:
