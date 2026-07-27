@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "issue-50",
+  "classification": "breaking",
+  "migration": "recommended",
+  "summary": "Resolve the independent verifier from the running host and stop persisting it in project config.",
+  "paths": [
+    "docs/upgrade-guide.md",
+    "scripts/role_binding_contract.py",
+    "skills/implement/SKILL.md",
+    "skills/review/SKILL.md",
+    "skills/setup/SKILL.md"
+  ]
+}

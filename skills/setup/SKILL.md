@@ -55,34 +55,27 @@ Do **not** detect or ask about the QA environment, artifact-provenance source, Q
 deployment path, or claim/fencing policy at first run. They are irrelevant until a workflow reaches
 them, and demanding them up front is what made setup an all-or-nothing exercise.
 
-#### The independent-verifier gate
+#### The independent verifier is not configured
 
-`implement` is blocked unless one independent verifier is bound and satisfies the required boundary:
-read-only, cannot spawn children, fresh context, effort high or higher. Record it as one line:
-
-```markdown
-- **Independent verifier:** `claude-code` / `harness-ship:harness-ship-independent-verifier`
-- **Independent verifier:** `codex` / `Codex/verifier` — mode=read-only, write=none, spawn=no, context=fresh, effort=high
-```
-
-Verify it with the packaged executable, which is authoritative — do not substitute a prose check:
+Nothing about the verifier is recorded in project config. It is resolved from the **running host**,
+which is the only thing that determines which agent will actually load:
 
 ```sh
 python3 <plugin-root>/scripts/role_binding_contract.py preflight --config <AGENTS.md|CLAUDE.md>
 ```
 
-The two hosts give different strengths of guarantee, and the gate reports which one you have:
+- **Claude Code** — this plugin ships the verifier agent. The gate reads that file at check time and
+  compares its tools, model and effort against the required boundary: read-only, no spawn, effort
+  high or higher. The whitelist is enforced by the host permission layer, so a verifier that cannot
+  invoke Edit is not merely promising to abstain. Exit `0`, `assurance: host-enforced`. A drift names
+  the field.
+- **Any other host** — this plugin ships no verifier there and cannot establish independence. Exit
+  `1`, `independence: not established`. That is neither a pass nor a broken boundary, and `implement`
+  treats it as an unmet gate.
 
-- **Claude Code** (`assurance: host-enforced`) — the binding must be the packaged plugin agent. The
-  gate reads that agent file at check time and compares its tools, model and effort against the
-  boundary. The tool whitelist is enforced by the host permission layer, so a verifier that cannot
-  invoke Edit is not merely promising to abstain. A failure names the field that drifted.
-- **Codex** (`assurance: operator-declared`) — no Codex interface exposes live profile metadata. The
-  operator writes the boundary down and the gate re-asserts it. This proves the declaration is
-  correct; it cannot prove the live profile matches. Say so rather than implying more.
-
-A non-zero exit stops setup and `implement` with zero mutation. Never replace a failing binding with
-a discovered default, and never write global agent or settings files.
+Earlier versions wrote an `Independent verifier:` line into config. On Claude Code it recorded a
+constant; elsewhere it recorded an operator declaration that proved nothing about the live profile
+while reading as a partial guarantee. A line left over from those versions is ignored, not an error.
 
 ### 2. Propose, then ask at most three questions
 
@@ -123,7 +116,6 @@ requested up front.
 - **RD API-contract command:** `<command | not-configured>`
 - **Lint / typecheck / build:** `<lint cmd>` / `<typecheck cmd>` / `<build cmd>` — write `none` only when the project is known not to have that check.
 - **Legacy test-command migration note:** <none | prior field name + verbatim command + classification evidence>
-- **Independent verifier:** `<claude-code | codex>` / `<profile id>`<` — mode=…, write=…, spawn=…, context=…, effort=…` for Codex>
 - **Data-mutation safety gate:** <on | off> — on when the project has scheduled/batch DB writers.
 - **UI convention:** <front-end-first mocks under `docs/design/` | none>
 

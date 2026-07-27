@@ -8,6 +8,7 @@ nothing else — and is never reported ready.
 from pathlib import Path
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -26,10 +27,14 @@ PLANNING = f"""## harness-ship
 - **Issue tracker:** GitHub issues via `gh`
 """
 
-IMPLEMENTATION = PLANNING + f"""- **Integration branch:** `main`
+IMPLEMENTATION = PLANNING + """- **Integration branch:** `main`
 - **RD API-contract command:** `python3 -m unittest discover -s tests`
-- **Independent verifier:** `claude-code` / `{gate.CLAUDE_PROFILE_ID}`
 """
+
+# Pin the host: readiness resolves the verifier from the runtime, so an unpinned
+# environment would make these tests pass locally and degrade in CI.
+CLAUDE = {"CLAUDECODE": "1"}
+OTHER_HOST = {}
 
 QA = IMPLEMENTATION + """- **QA environment:** staging at https://staging.example.invalid
 - **Artifact-provenance source:** GitHub Actions run + full commit SHA
@@ -40,13 +45,13 @@ QA = IMPLEMENTATION + """- **QA environment:** staging at https://staging.exampl
 
 class PlanningTierTests(unittest.TestCase):
     def test_a_tracker_alone_is_enough_to_plan(self) -> None:
-        tiers = gate.readiness(PLANNING)
+        tiers = gate.readiness(PLANNING, env=CLAUDE)
 
         self.assertTrue(tiers["planning"]["ready"])
 
     def test_planning_without_a_tracker_is_blocked(self) -> None:
         config = PLANNING.replace("- **Issue tracker:** GitHub issues via `gh`\n", "")
-        tiers = gate.readiness(config)
+        tiers = gate.readiness(config, env=CLAUDE)
 
         self.assertFalse(tiers["planning"]["ready"])
         self.assertIn("configure the issue tracker", tiers["planning"]["blockers"])
@@ -54,29 +59,26 @@ class PlanningTierTests(unittest.TestCase):
     def test_a_not_configured_tracker_is_not_ready(self) -> None:
         config = PLANNING.replace("GitHub issues via `gh`", "not-configured")
 
-        self.assertFalse(gate.readiness(config)["planning"]["ready"])
+        self.assertFalse(gate.readiness(config, env=CLAUDE)["planning"]["ready"])
 
     def test_an_unfilled_placeholder_is_not_ready(self) -> None:
         config = PLANNING.replace("GitHub issues via `gh`", "<system + access method>")
 
-        self.assertFalse(gate.readiness(config)["planning"]["ready"])
+        self.assertFalse(gate.readiness(config, env=CLAUDE)["planning"]["ready"])
 
 
 class ImplementationTierTests(unittest.TestCase):
     def test_a_planning_only_project_can_still_plan(self) -> None:
         """The headline: a missing verifier must not make planning look unusable."""
-        tiers = gate.readiness(PLANNING)
+        tiers = gate.readiness(PLANNING, env=CLAUDE)
 
         self.assertTrue(tiers["planning"]["ready"])
         self.assertFalse(tiers["implementation"]["ready"])
 
-    def test_missing_verifier_blocks_implementation_and_names_the_fix(self) -> None:
-        config = IMPLEMENTATION.replace(
-            f"- **Independent verifier:** `claude-code` / `{gate.CLAUDE_PROFILE_ID}`\n", ""
-        )
-        blockers = gate.readiness(config)["implementation"]["blockers"]
+    def test_a_host_without_a_verifier_blocks_implementation_and_says_why(self) -> None:
+        blockers = gate.readiness(IMPLEMENTATION, env=OTHER_HOST)["implementation"]["blockers"]
 
-        self.assertTrue(any("bind an independent verifier" in b for b in blockers))
+        self.assertTrue(any("cannot establish independence" in b for b in blockers))
 
     def test_a_drifted_verifier_blocks_implementation(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -89,7 +91,7 @@ class ImplementationTierTests(unittest.TestCase):
                 "tools": ["Read", "Edit"],
             }
             path.write_text(f"---\n{json.dumps(fields)}\n---\n\nBody.\n", encoding="utf-8")
-            tiers = gate.readiness(IMPLEMENTATION, path)
+            tiers = gate.readiness(IMPLEMENTATION, path, env=CLAUDE)
 
         self.assertFalse(tiers["implementation"]["ready"])
         self.assertIn("repair the independent verifier boundary", tiers["implementation"]["blockers"])
@@ -99,18 +101,18 @@ class ImplementationTierTests(unittest.TestCase):
             "- **RD API-contract command:** `python3 -m unittest discover -s tests`\n",
             "- **RD API-contract command:** `not-configured`\n",
         )
-        blockers = gate.readiness(config)["implementation"]["blockers"]
+        blockers = gate.readiness(config, env=CLAUDE)["implementation"]["blockers"]
 
         self.assertIn("configure at least one RD command", blockers)
 
     def test_a_fully_configured_rd_project_is_implementation_ready(self) -> None:
-        self.assertTrue(gate.readiness(IMPLEMENTATION)["implementation"]["ready"])
+        self.assertTrue(gate.readiness(IMPLEMENTATION, env=CLAUDE)["implementation"]["ready"])
 
 
 class QaTierTests(unittest.TestCase):
     def test_no_qa_environment_blocks_only_qa(self) -> None:
         """The other headline: QA gaps must not block planning or implementation."""
-        tiers = gate.readiness(IMPLEMENTATION)
+        tiers = gate.readiness(IMPLEMENTATION, env=CLAUDE)
 
         self.assertTrue(tiers["planning"]["ready"])
         self.assertTrue(tiers["implementation"]["ready"])
@@ -118,7 +120,7 @@ class QaTierTests(unittest.TestCase):
         self.assertIn("configure the qa environment", tiers["qa"]["blockers"])
 
     def test_a_fully_configured_project_is_ready_everywhere(self) -> None:
-        tiers = gate.readiness(QA)
+        tiers = gate.readiness(QA, env=CLAUDE)
 
         self.assertEqual([t for t in gate.TIERS if tiers[t]["ready"]], list(gate.TIERS))
 
@@ -128,13 +130,10 @@ class QaTierTests(unittest.TestCase):
             "- **QA integration command:** manual: log in, place an order, screenshot the receipt",
         )
 
-        self.assertTrue(gate.readiness(config)["qa"]["ready"])
+        self.assertTrue(gate.readiness(config, env=CLAUDE)["qa"]["ready"])
 
     def test_qa_inherits_an_implementation_blocker_rather_than_hiding_it(self) -> None:
-        config = QA.replace(
-            f"- **Independent verifier:** `claude-code` / `{gate.CLAUDE_PROFILE_ID}`\n", ""
-        )
-        tiers = gate.readiness(config)
+        tiers = gate.readiness(QA, env=OTHER_HOST)
 
         self.assertFalse(tiers["qa"]["ready"])
         self.assertIn("implementation is not ready", tiers["qa"]["blockers"])
@@ -146,7 +145,7 @@ class QaTierTests(unittest.TestCase):
                     line for line in QA.splitlines() if not line.startswith(f"- **{field}:**")
                 )
 
-                self.assertFalse(gate.readiness(config)["qa"]["ready"])
+                self.assertFalse(gate.readiness(config, env=CLAUDE)["qa"]["ready"])
 
 
 class UnsetValueTests(unittest.TestCase):
@@ -176,7 +175,7 @@ class UnsetValueTests(unittest.TestCase):
             "- **QA environment:** staging at https://staging.example.invalid",
             "- **QA environment:** `not-configured` — source-only repo, nothing is deployed",
         )
-        tiers = gate.readiness(config)
+        tiers = gate.readiness(config, env=CLAUDE)
 
         self.assertFalse(tiers["qa"]["ready"])
         self.assertIn("configure the qa environment", tiers["qa"]["blockers"])
@@ -191,6 +190,7 @@ class CliTests(unittest.TestCase):
                 [sys.executable, str(HELPER), "readiness", "--config", str(path)],
                 capture_output=True,
                 text=True,
+                env={**os.environ, "CLAUDECODE": "1"},
             )
 
     def test_a_planning_only_project_exits_zero(self) -> None:

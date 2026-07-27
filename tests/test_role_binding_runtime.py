@@ -3,6 +3,7 @@
 from pathlib import Path
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -15,10 +16,9 @@ spec = importlib.util.spec_from_file_location("role_binding_contract", HELPER)
 gate = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gate)
 
-ENVELOPE = f"## harness-ship\n- **Config version:** `{gate.SUPPORTED_CONFIG_VERSION}`\n"
-PACKAGED = ENVELOPE + f"- **Independent verifier:** `claude-code` / `{gate.CLAUDE_PROFILE_ID}`\n"
-CODEX_DECLARATION = "mode=read-only, write=none, spawn=no, context=fresh, effort=high"
-CODEX = ENVELOPE + f"- **Independent verifier:** `codex` / `Codex/verifier` — {CODEX_DECLARATION}\n"
+CONFIG = f"## harness-ship\n- **Config version:** `{gate.SUPPORTED_CONFIG_VERSION}`\n"
+CLAUDE = {"CLAUDECODE": "1"}
+OTHER_HOST = {}
 
 
 def agent_file(directory: Path, **overrides) -> Path:
@@ -42,7 +42,7 @@ class PackagedVerifierTests(unittest.TestCase):
         self.assertEqual(gate.self_test()["status"], "pass")
 
     def test_claude_assurance_is_host_enforced(self) -> None:
-        self.assertEqual(gate.preflight(PACKAGED)["assurance"], "host-enforced")
+        self.assertEqual(gate.preflight(CONFIG, env=CLAUDE)["assurance"], "host-enforced")
 
 
 class DriftTests(unittest.TestCase):
@@ -50,7 +50,7 @@ class DriftTests(unittest.TestCase):
 
     def drift(self, **overrides) -> dict:
         with tempfile.TemporaryDirectory() as directory:
-            return gate.preflight(PACKAGED, agent_file(Path(directory), **overrides))
+            return gate.preflight(CONFIG, agent_file(Path(directory), **overrides), env=CLAUDE)
 
     def test_added_write_tool_fails_and_names_tools(self) -> None:
         result = self.drift(tools=["Read", "Grep", "Glob", "Edit"])
@@ -84,46 +84,54 @@ class DriftTests(unittest.TestCase):
 
     def test_missing_agent_file_fails_closed(self) -> None:
         with self.assertRaises(gate.ContractError):
-            gate.preflight(PACKAGED, ROOT / "agents" / "does-not-exist.md")
+            gate.preflight(CONFIG, ROOT / "agents" / "does-not-exist.md", env=CLAUDE)
 
-    def test_config_cannot_self_certify_over_a_drifted_agent(self) -> None:
-        """The old contract accepted a caller-supplied record as evidence. This does not.
-
-        Writing the required boundary into the config is not evidence that the
-        agent has it — the agent file is the authority for Claude Code.
-        """
-        claimed = PACKAGED.rstrip("\n") + " — mode=read-only, write=none, effort=high\n"
+    def test_config_text_cannot_override_a_drifted_agent(self) -> None:
+        """The agent file is the authority; nothing written in config outranks it."""
+        claimed = CONFIG + "- **Independent verifier:** mode=read-only, write=none, effort=high\n"
         with tempfile.TemporaryDirectory() as directory:
             drifted = agent_file(Path(directory), tools=["Read", "Edit"], effort="low")
-            result = gate.preflight(claimed, drifted)
+            result = gate.preflight(claimed, drifted, env=CLAUDE)
 
         self.assertEqual(result["status"], "fail")
         self.assertEqual(set(result["violations"]), {"tools", "effort"})
 
 
-class CodexDeclarationTests(unittest.TestCase):
-    """Codex exposes nothing live; the declaration is re-asserted, not assumed."""
+class HostResolutionTests(unittest.TestCase):
+    """The verifier comes from the running host, never from config or a caller."""
 
-    def test_complete_declaration_passes_as_operator_declared(self) -> None:
-        result = gate.preflight(CODEX)
+    def test_claude_code_resolves_the_packaged_verifier(self) -> None:
+        result = gate.preflight(CONFIG, env=CLAUDE)
 
         self.assertEqual(result["status"], "pass")
-        self.assertEqual(result["assurance"], "operator-declared")
+        self.assertEqual(result["assurance"], "host-enforced")
+        self.assertEqual(result["profile_id"], gate.CLAUDE_PROFILE_ID)
 
-    def test_missing_declaration_fails(self) -> None:
-        config = ENVELOPE + "- **Independent verifier:** `codex` / `Codex/verifier`\n"
+    def test_another_host_cannot_establish_independence(self) -> None:
+        result = gate.preflight(CONFIG, env=OTHER_HOST)
 
-        self.assertEqual(gate.preflight(config)["status"], "fail")
+        self.assertEqual(result["status"], "degraded")
+        self.assertEqual(result["assurance"], "independence: not established")
 
-    def test_wrong_declared_boundary_fails_and_names_the_key(self) -> None:
-        result = gate.preflight(CODEX.replace("write=none", "write=task worktree"))
+    def test_degraded_is_not_a_boundary_failure(self) -> None:
+        """A missing verifier and a broken one are different problems."""
+        result = gate.preflight(CONFIG, env=OTHER_HOST)
 
-        self.assertEqual(set(result["violations"]), {"write"})
+        self.assertNotIn("violations", result)
+        self.assertNotEqual(result.get("reason_code"), "unsafe-verifier-boundary")
 
-    def test_lowered_declared_effort_fails(self) -> None:
-        result = gate.preflight(CODEX.replace("effort=high", "effort=medium"))
+    def test_config_cannot_assert_its_way_to_host_enforced(self) -> None:
+        """The old design let the config name the host. This one reads the runtime."""
+        claiming = CONFIG + (
+            f"- **Independent verifier:** `claude-code` / `{gate.CLAUDE_PROFILE_ID}`\n"
+        )
 
-        self.assertEqual(set(result["violations"]), {"effort"})
+        self.assertEqual(gate.preflight(claiming, env=OTHER_HOST)["status"], "degraded")
+
+    def test_a_stale_binding_line_is_ignored_not_rejected(self) -> None:
+        stale = CONFIG + "- **Independent verifier:** `codex` / `Codex/verifier` — mode=read-only\n"
+
+        self.assertEqual(gate.preflight(stale, env=CLAUDE)["status"], "pass")
 
 
 class ConfigVersionTests(unittest.TestCase):
@@ -132,69 +140,47 @@ class ConfigVersionTests(unittest.TestCase):
     def test_any_plugin_version_leaves_a_valid_config_working(self) -> None:
         for plugin_version in ("0.7.0", "0.7.1", "0.8.3", "1.2.0"):
             with self.subTest(plugin_version=plugin_version):
-                config = PACKAGED.replace(
+                config = CONFIG.replace(
                     "## harness-ship\n",
                     f"## harness-ship\n- **Plugin version:** `{plugin_version}`\n",
                 )
 
-                self.assertEqual(gate.preflight(config)["status"], "pass")
+                self.assertEqual(gate.preflight(config, env=CLAUDE)["status"], "pass")
 
     def test_an_older_config_schema_fails_with_an_actionable_message(self) -> None:
         older = gate.SUPPORTED_CONFIG_VERSION - 1
-        config = PACKAGED.replace(
+        config = CONFIG.replace(
             f"`{gate.SUPPORTED_CONFIG_VERSION}`", f"`{older}`", 1
         )
 
         with self.assertRaises(gate.ContractError) as caught:
-            gate.preflight(config)
+            gate.preflight(config, env=CLAUDE)
 
         self.assertIn("re-run setup", str(caught.exception))
 
     def test_a_missing_config_version_fails(self) -> None:
-        config = PACKAGED.replace(
+        config = CONFIG.replace(
             f"- **Config version:** `{gate.SUPPORTED_CONFIG_VERSION}`\n", ""
         )
 
         with self.assertRaises(gate.ContractError):
-            gate.preflight(config)
+            gate.preflight(config, env=CLAUDE)
 
     def test_the_verdict_reports_the_config_version(self) -> None:
-        self.assertEqual(gate.preflight(PACKAGED)["config_version"], gate.SUPPORTED_CONFIG_VERSION)
+        self.assertEqual(gate.preflight(CONFIG, env=CLAUDE)["config_version"], gate.SUPPORTED_CONFIG_VERSION)
 
 
-class BindingParsingTests(unittest.TestCase):
+class ConfigParsingTests(unittest.TestCase):
     def test_missing_block_fails(self) -> None:
         with self.assertRaises(gate.ContractError):
-            gate.preflight("# Some project\n\nNo config here.\n")
-
-    def test_missing_binding_fails(self) -> None:
-        with self.assertRaises(gate.ContractError):
-            gate.preflight(ENVELOPE + "- **Integration branch:** `main`\n")
-
-    def test_duplicate_bindings_fail(self) -> None:
-        with self.assertRaises(gate.ContractError):
-            gate.preflight(PACKAGED + "- **Independent verifier:** `codex` / `Codex/verifier`\n")
-
-    def test_unsupported_host_fails(self) -> None:
-        with self.assertRaises(gate.ContractError):
-            gate.preflight(ENVELOPE + "- **Independent verifier:** `cursor` / `x`\n")
-
-    def test_claude_binding_must_be_the_packaged_profile(self) -> None:
-        config = (
-            ENVELOPE + "- **Independent verifier:** `claude-code` / `Claude/user/mine`\n"
-        )
-
-        with self.assertRaises(gate.ContractError):
-            gate.preflight(config)
-
-    def test_malformed_declaration_fails(self) -> None:
-        with self.assertRaises(gate.ContractError):
-            gate.preflight(ENVELOPE + "- **Independent verifier:** `codex` / `C/v` — read-only\n")
+            gate.preflight("# Some project\n\nNo config here.\n", env=CLAUDE)
 
 
 class CliTests(unittest.TestCase):
-    def run_cli(self, *args: str) -> subprocess.CompletedProcess:
-        return subprocess.run([sys.executable, str(HELPER), *args], capture_output=True, text=True)
+    def run_cli(self, *args: str, env: dict = None) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            [sys.executable, str(HELPER), *args], capture_output=True, text=True, env=env
+        )
 
     def test_self_test_exits_zero(self) -> None:
         self.assertEqual(self.run_cli("self-test").returncode, 0)
@@ -202,24 +188,26 @@ class CliTests(unittest.TestCase):
     def test_validate_agent_accepts_the_packaged_agent(self) -> None:
         self.assertEqual(self.run_cli("validate-agent", str(gate.PLUGIN_AGENT)).returncode, 0)
 
-    def test_preflight_exits_two_on_violation(self) -> None:
+    def test_preflight_exits_two_on_a_malformed_config(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             config = Path(directory) / "AGENTS.md"
-            config.write_text(CODEX.replace("effort=high", "effort=low"), encoding="utf-8")
-            result = self.run_cli("preflight", "--config", str(config))
+            config.write_text("## harness-ship\n- **Issue tracker:** local\n", encoding="utf-8")
 
-        self.assertEqual(result.returncode, 2)
-        self.assertEqual(json.loads(result.stdout)["reason_code"], "unsafe-verifier-boundary")
+            self.assertEqual(self.run_cli("preflight", "--config", str(config)).returncode, 2)
 
     def test_preflight_exits_two_on_unreadable_config(self) -> None:
         self.assertEqual(self.run_cli("preflight", "--config", "/nonexistent").returncode, 2)
 
-    def test_preflight_exits_zero_on_the_packaged_verifier(self) -> None:
+    def test_preflight_exit_code_follows_the_host(self) -> None:
+        """0 pass, 1 degraded, 2 broken — a caller can tell the three apart."""
         with tempfile.TemporaryDirectory() as directory:
             config = Path(directory) / "AGENTS.md"
-            config.write_text(PACKAGED, encoding="utf-8")
+            config.write_text(CONFIG, encoding="utf-8")
+            args = ["preflight", "--config", str(config)]
 
-            self.assertEqual(self.run_cli("preflight", "--config", str(config)).returncode, 0)
+            self.assertEqual(self.run_cli(*args, env={**os.environ, "CLAUDECODE": "1"}).returncode, 0)
+            stripped = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
+            self.assertEqual(self.run_cli(*args, env=stripped).returncode, 1)
 
 
 if __name__ == "__main__":
