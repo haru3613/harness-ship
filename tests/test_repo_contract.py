@@ -61,14 +61,28 @@ class ReviewerRoutingTests(unittest.TestCase):
 
         self.assertIn("## Invocation-time reviewer routing", implement)
         self.assertIn("## Dispatch reviewers at invocation", review)
-        for skill in (setup, implement, review):
-            self.assertNotIn("role_binding_contract.py preflight", skill)
+        self.assertNotIn("role_binding_contract.py preflight", setup)
+        self.assertNotIn("## Mandatory independent-verifier preflight", implement)
+
+        self.assertIn("## Role-profile gate", implement)
+        non_review_routing = implement.split("## Role-profile gate", 1)[1].split(
+            "\n## ", 1
+        )[0]
+        for guarantee in (
+            "planning, implementation, and security work",
+            "pre-defined role profile",
+            "Do not substitute an undefined",
+        ):
+            self.assertIn(guarantee, non_review_routing)
 
         implement_routing = implement.split(
             "## Invocation-time reviewer routing", 1
         )[1].split("\n## ", 1)[0]
         for guarantee in (
             "`generic`, `default`, `worker`",
+            "`claude-code`",
+            "role_binding_contract.py preflight",
+            "`harness-ship:harness-ship-independent-verifier`",
             "run identity",
             "`independence: not established`",
             "root performs",
@@ -80,11 +94,15 @@ class ReviewerRoutingTests(unittest.TestCase):
         )[1].split("\n## ", 1)[0]
         for guarantee in (
             "`generic`, `default`, `worker`",
+            "`claude-code`",
+            "role_binding_contract.py preflight",
+            "`harness-ship:harness-ship-independent-verifier`",
             "run identity",
             "`independence: not established`",
             "`git rev-parse HEAD`",
             "`git rev-parse HEAD^{tree}`",
             "`git status --porcelain`",
+            "activity trace",
             "mutate external state",
             "spawn children",
         ):
