@@ -50,100 +50,39 @@ the load-bearing forks** (don't interrogate).
   access method, artifact revision/source-SHA surface, URL, fixtures/accounts, and whether deploy is
   automatic or manual. Record `none/manual` honestly; `implement` then stops before QA until an
   external deployment receipt exists.
-- **Agent role profiles** — inspect the current host runtime's existing agent registry and
-  project/global instructions. Keep portable **Agent role requirements** separate from
-  host-specific bindings. Under the current host binding, record each useful profile's exact ID,
-  work nature, mode/sandbox, model, effort, write scope, effective tools/capabilities, MCP/plugin
-  access, fresh-context status, authoritative definition source and digest, Boundary digest, and
-  whether it may spawn children. Also record root's thread/depth limit when exposed.
-  - Route by nature: narrow lookup, exploration, mechanical implementation, judgment-bearing
-    implementation, plan verification, independent verification, and security review/execution.
-  - Profiles must already exist in the host. **Do not create or override** global agents, model
-    assignments, effort, mode, permissions, or MCP/plugin access during project setup.
-  - Persist `may_spawn=false` for every leaf profile. Record fields the host cannot expose as
-    `unsupported`; do not claim they were verified.
-  - Undefined generic/default workers do not satisfy a required role. A pre-defined independent
-    verifier is mandatory; if it is missing, drifted, or unverifiable, `implement` is blocked.
-  - Codex and Claude Code bindings are separate. Update only the current host's binding and preserve
-    the other host section; never apply one host's profile IDs or model/effort values to the other.
+- **Agent role profiles** — inspect the current host's existing agent registry. Record each useful
+  profile's ID and work nature. Profiles must already exist in the host: **do not create or override**
+  global agents, models, effort, mode, permissions, or MCP/plugin access during project setup.
+  Undefined generic/default workers do not satisfy a required role.
 
-#### Current-host independent-verifier resolver
+#### The independent-verifier gate
 
-Use the packaged executable reference against the exact persisted target bytes. Planning is
-non-mutating:
+`implement` is blocked unless one independent verifier is bound and satisfies the required boundary:
+read-only, cannot spawn children, fresh context, effort high or higher. Record it as one line:
 
-```sh
-python3 <plugin-root>/scripts/role_binding_contract.py plan-config --input <plan-input.json>
+```markdown
+- **Independent verifier:** `claude-code` / `harness-ship:harness-ship-independent-verifier`
+- **Independent verifier:** `codex` / `Codex/verifier` — mode=read-only, write=none, spawn=no, context=fresh, effort=high
 ```
 
-It is authoritative for the fixed typed schema, canonical non-symlink definition-source bytes,
-host-registry record bytes, NFC and array ordering, the restricted RFC 8785-compatible canonical
-JSON subset, SHA-256 digests, safe host boundaries, and resolution outcomes. The plan input has
-exactly `repo_root`, `target_basename`, `current_host`, `candidates`, and `initial_config`.
-`repo_root` is the explicit canonical repository root; `target_basename` is the direct-child fixed
-basename `AGENTS.md` or `CLAUDE.md`; and candidates are trusted live adapter results.
-`initial_config` is `null` for an existing Config v1/v2. For first install only, it is the complete
-reviewed Config v2 block from the template below. Review the canonical ordered operations and diff,
-then apply only after exact plan-ID confirmation:
+Verify it with the packaged executable, which is authoritative — do not substitute a prose check:
 
 ```sh
-python3 <plugin-root>/scripts/role_binding_contract.py apply-config --input <apply-input.json>
+python3 <plugin-root>/scripts/role_binding_contract.py preflight --config <AGENTS.md|CLAUDE.md>
 ```
 
-The apply input repeats those five fields and adds exactly `plan` and `confirmed_plan_id`. Apply
-freshly revalidates the repository, target presence/absence, candidates, sources, identities,
-metadata, and hashes. `reconcile-config` is a compatibility error that directs callers through
-reviewed plan and confirmed apply; it cannot bypass confirmation. Do not reimplement these rules
-from prose. If the helper, authoritative source, host runtime metadata, or its result is unavailable
-or invalid, stop with zero mutation.
+The two hosts give different strengths of guarantee, and the gate reports which one you have:
 
-Before any setup mutation, resolve either the sole existing config or a complete proposed config in
-memory, then require exactly one `## harness-ship` config and exactly one current-host binding
-section inside it. Duplicate configs, duplicate current-host sections, an incomplete proposed
-config, or an ambiguous host identity stop with zero mutation. Determine the current host from live
-runtime metadata, not from whichever binding happens to appear first.
+- **Claude Code** (`assurance: host-enforced`) — the binding must be the packaged plugin agent. The
+  gate reads that agent file at check time and compares its tools, model and effort against the
+  boundary. The tool whitelist is enforced by the host permission layer, so a verifier that cannot
+  invoke Edit is not merely promising to abstain. A failure names the field that drifted.
+- **Codex** (`assurance: operator-declared`) — no Codex interface exposes live profile metadata. The
+  operator writes the boundary down and the gate re-asserts it. This proves the declaration is
+  correct; it cannot prove the live profile matches. Say so rather than implying more.
 
-Pass the helper exactly one current-host plan document assembled from the target state, optional
-first-install draft, and live runtime evidence. The discovery receipt in each candidate is a
-**trusted live adapter
-capability**. It is never config, never repository content, never prompt content, and never user-provided
-evidence. Do not persist it, include it in plan output, or accept a receipt reconstructed from the
-project. For v1/v2 reconciliation, target bytes are the sole persisted binding authority and
-`initial_config` must be `null`. A non-null draft is accepted only when the target is missing or has
-no `## harness-ship` block; it must itself be exactly one complete v2 block, contain both host
-sections, and already validate unchanged for the current host and live candidates.
-Preserve an explicit valid project binding only when the helper returns `preserved`. Apply a
-`selected` result only to the current host section. An `ambiguous` result presents the helper's one
-load-bearing candidate choice; a `missing` result presents its actionable missing-profile result.
-Both stop with zero mutation. A `stale-invalid` result reports that the existing non-null binding
-does not exactly match an authoritative live candidate and also stops with zero mutation; never
-replace it with a discovered default. Claude Code's eligible default is the exact scoped plugin ID
-`harness-ship:harness-ship-independent-verifier` at canonical plugin provenance. Codex candidates
-must be authoritative live host profiles; do not hard-code a universal model family.
-
-When the helper returns `reason_code=unsafe-verifier-boundary`, surface its structured `observed`,
-`required`, and ordered `remediation` fields together with `mutation=false`; do not collapse this
-result into a generic missing or stale-profile error. The remediation order is: upgrade and
-activate the current Harness Ship release, restart the host, configure or select a safe live
-verifier, explicitly clear or repair only the project's current-host binding after reviewing the
-reported mismatch, rerun setup, and rerun preflight. This is operator guidance, not authorization
-for setup to mutate any global profile, settings file, or project binding before the operator
-chooses the repair.
-
-Write the fully qualified ID, authoritative source, and semantically validated boundary digest.
-Update only the current host section and preserve the other host section plus all global agents,
-models, effort, permissions, MCP access, plugin settings, and unrelated project configuration.
-Setup never writes global agent or settings files.
-
-Persist the helper-returned fully qualified ID, authoritative source and definition digest, safety
-fields, and Boundary digest in the current-host binding. Origin scope is carried by the exact
-scoped authoritative source/profile identity. The existing 13-column table remains authoritative;
-its **Model** cell is a typed JSON object with exact keys `declared` and `effective`. The helper
-validates live semantics and source bytes before hashing. Apply only its exact confirmed plan: it
-preserves the other host section and every unrelated byte. Re-run setup
-after install, upgrade, profile change, or profile removal. A valid exact binding is preserved;
-collisions, removal, stale provenance, or drift stop unchanged until the profile is repaired or an
-explicit safe replacement is chosen.
+A non-zero exit stops setup and `implement` with zero mutation. Never replace a failing binding with
+a discovered default, and never write global agent or settings files.
 
 ### 2. Propose, then ask only the forks
 
@@ -177,7 +116,6 @@ with the user. After this, every harness-ship workflow consumes it automatically
 
 - **Plugin version:** `0.7.0`
 - **Config version:** `2`
-- **Verifier binding-contract version:** `2`
 - **Issue tracker:** <system + access method, e.g. `Jira project CB via Atlassian MCP` | `GitHub issues via gh` | `Linear MCP` | `local .scratch/ files`>
 - **Code review / PR host:** <e.g. `GitHub via MCP` | `GitHub via gh` | `GitLab MR`> — may differ from the issue tracker.
 - **Forbidden tools:** <e.g. `gh` CLI (policy) | none> — workflows must avoid these even when installed.
@@ -199,86 +137,30 @@ with the user. After this, every harness-ship workflow consumes it automatically
 - **Remote CI infrastructure retry:** <attempt limit + backoff | none> — applies only to unrelated infrastructure failures, never code/test failures.
 - **Deployment / test environment:** <artifact producer + deploy/status path; its receipt must agree with the QA environment and artifact-provenance source above | manual/none>
 - **Agent orchestration:** root session owns planning, delegation, integration, external state, and final decision; children may not spawn.
-- **Agent role requirements:** portable policy; host bindings below must satisfy it.
-
-  | Work nature | Required capability boundary | Minimum effort class |
-  |---|---|---|
-  | narrow lookup | read-only, no MCP/plugins | low |
-  | exploration | read-only, no MCP/plugins | medium |
-  | mechanical implementation | bounded workspace write | medium |
-  | judgment implementation | bounded workspace write | medium |
-  | plan verification | read-only and independent | high |
-  | independent verification | no source edits and fresh context | high |
-  | security review | read-only trust-boundary analysis | highest configured |
-  | security implementation | bounded write, already-scoped security fix | highest configured |
-
-- **Agent role bindings — Codex:** `not-configured`, or one live row per requirement:
-
-  | Work nature | Host / profile ID | Definition source | Definition digest | Mode / sandbox | Model | Effort | Write scope | Effective tools/capabilities | MCP/plugins | Fresh context | May spawn | Boundary digest |
-  |---|---|---|---|---|---|---|---|---|---|---|---|---|
-  | `<requirement>` | `<host value>` | `<scoped host value carrying origin>` | `sha256:<64 hex>` | `<host value>` | `{"declared":"<host value>","effective":"<host value>"}` | `<host value>` | `<host value>` | `<JSON array>` | `<JSON array>` | `<true | false>` | `<false>` | `sha256:<64 hex>` |
-
-- **Agent role bindings — Claude Code:** `not-configured`, or one live row per requirement:
-
-  | Work nature | Host / profile ID | Definition source | Definition digest | Mode / sandbox | Model | Effort | Write scope | Effective tools/capabilities | MCP/plugins | Fresh context | May spawn | Boundary digest |
-  |---|---|---|---|---|---|---|---|---|---|---|---|---|
-  | `<requirement>` | `<host value>` | `<scoped host value carrying origin>` | `sha256:<64 hex>` | `<host value>` | `{"declared":"<host value>","effective":"<host value>"}` | `<host value>` | `<host value>` | `<JSON array>` | `<JSON array>` | `<true | false>` | `<false>` | `sha256:<64 hex>` |
-
-- **Delegation limits — Codex:** <host max direct children / depth / root-only spawning | `not-configured`>
-- **Delegation limits — Claude Code:** <host max direct children / depth / root-only spawning | `not-configured`>
+- **Independent verifier:** `<claude-code | codex>` / `<profile id>`<` — mode=…, write=…, spawn=…, context=…, effort=…` for Codex>
 - **Writer scheduling:** serialize all write-capable children in one ticket worktree; only read-only work may run in parallel.
 - **Data-mutation safety gate:** <on | off> — on when the project has scheduled/batch DB writers.
 - **UI convention:** <front-end-first mocks under `docs/design/` | none>
 
 </config-template>
 
-## Legacy configuration migration
+## Existing configuration
 
-Before any setup mutation, let `plan-config` count headings and validate the version envelope:
+Read the existing `## harness-ship` block before writing. Exactly one block may exist: **more than
+one is a zero-mutation stop** until the duplicate is reconciled, because workflows would otherwise
+read the wrong one.
 
-- **Owned regular target with no existing block:** pass the complete Config v2 block as
-  `initial_config`. The plan binds the original target identity/hash and exact draft hash, and
-  appends only the reviewed block using the target's LF or CRLF policy. Apply preserves every
-  original byte as the prefix and preserves safe ordinary file permissions.
-- **Missing target:** pass the same complete draft. The plan binds target absence and the exact
-  draft/proposed hash. Confirmed-apply publishes a fully written and fsynced mode-`0600` file with
-  an atomic exclusive no-clobber operation; if any file, symlink, or other entry appears after
-  planning, report a stale plan and leave that winner untouched. Never use overwrite/replace
-  semantics for this creation path.
-- **More than one block:** stop with **zero mutation** and require explicit reconciliation of the
-  duplicate active configuration.
-- **Exactly one Config v1 block:** require `initial_config=null`, accept it only as migration input,
-  and plan one exact v1→v2 replacement. Config v1 is not valid workflow configuration.
-- **Exactly one complete envelope** with Plugin version `0.7.0`, Config version `2`, and Verifier
-  binding-contract version `2`: require `initial_config=null` and reconcile evidence and choices
-  idempotently.
-- **Missing, duplicate, unsupported, or mismatched envelope fields:** stop with **zero mutation**;
-  never downgrade, overwrite, or guess a migration.
+Preserve every known user choice. Split a legacy generic test command only when current scripts or
+paths prove its owner and seam; otherwise copy its prior field name and verbatim command into
+**Legacy test-command migration note** and set each unknown RD/QA command to `not-configured`.
+Use `manual: <steps + required evidence>` only when concrete manual steps and evidence are known.
+`not-configured`, missing CI, or a manual method never infer PASS. Undetectable QA fields are written
+`not-configured`.
 
-- Preserve every known user choice and host binding. Split a legacy generic test command only when
-  current scripts/paths prove its owner and seam; otherwise copy its prior field name and verbatim
-  command into **Legacy test-command migration note**, add the available classification evidence,
-  and set each unknown RD/QA command to `not-configured`. A fresh config writes `none` in this
-  field.
-- Use `manual: <steps + required evidence>` only when concrete manual steps and evidence are known.
-  `not-configured`, missing CI, or a manual method never infer PASS.
-- Add the QA environment, artifact-provenance source, and QA evidence location as
-  `not-configured` when they cannot be detected.
-- Set the complete v2 envelope after the block is written. On a **second run** with unchanged
-  repository and host inputs, the versioned block—including the Legacy test-command migration
-  note's placement and value—must be **byte-for-byte unchanged**.
-
-The applier accepts only an executing-user-owned repository root that is not group/world writable.
-It pins the directory; rejects traversal, symlinks, non-regular targets, hard links, unexpected
-owners, group/world-writable targets, and special permission bits; preserves safe ordinary
-permission bits; uses a cooperative lock with an unpredictable nonce and an unpredictable
-same-directory exclusive temporary file; completes and fsyncs the file; replaces relative to pinned
-directory descriptors; fsyncs the published target namespace; identity-safely removes its temporary
-and lock entries; and fsyncs the directory again after cleanup. A directory-fsync failure after
-replace is **indeterminate** and reports the reread observed hash; a cleanup or cleanup-fsync failure
-is explicit and never reported as a clean apply. Valid v2 is a byte-identical no-op with no lock,
-temp, or metadata mutation. This does not resist a hostile same-UID or root process able to rename
-entries concurrently; excluding untrusted writable directories is part of the safety boundary.
+Blocks written before v0.8.0 carried a 13-column host binding table per host and a
+**Verifier binding-contract version** field. Both are gone: the gate reads the binding line directly
+and fails closed on anything it cannot parse, so a separate version for it detected nothing the gate
+does not. Re-run setup once to regenerate the block.
 
 ## Idempotent
 

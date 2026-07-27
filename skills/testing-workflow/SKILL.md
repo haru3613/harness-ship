@@ -16,7 +16,7 @@ after the dev→QA handoff and produces a report the user can actually read and 
 ownership belongs to `acceptance-design`; this workflow must not author or redesign those scenarios.
 
 **Prerequisite:** require the project's exact `## harness-ship` envelope with **Plugin version
-0.7.0**, **Config version 2**, and **Verifier binding-contract version 2** in `AGENTS.md` /
+0.7.0**, **Config version 2** in `AGENTS.md` /
 `CLAUDE.md`. Its QA environment, artifact-provenance source, QA evidence location, and tracker must
 be concrete and non-placeholder. If the block is absent, Config v1, legacy, unversioned,
 duplicated, unsupported, mismatched, or has a missing/placeholder/`not-configured` required field,
