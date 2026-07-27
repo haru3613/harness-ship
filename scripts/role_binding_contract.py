@@ -70,6 +70,7 @@ BINDING_RE = re.compile(
 FIELD_RE = re.compile(r"(?m)^\s*[-*]\s*\*\*(?P<name>[^*]+?):\*\*\s*(?P<value>.*?)\s*$")
 PLACEHOLDER_RE = re.compile(r"^<.*>$")
 UNSET_VALUES = {"", "not-configured", "not configured", "tbd"}
+EXPLANATION_RE = re.compile(r"\s+(?:[—–]|--)\s+")
 TIERS = ("planning", "implementation", "qa")
 
 REMEDIATION = [
@@ -229,10 +230,16 @@ def read_fields(config_text: str) -> Dict[str, str]:
 
 
 def is_set(value: Optional[str]) -> bool:
+    """An explained absence is still an absence.
+
+    Operators document *why* a capability is missing, so compare the leading
+    segment rather than the whole string — otherwise `not-configured — nothing
+    is deployed` reads as configured and the tier is reported ready.
+    """
     if value is None:
         return False
-    value = value.strip().strip("`").strip()
-    return bool(value) and value.lower() not in UNSET_VALUES and not PLACEHOLDER_RE.match(value)
+    head = EXPLANATION_RE.split(value.strip(), maxsplit=1)[0].strip().strip("`").strip()
+    return bool(head) and head.lower() not in UNSET_VALUES and not PLACEHOLDER_RE.match(head)
 
 
 def readiness(config_text: str, agent_path: Path = PLUGIN_AGENT) -> Dict[str, Any]:

@@ -149,6 +149,39 @@ class QaTierTests(unittest.TestCase):
                 self.assertFalse(gate.readiness(config)["qa"]["ready"])
 
 
+class UnsetValueTests(unittest.TestCase):
+    """An explained absence is still an absence — see #47."""
+
+    def test_not_configured_with_an_explanation_is_still_unset(self) -> None:
+        for value in (
+            "`not-configured`",
+            "`not-configured` — source-only repo, no deployed artifact",
+            "not-configured — because reasons",
+            "not configured -- nothing to deploy",
+        ):
+            with self.subTest(value=value):
+                self.assertFalse(gate.is_set(value))
+
+    def test_a_real_value_with_an_explanation_is_still_set(self) -> None:
+        for value in (
+            "`npm test`",
+            "staging at https://staging.example.invalid — fixtures A/B",
+            "GitHub issues via `gh` — maintainer only",
+        ):
+            with self.subTest(value=value):
+                self.assertTrue(gate.is_set(value))
+
+    def test_an_explained_missing_qa_environment_still_blocks_qa(self) -> None:
+        config = QA.replace(
+            "- **QA environment:** staging at https://staging.example.invalid",
+            "- **QA environment:** `not-configured` — source-only repo, nothing is deployed",
+        )
+        tiers = gate.readiness(config)
+
+        self.assertFalse(tiers["qa"]["ready"])
+        self.assertIn("configure the qa environment", tiers["qa"]["blockers"])
+
+
 class CliTests(unittest.TestCase):
     def run_cli(self, text: str) -> subprocess.CompletedProcess:
         with tempfile.TemporaryDirectory() as directory:
