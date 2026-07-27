@@ -198,6 +198,19 @@ class CliTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertIn("config is version 2", result.stderr)
 
+    def test_stray_fields_without_a_harness_ship_block_exit_two(self) -> None:
+        result = self.run_cli(QA.replace("## harness-ship", "## unrelated"))
+
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("exactly one ## harness-ship block", result.stderr)
+
+    def test_duplicate_harness_ship_blocks_exit_two(self) -> None:
+        duplicate = QA + "\n## harness-ship\n- **Config version:** `2`\n"
+        result = self.run_cli(duplicate)
+
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("exactly one ## harness-ship block", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
