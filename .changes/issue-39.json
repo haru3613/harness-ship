@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "issue-39",
+  "classification": "minor",
+  "migration": "none",
+  "summary": "Move implement's multi-root claim machinery and defect-repair entry into opt-in references.",
+  "paths": [
+    "skills/implement/SKILL.md",
+    "skills/implement/concurrent-claims.md",
+    "skills/implement/defect-repair.md"
+  ]
+}
