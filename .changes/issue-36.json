@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "issue-36",
+  "classification": "minor",
+  "migration": "recommended",
+  "summary": "Recompute the anti-fake-green verdict from an enumerated assertion audit in the ledger.",
+  "paths": [
+    "scripts/check_release_contract.py",
+    "scripts/fake_green.py",
+    "scripts/validate_plugin_lifecycle.sh",
+    "skills/testing-workflow/SKILL.md",
+    "skills/testing-workflow/execution-ledger-template.md"
+  ]
+}

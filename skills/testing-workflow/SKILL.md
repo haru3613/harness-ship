@@ -118,15 +118,26 @@ Then:
 
 ## Stage 4 — Anti-fake-green gate
 
-Before trusting any green, audit the executed QA checks in the ledger—not RD's unit/API-contract
-suite—for tests that *look* like coverage but assert nothing:
+Before trusting any green, audit the executed QA checks — not RD's unit/API-contract suite — for
+tests that *look* like coverage but assert nothing. Classifying an assertion needs judgement; the
+threshold does not. **Write the judgement down per assertion and let the arithmetic be checked.**
 
-- **> 50% static assertions** (status-200 / element-exists / title-only, no operation or flow) → reject.
-- **> 30% weak assertions** (no real assert, tautological, recomputes the expected value) → reject.
+Append an assertion audit to the execution ledger: state the denominator, then classify every
+assertion in scope as `static`, `weak`, or `ok`, each with its location and — for anything not `ok` —
+a reason. Then recompute the verdict:
+
+```sh
+python3 <plugin-root>/scripts/fake_green.py check --ledger <execution-ledger>
+```
+
+- **static** — status-200 / element-exists / title-only; asserts no operation or flow. Over **50%** → reject.
+- **weak** — no real assert, tautological, or recomputes the expected value with the implementation's logic. Over **30%** → reject.
 - **Console/runtime errors must be intercepted**, not ignored.
 - "Verified only what's visible → marked PASS" → reject.
 
-A green suite that fails this gate is worse than none — it manufactures false confidence.
+A missing, unenumerated, or miscounted audit exits non-zero and is itself a blocking result: an
+unauditable verdict is not a verdict. A green suite that fails this gate is worse than none — it
+manufactures false confidence.
 For every affected scenario, append a new raw `BLOCKED` observation and `BLOCKED` scenario
 classification to the execution ledger with the audit evidence. Preserve every earlier PASS and
 attempt; never rewrite them. The verdict is **Not ready**. After the QA check is repaired, execute
