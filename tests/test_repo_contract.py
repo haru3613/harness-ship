@@ -53,5 +53,17 @@ class SkillStructureTests(unittest.TestCase):
                     self.assertTrue((source.parent / target).resolve().is_file())
 
 
+class ReviewerRoutingTests(unittest.TestCase):
+    def test_reviewer_routing_happens_at_invocation(self) -> None:
+        setup = (SKILLS / "setup" / "SKILL.md").read_text(encoding="utf-8")
+        implement = (SKILLS / "implement" / "SKILL.md").read_text(encoding="utf-8")
+        review = (SKILLS / "review" / "SKILL.md").read_text(encoding="utf-8")
+
+        self.assertIn("## Invocation-time reviewer routing", implement)
+        self.assertIn("## Dispatch reviewers at invocation", review)
+        for skill in (setup, implement, review):
+            self.assertNotIn("role_binding_contract.py preflight", skill)
+
+
 if __name__ == "__main__":
     unittest.main()
