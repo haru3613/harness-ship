@@ -124,10 +124,10 @@ def check_claude(agent_path: Path) -> Dict[str, Any]:
 
 def read_config_version(config_text: str) -> int:
     """Workflows depend on the config schema, not on which plugin build wrote it."""
-    match = CONFIG_VERSION_RE.search(config_text)
-    if not match:
-        raise ContractError("config declares no Config version")
-    version = int(match.group("version"))
+    matches = list(CONFIG_VERSION_RE.finditer(config_text))
+    if len(matches) != 1:
+        raise ContractError(f"config must declare exactly one Config version; found {len(matches)}")
+    version = int(matches[0].group("version"))
     if version != SUPPORTED_CONFIG_VERSION:
         raise ContractError(
             f"config is version {version}, this release reads version "

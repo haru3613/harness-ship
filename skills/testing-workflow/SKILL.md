@@ -18,11 +18,12 @@ ownership belongs to `acceptance-design`; this workflow must not author or redes
 **Prerequisite:** require the project's `## harness-ship` block on a supported **Config version** in
 `AGENTS.md` / `CLAUDE.md`; the plugin version is informational and never a gate. Its QA environment,
 artifact-provenance source, QA evidence location, and tracker must be concrete and non-placeholder.
-If the block is absent, duplicated, on an unsupported Config version, or has a
-missing/placeholder/`not-configured` required field, run `setup` and stop before Stage 2. Never
-guess or downgrade it. Do not reinterpret a legacy
-generic test command. Individual QA command capabilities may remain `not-configured`; Stage 3
-records those scenarios NOT TESTED rather than inferring PASS.
+If the block is absent or on an unsupported Config version, run `setup` and stop before Stage 2.
+Reconcile duplicate blocks directly; setup must not guess which one to replace. Configure
+missing/placeholder/`not-configured` required QA fields here and stop until they are concrete.
+Never guess or downgrade them. Do not reinterpret a legacy generic test command. Individual QA
+command capabilities may remain `not-configured`; Stage 3 records those scenarios NOT TESTED rather
+than inferring PASS.
 
 ## Ownership + pyramid (settle first — prevents duplication)
 

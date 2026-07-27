@@ -17,9 +17,10 @@ execution after handoff.
 ## Inputs — inherit the approved contract
 
 Read the project's `## harness-ship` block before a baseline or edit. A supported **Config version**
-is the gate; the plugin version is informational. If the block is absent, duplicated, or on an
-unsupported Config version, run `setup` and stop until it is regenerated. Do not reinterpret a
-legacy generic test command.
+is the gate; the plugin version is informational. If the block is absent or on an unsupported
+Config version, run `setup` and stop until it is regenerated. Reconcile duplicate blocks directly;
+setup must not guess which one to replace. Configure missing RD fields here before the baseline. Do
+not reinterpret a legacy generic test command.
 
 Before editing code, read:
 

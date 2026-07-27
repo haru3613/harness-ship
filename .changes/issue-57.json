@@ -11,6 +11,8 @@
     "skills/dev-workflow/SKILL.md",
     "skills/implement/SKILL.md",
     "skills/review/SKILL.md",
-    "skills/setup/SKILL.md"
+    "skills/setup/SKILL.md",
+    "skills/tdd/SKILL.md",
+    "skills/testing-workflow/SKILL.md"
   ]
 }

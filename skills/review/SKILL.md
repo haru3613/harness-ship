@@ -98,9 +98,11 @@ python3 <plugin-root>/scripts/role_binding_contract.py preflight --config <AGENT
 ```
 
 Exit `0` selects `harness-ship:harness-ship-independent-verifier` for both axes with
-`host-enforced` assurance. On any other exit, do not use the failed packaged verifier; fall back to
-another available child and record the diagnostic plus `independence: not established`. Other
-hosts skip this Claude-specific diagnostic.
+`host-enforced` assurance. Configuration errors — missing or duplicate blocks, or missing,
+duplicate, or unsupported Config versions — stop fail-closed. If the config is valid but the
+packaged verifier is missing or drifted, do not use it; fall back to another available child and
+record the diagnostic plus `independence: not established`. Other hosts skip this Claude-specific
+diagnostic.
 
 Dispatch the two axes in one message so they run in parallel and neither pollutes the other's
 context. Each brief carries the diff command, commit list, its own sources, a **400-word cap**, and

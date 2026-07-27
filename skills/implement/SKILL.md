@@ -15,9 +15,10 @@ are bounded specialists, not competing controllers.
 
 **Prerequisite:** read the project's `## harness-ship` block in `AGENTS.md` / `CLAUDE.md`. It must
 identify the tracker and PR access paths, branch topology, classified RD/QA commands, configured
-checks, and a supported **Config version**. If the block is absent, duplicated, or unsupported, run
-`setup` and stop before delegating or running a baseline. Do not reinterpret a legacy generic test
-command.
+checks, and a supported **Config version**. If the block is absent or unsupported, run `setup` and
+stop before delegating or running a baseline. Reconcile duplicate blocks directly; setup must not
+guess which one to replace. Configure missing later-tier fields when their workflow first needs
+them. Do not reinterpret a legacy generic test command.
 
 ## Stop conditions, in priority order
 
@@ -98,9 +99,10 @@ python3 <plugin-root>/scripts/role_binding_contract.py preflight --config <AGENT
 ```
 
 Exit `0` selects `harness-ship:harness-ship-independent-verifier` with `host-enforced` assurance.
-On any other exit, do not use the failed packaged verifier; fall back to another available child
-and record the diagnostic plus `independence: not established`. Other hosts skip this
-Claude-specific diagnostic.
+Configuration errors — missing or duplicate blocks, or missing, duplicate, or unsupported Config
+versions — stop fail-closed. If the config is valid but the packaged verifier is missing or drifted,
+do not use it; fall back to another available child and record the diagnostic plus
+`independence: not established`. Other hosts skip this Claude-specific diagnostic.
 
 Use `host-enforced` only when the host exposes an enforceable read-only boundary. Otherwise use
 `independence: not established`; the honest label does not block review or implementation. If the
