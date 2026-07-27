@@ -79,6 +79,7 @@ validate_current_install() {
   for required in \
     "agents/harness-ship-independent-verifier.md" \
     "scripts/role_binding_contract.py" \
+    "scripts/fake_green.py" \
     "scripts/tdd_receipt.py" \
     "skills/bug-workflow/SKILL.md" \
     "skills/diagnose/diagnosis-receipt-template.md" \
