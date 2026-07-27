@@ -227,22 +227,22 @@ No child chooses its own role, risk tier, acceptance meaning, or next ticket.
 
 ## Phase 2 — Execute TDD slices
 
-For each behaviour slice, root first checkpoints the slice's pre-dispatch `in-flight` reservation
-under the durable checkpoint protocol, then dispatches the mapped mechanical or judgment-bearing
-executor with the dispatch contract above. The executor runs `tdd` at the approved public seam:
+For each behaviour slice, root checkpoints the pre-dispatch reservation, then dispatches the mapped
+executor with the dispatch contract above. The executor runs `tdd` at the approved seam and produces
+**two commits inside the ticket worktree**: a RED commit containing the failing test and no
+production code, then a GREEN commit containing the smallest implementation, with the focused test
+and surrounding regression rerun.
 
-1. demonstrate a valid **RED** caused by the missing behaviour;
-2. add the smallest **GREEN** implementation;
-3. rerun the focused test and relevant surrounding regression;
-4. return the changed files, commands/results, risks, and TDD receipt to root.
+Root verifies the receipt mechanically before accepting the slice — a non-zero exit rejects it:
 
-Root inspects the diff and evidence before accepting the slice. Reject out-of-scope files,
-implementation-coupled tests, invalid REDs, speculative behaviour, or unexplained command failures.
-After each accepted slice, run the focused test and a proportionate **typecheck** / lint check, then
-make a clean checkpoint commit. Committing GREEN checkpoints ensures review sees the actual
-`fixed-point...HEAD` change; children never commit on root's behalf.
-Durably checkpoint the receipt after the accepted slice and its commit before dispatching or
-mutating anything else.
+```sh
+python3 <plugin-root>/scripts/tdd_receipt.py check --receipt <file> --repo <worktree>
+```
+
+Root then inspects the diff and rejects out-of-scope files, implementation-coupled tests,
+speculative behaviour, or unexplained command failures, and runs a proportionate **typecheck** /
+lint check. Slice commits make review see the actual `fixed-point...HEAD` change; root alone
+pushes, merges, and mutates external state.
 
 If implementation discovers a required observable behaviour change, stop and return to the
 acceptance-contract gate. Standards-only refactoring keeps tests green; it does not invent a RED.
