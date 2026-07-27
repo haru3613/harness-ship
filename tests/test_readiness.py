@@ -215,6 +215,7 @@ class CliTests(unittest.TestCase):
         duplicates = (
             QA.replace("## harness-ship\n", "## harness-ship\n- **Config version:** `2`\n"),
             QA + "- **Config version:** `2`\n",
+            QA + "- **Config version:** `banana`\n",
         )
         for duplicate in duplicates:
             with self.subTest(duplicate=duplicate):

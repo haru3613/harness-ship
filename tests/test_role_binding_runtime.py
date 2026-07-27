@@ -170,6 +170,7 @@ class ConfigVersionTests(unittest.TestCase):
         duplicates = (
             CONFIG.replace("## harness-ship\n", "## harness-ship\n- **Config version:** `2`\n"),
             CONFIG + "- **Config version:** `2`\n",
+            CONFIG.replace("## harness-ship\n", "## harness-ship\n- **Config version:** `3.0`\n"),
         )
         for duplicate in duplicates:
             with self.subTest(duplicate=duplicate):
