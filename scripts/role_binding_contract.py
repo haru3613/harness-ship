@@ -5,10 +5,14 @@ from __future__ import annotations
 
 import argparse
 from copy import deepcopy
+import difflib
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
+import secrets
+import stat
 import sys
 import unicodedata
 from typing import Any, Dict, List, Mapping
@@ -48,7 +52,28 @@ DISCOVERY_RECEIPT_FIELDS = {
 }
 DOCUMENT_FIELDS = {"current_host", "bindings", "candidates", "global_settings"}
 CONFIG_RECONCILE_FIELDS = {"config_text", "current_host", "candidates"}
+CONFIG_PLAN_FIELDS = {
+    "repo_root",
+    "target_basename",
+    "current_host",
+    "candidates",
+    "initial_config",
+}
+CONFIG_APPLY_FIELDS = CONFIG_PLAN_FIELDS | {"plan", "confirmed_plan_id"}
 HOSTS = {"codex", "claude-code"}
+PLUGIN_VERSION = "0.7.0"
+CONFIG_VERSION = "2"
+BINDING_CONTRACT_VERSION = "2"
+HELPER_VERSION = "2"
+PLAN_VERSION = "2"
+PLAN_DOMAIN = b"harness-ship.role-binding-config-plan.v2\x00"
+TARGET_BASENAMES = {"AGENTS.md", "CLAUDE.md"}
+VERSION_ENVELOPE = {
+    "helper_version": HELPER_VERSION,
+    "plugin_version": PLUGIN_VERSION,
+    "config_version": CONFIG_VERSION,
+    "verifier_binding_contract_version": BINDING_CONTRACT_VERSION,
+}
 HOST_ORIGIN_SCOPES = {
     "codex": {"builtin", "project", "user"},
     "claude-code": {"plugin", "project", "user"},
@@ -1064,7 +1089,7 @@ def _parse_binding_table(
     return {"binding": matches[0], "legacy": True, "row_index": row_index}
 
 
-def reconcile_config_text(
+def _reconcile_config_text_v1(
     config_text: Any,
     current_host: str,
     candidates: List[Mapping[str, Any]],
@@ -1202,6 +1227,796 @@ def reconcile_config_text(
         return _config_result(original, "invalid-config", str(error))
 
 
+def _config_block_span(config_text: str) -> tuple:
+    headings = list(re.finditer(r"(?m)^## harness-ship[ \t]*$", config_text))
+    if len(headings) != 1:
+        raise ContractError("expected exactly one ## harness-ship block")
+    next_heading = re.search(
+        r"(?m)^## (?!harness-ship(?:[ \t]*$)).*$",
+        config_text[headings[0].end() :],
+    )
+    end = (
+        headings[0].end() + next_heading.start()
+        if next_heading
+        else len(config_text)
+    )
+    return headings[0].start(), end
+
+
+def _exact_version_field(block: str, label: str) -> List[str]:
+    return re.findall(
+        rf"(?m)^- \*\*{re.escape(label)}:\*\* `([^`]+)`[ \t]*$",
+        block,
+    )
+
+
+def _normalize_config_newlines(config_text: str) -> tuple:
+    if "\r" not in config_text:
+        return config_text, "\n"
+    if re.search(r"\r(?!\n)|(?<!\r)\n", config_text):
+        raise ContractError("mixed or malformed config newlines")
+    return config_text.replace("\r\n", "\n"), "\r\n"
+
+
+def _propose_v2_config_text(
+    config_text: str,
+    current_host: str,
+    candidates: List[Mapping[str, Any]],
+) -> Dict[str, Any]:
+    normalized, newline = _normalize_config_newlines(config_text)
+    block_start, block_end = _config_block_span(normalized)
+    block = normalized[block_start:block_end]
+    plugin_versions = _exact_version_field(block, "Plugin version")
+    config_versions = _exact_version_field(block, "Config version")
+    binding_versions = _exact_version_field(
+        block, "Verifier binding-contract version"
+    )
+    if config_versions == ["1"] and not plugin_versions and not binding_versions:
+        legacy = normalized
+        source_version = "1"
+    elif (
+        plugin_versions == [PLUGIN_VERSION]
+        and config_versions == [CONFIG_VERSION]
+        and binding_versions == [BINDING_CONTRACT_VERSION]
+    ):
+        source_version = CONFIG_VERSION
+        legacy_block = re.sub(
+            r"(?m)^- \*\*Plugin version:\*\* `[^\n]+`\n",
+            "",
+            block,
+            count=1,
+        )
+        legacy_block = re.sub(
+            r"(?m)^- \*\*Verifier binding-contract version:\*\* `[^\n]+`\n",
+            "",
+            legacy_block,
+            count=1,
+        )
+        legacy_block = re.sub(
+            r"(?m)^- \*\*Config version:\*\* `2`[ \t]*$",
+            "- **Config version:** `1`",
+            legacy_block,
+            count=1,
+        )
+        legacy = normalized[:block_start] + legacy_block + normalized[block_end:]
+    else:
+        raise ContractError(
+            "missing, duplicate, unsupported, or mismatched config version envelope; "
+            "Config v1 users must run setup"
+        )
+    reconciled = _reconcile_config_text_v1(legacy, current_host, candidates)
+    if reconciled["status"] not in {"preserved", "selected", "migrated"}:
+        return reconciled
+    proposed_legacy = reconciled["config_text"]
+    proposed_start, proposed_end = _config_block_span(proposed_legacy)
+    proposed_block = proposed_legacy[proposed_start:proposed_end]
+    envelope = (
+        f"- **Plugin version:** `{PLUGIN_VERSION}`\n"
+        f"- **Config version:** `{CONFIG_VERSION}`\n"
+        f"- **Verifier binding-contract version:** `{BINDING_CONTRACT_VERSION}`"
+    )
+    proposed_block, substitutions = re.subn(
+        r"(?m)^- \*\*Config version:\*\* `1`[ \t]*$",
+        envelope,
+        proposed_block,
+        count=1,
+    )
+    if substitutions != 1:
+        raise ContractError("Config v1 migration source is malformed")
+    proposed = (
+        proposed_legacy[:proposed_start]
+        + proposed_block
+        + proposed_legacy[proposed_end:]
+    )
+    if source_version == CONFIG_VERSION and proposed == normalized:
+        status = "preserved"
+    else:
+        status = "planned"
+    if newline == "\r\n":
+        proposed = proposed.replace("\n", "\r\n")
+    return {
+        "status": status,
+        "mutation": False,
+        "proposed_config": proposed,
+    }
+
+
+def _sha256_bytes(value: bytes) -> str:
+    return "sha256:" + hashlib.sha256(value).hexdigest()
+
+
+def _read_all(fd: int) -> bytes:
+    chunks = []
+    while True:
+        chunk = os.read(fd, 1024 * 1024)
+        if not chunk:
+            return b"".join(chunks)
+        chunks.append(chunk)
+
+
+def _identity(st: os.stat_result) -> Dict[str, int]:
+    return {
+        "device": st.st_dev,
+        "inode": st.st_ino,
+        "uid": st.st_uid,
+        "gid": st.st_gid,
+        "mode": st.st_mode,
+        "links": st.st_nlink,
+        "size": st.st_size,
+    }
+
+
+def _open_owned_repo(repo_root: Any) -> tuple:
+    if isinstance(repo_root, Path):
+        path = repo_root
+    elif type(repo_root) is str:
+        path = Path(repo_root)
+    else:
+        raise ContractError("repo_root must be an explicit absolute path")
+    if not path.is_absolute():
+        raise ContractError("repo_root must be an explicit absolute path")
+    resolved = path.resolve(strict=True)
+    if resolved != path:
+        raise ContractError("repo_root must not contain symlinks or aliases")
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    flags |= getattr(os, "O_CLOEXEC", 0)
+    fd = os.open(str(path), flags)
+    try:
+        st = os.fstat(fd)
+        if not stat.S_ISDIR(st.st_mode):
+            raise ContractError("repo_root must be a directory")
+        if st.st_uid != os.geteuid():
+            raise ContractError("repo_root must be owned by the executing user")
+        if st.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
+            raise ContractError("repo_root must not be group/world writable")
+        return path, fd, st
+    except Exception:
+        os.close(fd)
+        raise
+
+
+def _open_target(dir_fd: int, basename: Any) -> tuple:
+    if type(basename) is not str or basename not in TARGET_BASENAMES:
+        raise ContractError("target must be the direct child AGENTS.md or CLAUDE.md")
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    flags |= getattr(os, "O_CLOEXEC", 0)
+    fd = os.open(basename, flags, dir_fd=dir_fd)
+    try:
+        st = os.fstat(fd)
+        lst = os.stat(basename, dir_fd=dir_fd, follow_symlinks=False)
+        if not stat.S_ISREG(st.st_mode) or not stat.S_ISREG(lst.st_mode):
+            raise ContractError("target must be a regular file")
+        if (st.st_dev, st.st_ino) != (lst.st_dev, lst.st_ino):
+            raise ContractError("target identity changed while opening")
+        if st.st_nlink != 1:
+            raise ContractError("target hard links are not allowed")
+        if st.st_uid != os.geteuid():
+            raise ContractError("target must be owned by the executing user")
+        if st.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
+            raise ContractError("target must not be group/world writable")
+        if st.st_mode & (stat.S_ISUID | stat.S_ISGID | stat.S_ISVTX):
+            raise ContractError("target has unsupported special permission bits")
+        if getattr(st, "st_flags", 0):
+            raise ContractError("target has unsupported filesystem flags")
+        if hasattr(os, "listxattr") and os.listxattr(fd):
+            raise ContractError(
+                "target extended attributes/ACL metadata are unsupported"
+            )
+        return fd, st
+    except Exception:
+        os.close(fd)
+        raise
+
+
+def _open_optional_target(dir_fd: int, basename: Any) -> tuple:
+    if type(basename) is not str or basename not in TARGET_BASENAMES:
+        raise ContractError("target must be the direct child AGENTS.md or CLAUDE.md")
+    try:
+        return _open_target(dir_fd, basename)
+    except FileNotFoundError:
+        try:
+            os.stat(basename, dir_fd=dir_fd, follow_symlinks=False)
+        except FileNotFoundError:
+            return None, None
+        raise ContractError("target entry exists but cannot be opened safely")
+
+
+def _validate_initial_config(
+    initial_config: Any,
+    current_host: str,
+    candidates: List[Mapping[str, Any]],
+) -> str:
+    if type(initial_config) is not str or not initial_config:
+        raise ContractError(
+            "first install requires a nonempty complete initial Config v2 proposal"
+        )
+    normalized, _ = _normalize_config_newlines(initial_config)
+    block_start, block_end = _config_block_span(normalized)
+    if block_start != 0 or block_end != len(normalized):
+        raise ContractError(
+            "initial_config must contain exactly one complete harness-ship block"
+        )
+    for label in ("Codex", "Claude Code"):
+        marker = f"- **Agent role bindings — {label}:**"
+        if len(re.findall(rf"(?m)^{re.escape(marker)}.*$", normalized)) != 1:
+            raise ContractError(
+                "initial_config must contain exactly one binding section per host"
+            )
+    other_label = "Claude Code" if current_host == "codex" else "Codex"
+    other_marker = f"- **Agent role bindings — {other_label}:** `not-configured`"
+    if len(re.findall(rf"(?m)^{re.escape(other_marker)}[ \t]*$", normalized)) != 1:
+        raise ContractError(
+            "initial_config non-current-host binding must be not-configured"
+        )
+    validated = _propose_v2_config_text(
+        initial_config, current_host, candidates
+    )
+    if (
+        validated.get("status") != "preserved"
+        or validated.get("proposed_config") != initial_config
+    ):
+        raise ContractError(
+            "initial_config must be a complete validated Config v2 for current host"
+        )
+    return initial_config
+
+
+def _append_initial_config(original: str, initial_config: str) -> str:
+    _, original_newline = _normalize_config_newlines(original)
+    _, initial_newline = _normalize_config_newlines(initial_config)
+    if "\n" in original and original_newline != initial_newline:
+        raise ContractError(
+            "initial_config newline policy must match the existing target"
+        )
+    newline = original_newline if "\n" in original else initial_newline
+    if not original:
+        return initial_config
+    if original.endswith(newline * 2):
+        separator = ""
+    elif original.endswith(newline):
+        separator = newline
+    else:
+        separator = newline * 2
+    return original + separator + initial_config
+
+
+def _candidate_plan_inputs(candidates: List[Mapping[str, Any]]) -> List[Dict[str, Any]]:
+    result = []
+    for candidate in candidates:
+        materialized = _materialize_candidate(candidate)
+        result.append(
+            {
+                "binding": materialized["binding"],
+                "source_kind": materialized["source_kind"],
+                "source_sha256": materialized["binding"][
+                    "authoritative_definition_digest"
+                ],
+            }
+        )
+    return result
+
+
+def plan_config_reconciliation(
+    repo_root: Any,
+    target_basename: str,
+    current_host: str,
+    candidates: List[Mapping[str, Any]],
+    initial_config: Any = None,
+) -> Dict[str, Any]:
+    """Return a canonical review plan without mutating the target."""
+    dir_fd = target_fd = None
+    try:
+        repo_path, dir_fd, repo_stat = _open_owned_repo(repo_root)
+        target_fd, target_stat = _open_optional_target(dir_fd, target_basename)
+        if target_fd is None:
+            target_state = "absent"
+            original_bytes = None
+            original_text = ""
+            initial_config = _validate_initial_config(
+                initial_config, current_host, candidates
+            )
+            proposed_text = initial_config
+        else:
+            original_bytes = _read_all(target_fd)
+            try:
+                original_text = original_bytes.decode("utf-8")
+            except UnicodeDecodeError as error:
+                raise ContractError("config target must be exact UTF-8") from error
+            normalized_original, _ = _normalize_config_newlines(original_text)
+            headings = list(
+                re.finditer(r"(?m)^## harness-ship[ \t]*$", normalized_original)
+            )
+            if not headings:
+                target_state = "present-no-config"
+                initial_config = _validate_initial_config(
+                    initial_config, current_host, candidates
+                )
+                proposed_text = _append_initial_config(
+                    original_text, initial_config
+                )
+            else:
+                target_state = "present-config"
+                if initial_config is not None:
+                    raise ContractError(
+                        "initial_config is forbidden for existing Config v1/v2"
+                    )
+                proposal = _propose_v2_config_text(
+                    original_text, current_host, candidates
+                )
+                if proposal["status"] not in {"planned", "preserved"}:
+                    return proposal
+                proposed_text = proposal["proposed_config"]
+        proposed_bytes = proposed_text.encode("utf-8")
+        semantic_candidates = _candidate_plan_inputs(candidates)
+        diff = "".join(
+            difflib.unified_diff(
+                original_text.splitlines(keepends=True),
+                proposed_text.splitlines(keepends=True),
+                fromfile=target_basename,
+                tofile=target_basename,
+                lineterm="\n",
+            )
+        )
+        plan = {
+            "helper_version": HELPER_VERSION,
+            "plan_version": PLAN_VERSION,
+            "plugin_version": PLUGIN_VERSION,
+            "config_version": CONFIG_VERSION,
+            "verifier_binding_contract_version": BINDING_CONTRACT_VERSION,
+            "repo_root": str(repo_path),
+            "target_basename": target_basename,
+            "target_state": target_state,
+            "repo_identity": _identity(repo_stat),
+            "target_identity": (
+                _identity(target_stat) if target_stat is not None else None
+            ),
+            "original_sha256": (
+                _sha256_bytes(original_bytes)
+                if original_bytes is not None
+                else None
+            ),
+            "initial_config_sha256": (
+                _sha256_bytes(initial_config.encode("utf-8"))
+                if initial_config is not None
+                else None
+            ),
+            "proposed_sha256": _sha256_bytes(proposed_bytes),
+            "current_host": current_host,
+            "semantic_candidates": semantic_candidates,
+            "binding_source_digests": [
+                {
+                    "boundary_digest": item["binding"]["boundary_digest"],
+                    "source_sha256": item["source_sha256"],
+                }
+                for item in semantic_candidates
+            ],
+            "operations": (
+                []
+                if original_bytes == proposed_bytes
+                else [
+                    {
+                        "operation": (
+                            "create-file-exclusive"
+                            if target_state == "absent"
+                            else (
+                                "append-config"
+                                if target_state == "present-no-config"
+                                else "replace-file"
+                            )
+                        ),
+                        "target": target_basename,
+                        "mode": (
+                            stat.S_IMODE(target_stat.st_mode)
+                            if target_stat is not None
+                            else 0o600
+                        ),
+                    }
+                ]
+            ),
+            "diff": diff,
+        }
+        canonical = json.dumps(
+            plan,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+        plan_id = "sha256:" + hashlib.sha256(PLAN_DOMAIN + canonical).hexdigest()
+        return {
+            "status": "preserved" if original_bytes == proposed_bytes else "planned",
+            "mutation": False,
+            "plan_id": plan_id,
+            "plan": plan,
+            "proposed_config": proposed_text,
+        }
+    except (ContractError, KeyError, TypeError, OSError, UnicodeError) as error:
+        return {
+            "status": "invalid-config",
+            "mutation": False,
+            "error": str(error),
+        }
+    finally:
+        if target_fd is not None:
+            os.close(target_fd)
+        if dir_fd is not None:
+            os.close(dir_fd)
+
+
+def _plan_id(plan: Mapping[str, Any]) -> str:
+    canonical = json.dumps(
+        plan,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    return "sha256:" + hashlib.sha256(PLAN_DOMAIN + canonical).hexdigest()
+
+
+def _write_all(fd: int, value: bytes) -> None:
+    offset = 0
+    while offset < len(value):
+        written = os.write(fd, value[offset:])
+        if written <= 0:
+            raise OSError("incomplete config write")
+        offset += written
+
+
+def _unlink_created(dir_fd: int, name: str, identity: tuple) -> None:
+    observed = os.stat(name, dir_fd=dir_fd, follow_symlinks=False)
+    if (observed.st_dev, observed.st_ino) != identity:
+        raise ContractError(f"refusing identity-unsafe cleanup of {name}")
+    os.unlink(name, dir_fd=dir_fd)
+
+
+def apply_config_reconciliation(
+    repo_root: Any,
+    target_basename: str,
+    current_host: str,
+    candidates: List[Mapping[str, Any]],
+    plan: Mapping[str, Any],
+    confirmed_plan_id: str,
+    initial_config: Any = None,
+) -> Dict[str, Any]:
+    """Apply only an exactly confirmed plan after fresh target/candidate validation."""
+    try:
+        supplied_plan_id = _plan_id(plan)
+    except (TypeError, ValueError, UnicodeError) as error:
+        return {"status": "invalid-plan", "mutation": False, "error": str(error)}
+    if type(confirmed_plan_id) is not str or confirmed_plan_id != supplied_plan_id:
+        return {
+            "status": "confirmation-required",
+            "mutation": False,
+            "required_plan_id": supplied_plan_id,
+        }
+    if plan.get("target_state") == "absent":
+        check_dir_fd = None
+        try:
+            _, check_dir_fd, _ = _open_owned_repo(repo_root)
+            if (
+                type(target_basename) is not str
+                or target_basename not in TARGET_BASENAMES
+            ):
+                raise ContractError(
+                    "target must be the direct child AGENTS.md or CLAUDE.md"
+                )
+            try:
+                os.stat(
+                    target_basename,
+                    dir_fd=check_dir_fd,
+                    follow_symlinks=False,
+                )
+            except FileNotFoundError:
+                pass
+            else:
+                return {
+                    "status": "stale-plan",
+                    "mutation": False,
+                    "plan_id": confirmed_plan_id,
+                    "error": "target entry appeared after planning",
+                }
+        except (ContractError, OSError) as error:
+            return {
+                "status": "invalid-config",
+                "mutation": False,
+                "error": str(error),
+            }
+        finally:
+            if check_dir_fd is not None:
+                os.close(check_dir_fd)
+    fresh = plan_config_reconciliation(
+        repo_root, target_basename, current_host, candidates, initial_config
+    )
+    if fresh.get("status") not in {"planned", "preserved"}:
+        if plan.get("target_state") == "absent":
+            recheck_dir_fd = None
+            try:
+                _, recheck_dir_fd, _ = _open_owned_repo(repo_root)
+                os.stat(
+                    target_basename,
+                    dir_fd=recheck_dir_fd,
+                    follow_symlinks=False,
+                )
+            except FileNotFoundError:
+                pass
+            except (ContractError, OSError):
+                pass
+            else:
+                return {
+                    "status": "stale-plan",
+                    "mutation": False,
+                    "plan_id": confirmed_plan_id,
+                    "error": "target entry appeared during fresh validation",
+                }
+            finally:
+                if recheck_dir_fd is not None:
+                    os.close(recheck_dir_fd)
+        return fresh
+    if fresh["plan_id"] != confirmed_plan_id or fresh["plan"] != plan:
+        return {
+            "status": "stale-plan",
+            "mutation": False,
+            "confirmed_plan_id": confirmed_plan_id,
+            "fresh_plan_id": fresh["plan_id"],
+        }
+    if fresh["status"] == "preserved":
+        return {
+            "status": "preserved",
+            "mutation": False,
+            "plan_id": confirmed_plan_id,
+        }
+
+    dir_fd = target_fd = lock_fd = temp_fd = None
+    lock_name = None
+    lock_guard_name = ".harness-ship-role-binding.lock"
+    temp_name = None
+    lock_identity = lock_guard_identity = temp_identity = None
+    replaced = False
+    cleanup_errors = []
+    outcome = None
+    try:
+        _, dir_fd, repo_stat = _open_owned_repo(repo_root)
+        if _identity(repo_stat) != plan["repo_identity"]:
+            raise ContractError("repo identity changed after planning")
+        target_fd, target_stat = _open_optional_target(
+            dir_fd, target_basename
+        )
+        creating = plan["target_state"] == "absent"
+        if creating:
+            if target_fd is not None:
+                outcome = {
+                    "status": "stale-plan",
+                    "mutation": False,
+                    "plan_id": confirmed_plan_id,
+                    "error": "target appeared after planning",
+                }
+                return outcome
+            original_bytes = None
+        else:
+            if target_fd is None:
+                raise ContractError("target disappeared after planning")
+            original_bytes = _read_all(target_fd)
+            if (
+                _identity(target_stat) != plan["target_identity"]
+                or _sha256_bytes(original_bytes) != plan["original_sha256"]
+            ):
+                raise ContractError("target identity or bytes changed after planning")
+        proposed_bytes = fresh["proposed_config"].encode("utf-8")
+        if _sha256_bytes(proposed_bytes) != plan["proposed_sha256"]:
+            raise ContractError("fresh proposed bytes do not match confirmed plan")
+
+        nonce = secrets.token_hex(32)
+        creation_flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        creation_flags |= getattr(os, "O_NOFOLLOW", 0)
+        creation_flags |= getattr(os, "O_CLOEXEC", 0)
+        lock_name = f".harness-ship-role-binding.{nonce}.lock"
+        lock_fd = os.open(
+            lock_name, creation_flags, 0o600, dir_fd=dir_fd
+        )
+        lock_stat = os.fstat(lock_fd)
+        if (
+            not stat.S_ISREG(lock_stat.st_mode)
+            or lock_stat.st_uid != os.geteuid()
+            or lock_stat.st_nlink != 1
+        ):
+            raise ContractError("new lock entry failed identity validation")
+        lock_identity = (lock_stat.st_dev, lock_stat.st_ino)
+        _write_all(lock_fd, (nonce + "\n").encode("ascii"))
+        os.fsync(lock_fd)
+        os.link(
+            lock_name,
+            lock_guard_name,
+            src_dir_fd=dir_fd,
+            dst_dir_fd=dir_fd,
+            follow_symlinks=False,
+        )
+        lock_guard_identity = lock_identity
+        lock_guard_stat = os.stat(
+            lock_guard_name, dir_fd=dir_fd, follow_symlinks=False
+        )
+        if (
+            not stat.S_ISREG(lock_guard_stat.st_mode)
+            or (lock_guard_stat.st_dev, lock_guard_stat.st_ino) != lock_identity
+            or lock_guard_stat.st_uid != os.geteuid()
+            or lock_guard_stat.st_nlink != 2
+        ):
+            raise ContractError("cooperative lock guard failed identity validation")
+
+        temp_name = f".{target_basename}.harness-ship.{secrets.token_hex(32)}.tmp"
+        temp_fd = os.open(
+            temp_name, creation_flags, 0o600, dir_fd=dir_fd
+        )
+        temp_stat = os.fstat(temp_fd)
+        temp_identity = (temp_stat.st_dev, temp_stat.st_ino)
+        _write_all(temp_fd, proposed_bytes)
+        expected_uid = target_stat.st_uid if target_stat else os.geteuid()
+        expected_gid = target_stat.st_gid if target_stat else os.getegid()
+        expected_mode = (
+            stat.S_IMODE(target_stat.st_mode) if target_stat else 0o600
+        )
+        os.fchown(temp_fd, expected_uid, expected_gid)
+        os.fchmod(temp_fd, expected_mode)
+        temp_stat = os.fstat(temp_fd)
+        if (
+            not stat.S_ISREG(temp_stat.st_mode)
+            or temp_stat.st_uid != expected_uid
+            or temp_stat.st_gid != expected_gid
+            or temp_stat.st_nlink != 1
+            or stat.S_IMODE(temp_stat.st_mode) != expected_mode
+        ):
+            raise ContractError("new target metadata does not match the original")
+        os.fsync(temp_fd)
+
+        if creating:
+            try:
+                os.link(
+                    temp_name,
+                    target_basename,
+                    src_dir_fd=dir_fd,
+                    dst_dir_fd=dir_fd,
+                    follow_symlinks=False,
+                )
+            except FileExistsError:
+                outcome = {
+                    "status": "stale-plan",
+                    "mutation": False,
+                    "plan_id": confirmed_plan_id,
+                    "error": "target appeared immediately before publish",
+                }
+                return outcome
+            replaced = True
+            _unlink_created(dir_fd, temp_name, temp_identity)
+        else:
+            observed = os.stat(
+                target_basename, dir_fd=dir_fd, follow_symlinks=False
+            )
+            if (
+                (observed.st_dev, observed.st_ino)
+                != (target_stat.st_dev, target_stat.st_ino)
+                or observed.st_nlink != 1
+            ):
+                raise ContractError("target changed immediately before replace")
+            os.replace(
+                temp_name,
+                target_basename,
+                src_dir_fd=dir_fd,
+                dst_dir_fd=dir_fd,
+            )
+        replaced = True
+        temp_name = None
+        temp_identity = None
+        try:
+            os.fsync(dir_fd)
+        except OSError as error:
+            observed_fd = observed_target = None
+            try:
+                observed_fd, _ = _open_target(dir_fd, target_basename)
+                observed_target = _sha256_bytes(_read_all(observed_fd))
+            except (ContractError, OSError):
+                observed_target = None
+            finally:
+                if observed_fd is not None:
+                    os.close(observed_fd)
+            outcome = {
+                "status": "indeterminate",
+                "mutation": observed_target == plan["proposed_sha256"],
+                "error": f"directory fsync failed after replace: {error}",
+                "observed_sha256": observed_target,
+                "expected_sha256": plan["proposed_sha256"],
+                "plan_id": confirmed_plan_id,
+            }
+            return outcome
+        outcome = {
+            "status": "applied",
+            "mutation": True,
+            "plan_id": confirmed_plan_id,
+            "observed_sha256": plan["proposed_sha256"],
+        }
+        return outcome
+    except (ContractError, KeyError, TypeError, OSError, UnicodeError) as error:
+        outcome = {
+            "status": "indeterminate" if replaced else "apply-failed",
+            "mutation": replaced,
+            "error": str(error),
+            "plan_id": confirmed_plan_id,
+        }
+        return outcome
+    finally:
+        for fd_name in ("temp_fd", "lock_fd", "target_fd"):
+            fd = locals()[fd_name]
+            if fd is not None:
+                try:
+                    os.close(fd)
+                except OSError as error:
+                    cleanup_errors.append(f"close {fd_name}: {error}")
+        if dir_fd is not None:
+            if temp_name is not None and temp_identity is not None:
+                try:
+                    _unlink_created(dir_fd, temp_name, temp_identity)
+                except (ContractError, OSError) as error:
+                    cleanup_errors.append(f"temp cleanup: {error}")
+            if lock_guard_identity is not None:
+                try:
+                    _unlink_created(
+                        dir_fd, lock_guard_name, lock_guard_identity
+                    )
+                except (ContractError, OSError) as error:
+                    cleanup_errors.append(f"lock guard cleanup: {error}")
+            if lock_name is not None and lock_identity is not None:
+                try:
+                    _unlink_created(dir_fd, lock_name, lock_identity)
+                except (ContractError, OSError) as error:
+                    cleanup_errors.append(f"lock cleanup: {error}")
+            try:
+                os.fsync(dir_fd)
+            except OSError as error:
+                cleanup_errors.append(f"cleanup directory fsync: {error}")
+            try:
+                os.close(dir_fd)
+            except OSError as error:
+                cleanup_errors.append(f"close dir_fd: {error}")
+        if cleanup_errors and outcome is not None:
+            outcome["cleanup_errors"] = cleanup_errors
+            if outcome["status"] == "applied":
+                outcome["status"] = "applied-with-cleanup-error"
+
+
+def reconcile_config_text(
+    config_text: Any,
+    current_host: str,
+    candidates: List[Mapping[str, Any]],
+) -> Dict[str, Any]:
+    """Compatibility surface that cannot produce directly writable config."""
+    return _config_result(
+        config_text,
+        "confirmation-required",
+        "Direct reconciliation is disabled; use plan_config_reconciliation, "
+        "review its exact plan_id and diff, then use apply_config_reconciliation.",
+    )
+
+
 def _candidate_digest(candidate: Mapping[str, Any]) -> str:
     validated = _materialize_candidate(candidate)
     return validated["binding"]["boundary_digest"]
@@ -1209,10 +2024,21 @@ def _candidate_digest(candidate: Mapping[str, Any]) -> str:
 
 def preflight_document(document: Mapping[str, Any]) -> Dict[str, Any]:
     """Fail before Phase 0 unless persisted, live, and launch-plan metadata agree."""
-    expected = {"persisted", "live", "launch_plan"}
+    expected = {"versions", "persisted", "live", "launch_plan"}
     try:
         _require_exact_keys(document, expected, "preflight document")
-        if any(document[field] is None for field in expected):
+        _require_exact_keys(
+            document["versions"], set(VERSION_ENVELOPE), "version envelope"
+        )
+        if document["versions"] != VERSION_ENVELOPE:
+            raise ContractError(
+                "helper, plugin, Config, and verifier binding-contract versions "
+                "must agree exactly; Config v1 users must run setup"
+            )
+        if any(
+            document[field] is None
+            for field in ("persisted", "live", "launch_plan")
+        ):
             raise ContractError("persisted, live, and launch metadata are required")
         persisted = validate_binding(document["persisted"])
         live = _materialize_candidate(document["live"])
@@ -1238,7 +2064,7 @@ def preflight_document(document: Mapping[str, Any]) -> Dict[str, Any]:
             }
         digests = {
             field: bindings[field]["boundary_digest"]
-            for field in expected
+            for field in ("persisted", "live", "launch_plan")
         }
         if len(set(digests.values())) != 1 or not (
             bindings["persisted"] == bindings["live"] == bindings["launch_plan"]
@@ -1258,10 +2084,16 @@ def reconcile_post_launch(
     persisted: Mapping[str, Any],
     live: Mapping[str, Any],
     loaded: Mapping[str, Any],
+    versions: Mapping[str, Any] = None,
 ) -> Dict[str, Any]:
     """Verify actual loaded metadata before trusting verifier output."""
     result = preflight_document(
-        {"persisted": persisted, "live": live, "launch_plan": loaded}
+        {
+            "versions": versions,
+            "persisted": persisted,
+            "live": live,
+            "launch_plan": loaded,
+        }
     )
     result["post_launch"] = True
     return result
@@ -1269,10 +2101,19 @@ def reconcile_post_launch(
 
 def post_launch_document(document: Mapping[str, Any]) -> Dict[str, Any]:
     _require_exact_keys(
-        document, {"persisted", "live", "loaded"}, "post-launch document"
+        document, {"versions", "persisted", "live", "loaded"}, "post-launch document"
     )
+    if document["versions"] != VERSION_ENVELOPE:
+        return {
+            "status": "fail",
+            "post_launch": True,
+            "error": "helper, plugin, Config, and verifier binding-contract versions must agree exactly",
+        }
     return reconcile_post_launch(
-        document["persisted"], document["live"], document["loaded"]
+        document["persisted"],
+        document["live"],
+        document["loaded"],
+        document["versions"],
     )
 
 
@@ -1331,7 +2172,14 @@ def _emit(payload: Mapping[str, Any]) -> None:
 def main(argv: List[str] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
-    for command in ("resolve", "reconcile-config", "preflight", "post-launch"):
+    for command in (
+        "resolve",
+        "reconcile-config",
+        "plan-config",
+        "apply-config",
+        "preflight",
+        "post-launch",
+    ):
         command_parser = subparsers.add_parser(command)
         command_parser.add_argument("--input", required=True)
     agent_parser = subparsers.add_parser("validate-agent")
@@ -1351,20 +2199,40 @@ def main(argv: List[str] = None) -> int:
             _emit(result)
             return 0 if result["status"] in {"preserved", "selected"} else 2
         if args.command == "reconcile-config":
-            document = _load_json(args.input)
-            _require_exact_keys(
-                document, CONFIG_RECONCILE_FIELDS, "config reconcile document"
+            raise ContractError(
+                "reconcile-config cannot apply Config v2; run plan-config, review "
+                "its exact plan_id and diff, then run apply-config with confirmation"
             )
-            result = reconcile_config_text(
-                document["config_text"],
+        if args.command == "plan-config":
+            document = _load_json(args.input)
+            _require_exact_keys(document, CONFIG_PLAN_FIELDS, "config plan document")
+            result = plan_config_reconciliation(
+                document["repo_root"],
+                document["target_basename"],
                 document["current_host"],
                 document["candidates"],
+                document["initial_config"],
+            )
+            _emit(result)
+            return 0 if result["status"] in {"planned", "preserved"} else 2
+        if args.command == "apply-config":
+            document = _load_json(args.input)
+            _require_exact_keys(
+                document, CONFIG_APPLY_FIELDS, "config apply document"
+            )
+            result = apply_config_reconciliation(
+                document["repo_root"],
+                document["target_basename"],
+                document["current_host"],
+                document["candidates"],
+                document["plan"],
+                document["confirmed_plan_id"],
+                document["initial_config"],
             )
             _emit(result)
             return 0 if result["status"] in {
+                "applied",
                 "preserved",
-                "selected",
-                "migrated",
             } else 2
         if args.command == "preflight":
             result = preflight_document(_load_json(args.input))

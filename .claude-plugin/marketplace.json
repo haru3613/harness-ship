@@ -8,8 +8,36 @@
   "plugins": [
     {
       "name": "harness-ship",
-      "source": "./",
+      "source": {
+        "source": "github",
+        "repo": "haru3613/harness-ship",
+        "ref": "v0.7.0"
+      },
       "description": "QA-led delivery through three orchestration workflows plus nine self-contained blocks: approve acceptance before code, route bounded RD work, verify the exact artifact in QA, and keep five judgment gates human-owned.",
+      "category": "engineering",
+      "keywords": [
+        "workflow",
+        "dev-workflow",
+        "acceptance-design",
+        "implement",
+        "subagents",
+        "testing",
+        "bug-workflow",
+        "qa",
+        "spec",
+        "tickets",
+        "code-review",
+        "tdd"
+      ]
+    },
+    {
+      "name": "harness-ship-next",
+      "source": {
+        "source": "github",
+        "repo": "haru3613/harness-ship",
+        "ref": "main"
+      },
+      "description": "QA-led delivery through three orchestration workflows plus nine self-contained blocks: approve acceptance before code, route bounded RD work, verify the exact artifact in QA, and keep five judgment gates human-owned. Unstable next channel.",
       "category": "engineering",
       "keywords": [
         "workflow",

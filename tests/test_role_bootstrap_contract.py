@@ -59,7 +59,9 @@ class RoleBootstrapContractTests(unittest.TestCase):
         self.assertIn("preserve an explicit valid project binding", text)
         self.assertIn("update only the current host section", text)
         self.assertIn("preserve the other host section", text)
-        self.assertIn("role_binding_contract.py reconcile-config", text)
+        self.assertIn("role_binding_contract.py plan-config", text)
+        self.assertIn("role_binding_contract.py apply-config", text)
+        self.assertIn("exact plan-id confirmation", text)
         self.assertIn("stop with zero mutation", text)
         for setting in (
             "global agents",
@@ -110,7 +112,8 @@ class RoleBootstrapContractTests(unittest.TestCase):
         self.assertIn("typed json object", setup)
         self.assertIn("`declared`", setup)
         self.assertIn("`effective`", setup)
-        self.assertIn("role_binding_contract.py reconcile-config", setup)
+        self.assertIn("role_binding_contract.py plan-config", setup)
+        self.assertIn("role_binding_contract.py apply-config", setup)
         self.assertIn("role_binding_contract.py preflight", implement)
         self.assertIn("post-launch reconciliation", implement)
 
@@ -185,7 +188,7 @@ class RoleBootstrapContractTests(unittest.TestCase):
             for path in (".codex-plugin/plugin.json", ".claude-plugin/plugin.json")
         }
 
-        self.assertEqual(versions, {"0.6.4"})
+        self.assertEqual(versions, {"0.7.0"})
         self.assertEqual(upgrade.count("**v0.6.4 migration:**"), 2)
         self.assertEqual(upgrade.count("**v0.6.3 migration:**"), 2)
         self.assertIn("every config v1 project must run", upgrade)
@@ -201,7 +204,7 @@ class RoleBootstrapContractTests(unittest.TestCase):
             "zero mutation",
         ):
             self.assertIn(marker, upgrade)
-        self.assertIn("current release: **v0.6.4**", readme)
+        self.assertIn("current release: **v0.7.0**", readme)
         self.assertIn("codex installation supplies skills only", readme)
         self.assertIn("it does not supply an independent verifier", readme)
         self.assertIn("claude plugin agent", readme)
@@ -215,6 +218,44 @@ class RoleBootstrapContractTests(unittest.TestCase):
             self.assertIn("never repository", text)
             self.assertIn("never prompt", text)
             self.assertIn("never user-provided", text)
+
+    def test_v2_envelope_and_two_phase_file_safety_are_required(self) -> None:
+        setup = normalized("skills/setup/SKILL.md")
+        for marker in (
+            "plugin version:** `0.7.0",
+            "config version:** `2",
+            "verifier binding-contract version:** `2",
+            "config v1 is not valid workflow configuration",
+            "missing, duplicate, unsupported, or mismatched",
+            "plan-config",
+            "apply-config",
+            "confirmed apply",
+            "directory-fsync failure",
+            "indeterminate",
+            "byte-identical no-op",
+            "hostile same-uid or root",
+            "untrusted writable directories",
+            "`initial_config` is `null` for an existing config v1/v2",
+            "owned regular target with no existing block",
+            "missing target",
+            "exact draft hash",
+            "atomic exclusive no-clobber",
+            "leave that winner untouched",
+            "never use overwrite/replace semantics for this creation path",
+        ):
+            self.assertIn(marker, setup)
+        for path in (
+            "skills/dev-workflow/SKILL.md",
+            "skills/implement/SKILL.md",
+            "skills/tdd/SKILL.md",
+            "skills/testing-workflow/SKILL.md",
+        ):
+            text = normalized(path)
+            self.assertIn("plugin version 0.7.0", text)
+            self.assertIn("config version 2", text)
+            self.assertIn("verifier binding-contract version 2", text)
+            self.assertIn("config v1", text)
+            self.assertIn("run `setup`", text)
 
 
 if __name__ == "__main__":

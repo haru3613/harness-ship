@@ -1,16 +1,38 @@
 # Upgrade guide
 
-Upgrade the marketplace source, install the refreshed plugin, start a new host session, and re-run
-setup in every configured project.
+Choose one channel, upgrade its marketplace source, install the refreshed plugin, restart or reload
+the real host process, start a new session, and re-run setup in every configured project.
+
+`harness-ship` is the stable channel pinned to `v0.7.0`; `harness-ship-next` is an explicit
+unreleased channel pinned to `main`. Both resolve to the same underlying plugin namespace and are
+mutually exclusive. Remove the installed channel before switching. A local editable checkout is a
+development source and does not receive managed upgrades or prove the tagged release.
+The marketplace catalog is added or refreshed from `main`; only its stable plugin entry is pinned
+to the release tag. This lets a catalog refresh discover a future stable patch without silently
+moving the already published stable source.
 
 ## Codex
 
 ```sh
+codex plugin marketplace add haru3613/harness-ship --ref main
 codex plugin marketplace upgrade harness-ship
 codex plugin add harness-ship@harness-ship
 ```
 
 Start a new Codex session before running `$harness-ship:setup`.
+
+To opt in to unreleased next source after removing or deactivating stable:
+
+```sh
+codex plugin marketplace add haru3613/harness-ship --ref main
+codex plugin add harness-ship-next@harness-ship
+```
+
+**v0.7.0 migration:** setup proposes Config v1 → v2 without writing it. Review the complete plan
+and exact configuration diff, correct unsafe or unknown bindings, and explicitly confirm that exact
+proposal. Only then apply it. If repository state or the proposal changes, discard the old
+confirmation and repeat plan → review → exact confirmation → apply. Restart/reload Codex and begin
+a new session before trusting the new plugin source.
 
 **v0.6.4 migration:** upgrade and activate the plugin, then restart Codex. If the verifier
 diagnostic reports an unsafe boundary, configure or select one **safe live verifier** with
@@ -26,18 +48,28 @@ repair or explicitly choose the safe live profile, then rerun setup.
 
 **v0.5.0 migration:** setup began recording the host's pre-defined agent role profiles.
 
-**v0.6.0 migration:** call `$harness-ship:acceptance-design` for pre-implementation scenario design.
-`$harness-ship:testing-workflow` redirects legacy pre-implementation and missing-contract calls
-there for this minor release and otherwise starts only after the dev→QA handoff.
-
 ## Claude Code
 
 ```sh
+claude plugin marketplace add haru3613/harness-ship@main
 claude plugin marketplace update harness-ship
 claude plugin update harness-ship@harness-ship
 ```
 
 Restart Claude Code before running `/harness-ship:setup`.
+
+To opt in to unreleased next source after uninstalling stable:
+
+```sh
+claude plugin marketplace add haru3613/harness-ship@main
+claude plugin install harness-ship-next@harness-ship
+```
+
+**v0.7.0 migration:** setup proposes Config v1 → v2 without writing it. Review the complete plan
+and exact configuration diff, correct unsafe or unknown bindings, and explicitly confirm that exact
+proposal. Only then apply it. If repository state or the proposal changes, discard the old
+confirmation and repeat plan → review → exact confirmation → apply. Restart Claude Code and begin
+a new session before trusting the new plugin source.
 
 **v0.6.4 migration:** upgrade the plugin, then restart Claude Code. If the verifier diagnostic
 reports an unsafe boundary, configure or select one **safe live verifier** with host-enforced
@@ -53,16 +85,20 @@ repair or explicitly choose the safe live profile, then rerun setup.
 
 **v0.5.0 migration:** setup began recording the host's pre-defined agent role profiles.
 
-**v0.6.0 migration:** call `/harness-ship:acceptance-design` for pre-implementation scenario
-design. `/harness-ship:testing-workflow` redirects legacy pre-implementation and missing-contract
-calls there for this minor release and otherwise starts only after the dev→QA handoff.
+## Editable local development
+
+Run Python and lifecycle contracts directly in an editable checkout, or use the host's temporary
+local plugin-directory facility for attended testing. Do not register or alter global plugin state
+as part of repository validation. Local source changes are immediate, so restart/reload the
+consumer after each source change; managed marketplace upgrade commands do not update a checkout.
 
 ## Earlier Config v1 projects
 
-Setup upgrades the existing Harness Ship block in place. Known values are preserved while RD
+Setup proposes the upgraded Harness Ship block before applying it. Known values are preserved while RD
 unit/API-contract commands remain separate from QA integration/P0/full-suite commands. It records
 the QA environment, artifact provenance, and evidence location; unavailable capabilities remain
 `not-configured`.
 
 Harness Ship updates only the current host section. It does not replace global agents or settings,
-and it does not silently weaken or select an ambiguous verifier profile.
+and it does not silently weaken or select an ambiguous verifier profile. Config v2 apply requires
+review and exact confirmation of the current proposal.
