@@ -31,8 +31,6 @@ IMPLEMENTATION = PLANNING + """- **Integration branch:** `main`
 - **RD API-contract command:** `python3 -m unittest discover -s tests`
 """
 
-# Pin the host: readiness resolves the verifier from the runtime, so an unpinned
-# environment would make these tests pass locally and degrade in CI.
 CLAUDE = {"CLAUDECODE": "1"}
 OTHER_HOST = {}
 
@@ -75,26 +73,12 @@ class ImplementationTierTests(unittest.TestCase):
         self.assertTrue(tiers["planning"]["ready"])
         self.assertFalse(tiers["implementation"]["ready"])
 
-    def test_a_host_without_a_verifier_blocks_implementation_and_says_why(self) -> None:
-        blockers = gate.readiness(IMPLEMENTATION, env=OTHER_HOST)["implementation"]["blockers"]
+    def test_reviewer_profile_does_not_gate_implementation_readiness(self) -> None:
+        without_packaged_verifier = gate.readiness(IMPLEMENTATION, env=OTHER_HOST)
+        with_packaged_verifier = gate.readiness(IMPLEMENTATION, env=CLAUDE)
 
-        self.assertTrue(any("cannot establish independence" in b for b in blockers))
-
-    def test_a_drifted_verifier_blocks_implementation(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / f"{gate.AGENT_NAME}.md"
-            fields = {
-                "name": gate.AGENT_NAME,
-                "description": "d",
-                "model": "inherit",
-                "effort": "high",
-                "tools": ["Read", "Edit"],
-            }
-            path.write_text(f"---\n{json.dumps(fields)}\n---\n\nBody.\n", encoding="utf-8")
-            tiers = gate.readiness(IMPLEMENTATION, path, env=CLAUDE)
-
-        self.assertFalse(tiers["implementation"]["ready"])
-        self.assertIn("repair the independent verifier boundary", tiers["implementation"]["blockers"])
+        self.assertTrue(without_packaged_verifier["implementation"]["ready"])
+        self.assertTrue(with_packaged_verifier["implementation"]["ready"])
 
     def test_no_rd_command_blocks_implementation(self) -> None:
         config = IMPLEMENTATION.replace(
@@ -132,11 +116,11 @@ class QaTierTests(unittest.TestCase):
 
         self.assertTrue(gate.readiness(config, env=CLAUDE)["qa"]["ready"])
 
-    def test_qa_inherits_an_implementation_blocker_rather_than_hiding_it(self) -> None:
+    def test_qa_does_not_inherit_a_reviewer_profile_blocker(self) -> None:
         tiers = gate.readiness(QA, env=OTHER_HOST)
 
-        self.assertFalse(tiers["qa"]["ready"])
-        self.assertIn("implementation is not ready", tiers["qa"]["blockers"])
+        self.assertTrue(tiers["implementation"]["ready"])
+        self.assertTrue(tiers["qa"]["ready"])
 
     def test_missing_qa_capability_is_never_reported_ready(self) -> None:
         for field in ("QA environment", "Artifact-provenance source", "QA evidence location"):
@@ -203,6 +187,41 @@ class CliTests(unittest.TestCase):
         config = PLANNING.replace("- **Issue tracker:** GitHub issues via `gh`\n", "")
 
         self.assertEqual(self.run_cli(config).returncode, 2)
+
+    def test_an_unsupported_config_version_exits_two(self) -> None:
+        stale = PLANNING.replace(
+            f"- **Config version:** `{gate.SUPPORTED_CONFIG_VERSION}`",
+            "- **Config version:** `2`",
+        )
+        result = self.run_cli(stale)
+
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("config is version 2", result.stderr)
+
+    def test_stray_fields_without_a_harness_ship_block_exit_two(self) -> None:
+        result = self.run_cli(QA.replace("## harness-ship", "## unrelated"))
+
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("exactly one ## harness-ship block", result.stderr)
+
+    def test_duplicate_harness_ship_blocks_exit_two(self) -> None:
+        duplicate = QA + "\n## harness-ship\n- **Config version:** `2`\n"
+        result = self.run_cli(duplicate)
+
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("exactly one ## harness-ship block", result.stderr)
+
+    def test_duplicate_config_versions_exit_two_in_either_order(self) -> None:
+        duplicates = (
+            QA.replace("## harness-ship\n", "## harness-ship\n- **Config version:** `2`\n"),
+            QA + "- **Config version:** `2`\n",
+            QA + "- **Config version:** `banana`\n",
+        )
+        for duplicate in duplicates:
+            with self.subTest(duplicate=duplicate):
+                result = self.run_cli(duplicate)
+                self.assertEqual(result.returncode, 2)
+                self.assertIn("exactly one Config version", result.stderr)
 
 
 if __name__ == "__main__":

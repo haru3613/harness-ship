@@ -1,8 +1,8 @@
 """Structural checks that survive rewording.
 
-These replace the former *_contract.py suites, which asserted that specific
-English phrases appeared in instruction prose. Wording is not a contract; it
-locked every sentence in place and made the skill corpus grow-only.
+These replace the former *_contract.py suites, which asserted that arbitrary
+English phrases appeared in instruction prose. Only load-bearing runtime
+guarantees are pinned below.
 
 What is a contract: the verifier agent's tool boundary (enforced by the host
 permission layer, not by prose), skill discoverability, and link integrity.
@@ -51,6 +51,62 @@ class SkillStructureTests(unittest.TestCase):
             for target in MD_LINK.findall(source.read_text(encoding="utf-8")):
                 with self.subTest(source=str(source.relative_to(ROOT)), target=target):
                     self.assertTrue((source.parent / target).resolve().is_file())
+
+
+class ReviewerRoutingTests(unittest.TestCase):
+    def test_reviewer_routing_happens_at_invocation(self) -> None:
+        setup = (SKILLS / "setup" / "SKILL.md").read_text(encoding="utf-8")
+        implement = (SKILLS / "implement" / "SKILL.md").read_text(encoding="utf-8")
+        review = (SKILLS / "review" / "SKILL.md").read_text(encoding="utf-8")
+
+        self.assertIn("## Invocation-time reviewer routing", implement)
+        self.assertIn("## Dispatch reviewers at invocation", review)
+        self.assertNotIn("role_binding_contract.py preflight", setup)
+        self.assertNotIn("## Mandatory independent-verifier preflight", implement)
+
+        self.assertIn("## Role-profile gate", implement)
+        non_review_routing = implement.split("## Role-profile gate", 1)[1].split(
+            "\n## ", 1
+        )[0]
+        for guarantee in (
+            "planning, implementation, and security work",
+            "pre-defined role profile",
+            "Do not substitute an undefined",
+        ):
+            self.assertIn(guarantee, non_review_routing)
+
+        implement_routing = implement.split(
+            "## Invocation-time reviewer routing", 1
+        )[1].split("\n## ", 1)[0]
+        for guarantee in (
+            "`generic`, `default`, `worker`",
+            "`claude-code`",
+            "role_binding_contract.py preflight",
+            "`harness-ship:harness-ship-independent-verifier`",
+            "run identity",
+            "`independence: not established`",
+            "root performs",
+        ):
+            self.assertIn(guarantee, implement_routing)
+
+        review_routing = review.split(
+            "## Dispatch reviewers at invocation", 1
+        )[1].split("\n## ", 1)[0]
+        for guarantee in (
+            "`generic`, `default`, `worker`",
+            "`claude-code`",
+            "role_binding_contract.py preflight",
+            "`harness-ship:harness-ship-independent-verifier`",
+            "run identity",
+            "`independence: not established`",
+            "`git rev-parse HEAD`",
+            "`git rev-parse HEAD^{tree}`",
+            "`git status --porcelain`",
+            "activity trace",
+            "mutate external state",
+            "spawn children",
+        ):
+            self.assertIn(guarantee, review_routing)
 
 
 if __name__ == "__main__":

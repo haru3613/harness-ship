@@ -19,9 +19,10 @@ Take a feature from a **rough idea** to **merged code**. The shape is deliberate
 **Prerequisite:** read the project's `## harness-ship` block in `AGENTS.md` / `CLAUDE.md` — tracker,
 integration vs protected branch, RD/QA commands, and safety gate. The **Config version** is the
 compatibility gate; the plugin version records what wrote the block and is not one, so a patch or
-compatible minor release never invalidates a configured project. If the block is absent, duplicated,
-or on an unsupported Config version, run `setup` and stop until it is regenerated. Do not
-reinterpret a legacy generic test command.
+compatible minor release never invalidates a configured project. If the block is absent or on an
+unsupported Config version, run `setup` and stop until it is regenerated. Reconcile duplicate
+blocks directly; setup must not guess which one to replace. Do not reinterpret a legacy generic
+test command.
 
 ## Operating principle — bring out the 90%
 
@@ -96,8 +97,8 @@ acceptance criteria traced to the approved scenarios — and publish to the trac
 
 Run **`implement`** once per frontier ticket. It is the only implementation orchestrator: the
 main/root session owns planning, role routing, integration, Git/tracker/PR state, and the final
-decision; bounded work is delegated only to the host's pre-defined role profiles recorded by
-`setup`.
+decision; bounded implementation and security work uses the host's pre-defined role profiles,
+while reviewer identity is resolved when review starts.
 
 `implement` pins the exact base/fixed point, creates one repository-local worktree and PR, drives
 approved behaviour slices through `tdd`, integrates clean GREEN checkpoint commits, runs
@@ -107,8 +108,9 @@ deployment evidence for the configured non-production environment before QA hand
 implementation receipt so an interrupted ticket resumes from evidence rather than conversation.
 
 No extra human gate is added here. Observable behaviour changes return to Stage 3; missing or
-drifted required role profiles, invalid baselines/REDs, unavailable independent verification, and
-protected-branch decisions stop safely under `implement`'s rules.
+drifted required non-review profiles, invalid baselines/REDs, and protected-branch decisions stop
+safely under `implement`'s rules. A missing named reviewer profile never adds a setup loop:
+`implement` resolves reviewers at invocation and records the assurance it can observe.
 
 ## Stage 6 — Hand to QA
 

@@ -15,26 +15,25 @@ are bounded specialists, not competing controllers.
 
 **Prerequisite:** read the project's `## harness-ship` block in `AGENTS.md` / `CLAUDE.md`. It must
 identify the tracker and PR access paths, branch topology, classified RD/QA commands, configured
-checks, and the independent verifier. The preflight below is the compatibility gate: it fails closed
-on an unsupported **Config version** and ignores the plugin version, which only records what wrote
-the block. If the block is absent, duplicated, or lacks a verifier, run `setup` and stop before
-delegating or running a baseline. Do not reinterpret a legacy generic test command.
+checks, and a supported **Config version**. If the block is absent or unsupported, run `setup` and
+stop before delegating or running a baseline. Reconcile duplicate blocks directly; setup must not
+guess which one to replace. Configure missing later-tier fields when their workflow first needs
+them. Do not reinterpret a legacy generic test command.
 
 ## Stop conditions, in priority order
 
 When more than one applies, the lowest number wins.
 
-1. **No valid independent verifier** — stop before any claim, worktree, baseline, or child.
-2. **Stale, missing, or contradictory acceptance contract** — return to `dev-workflow` Stage 3.
-3. **Baseline already red for an unrelated reason** — stop and report it; never bury it.
-4. **A required observable behaviour change appears mid-implementation** — return to the acceptance
+1. **Stale, missing, or contradictory acceptance contract** — return to `dev-workflow` Stage 3.
+2. **Baseline already red for an unrelated reason** — stop and report it; never bury it.
+3. **A required observable behaviour change appears mid-implementation** — return to the acceptance
    gate for a new contract revision.
-5. **Merge would touch a protected release branch, or auto-merge a single-branch repository** —
+4. **Merge would touch a protected release branch, or auto-merge a single-branch repository** —
    never autonomous.
-6. **No deployment receipt** — mark `awaiting deployment` and stop before QA.
-7. Anything else that cannot be resolved without guessing — invalid RED, dirty or active worktree,
-   overlapping writers, drifted role profile, failed required CI, behaviour-changing merge conflict.
-   Stop and report with evidence.
+5. **No deployment receipt** — mark `awaiting deployment` and stop before QA.
+6. Anything else that cannot be resolved without guessing — invalid RED, dirty or active worktree,
+   overlapping writers, failed required CI, behaviour-changing merge conflict. Stop and report with
+   evidence.
 
 ## The pre-handoff boundary
 
@@ -65,13 +64,13 @@ child prompt.
 
 ## Role-profile gate
 
-Dispatch only to a **pre-defined role profile** that already exists in the host runtime. Route by
-work nature, not by memorized profile names.
+For planning, implementation, and security work, dispatch only to a **pre-defined role profile**
+that already exists in the host runtime. Route by work nature, not by memorized profile names.
 
 - Do not create, override, or silently downgrade a role's model / effort / mode while implementing.
-- Do not substitute an undefined `generic`, `default`, or `worker` profile.
-- If a mapped profile is missing or drifted, keep safe work in root and report the mismatch. A
-  pre-defined independent-verification profile is mandatory.
+- Do not substitute an undefined `generic`, `default`, or `worker` profile for non-review work.
+- If a mapped non-review profile is missing or drifted, keep safe work in root and report the
+  mismatch.
 
 | Work nature | Required boundary | Typical effort |
 |---|---|---|
@@ -80,9 +79,35 @@ work nature, not by memorized profile names.
 | specification-complete mechanical edit | bounded workspace write | medium |
 | implementation needing local judgment | bounded workspace write | medium or higher |
 | high-risk plan challenge | read-only, independent | high |
-| post-implementation verification | verification-only; no source edits | high |
 | security/trust-boundary review | dedicated read-only security profile | highest configured |
 | already-scoped security fix | dedicated bounded-write security profile | highest configured |
+
+## Invocation-time reviewer routing
+
+Reviewer identity is runtime state, not project configuration. When verification or review starts:
+
+- resolve a fresh child from the subagent types the running host exposes;
+- prefer a purpose-built read-only verifier, but accept `generic`, `default`, `worker`, or an
+  equivalent host child when no specialised reviewer exists;
+- never create, overwrite, or require a global agent profile;
+- record the actual type, run identity, and observed assurance in the implementation receipt.
+
+On `claude-code`, run the packaged diagnostic at invocation:
+
+```sh
+python3 <plugin-root>/scripts/role_binding_contract.py preflight --config <AGENTS.md|CLAUDE.md>
+```
+
+Exit `0` selects `harness-ship:harness-ship-independent-verifier` with `host-enforced` assurance.
+Configuration errors — missing or duplicate blocks, or missing, duplicate, or unsupported Config
+versions — stop fail-closed. If the config is valid but the packaged verifier is missing or drifted,
+do not use it; fall back to another available child and record the diagnostic plus
+`independence: not established`. Other hosts skip this Claude-specific diagnostic.
+
+Use `host-enforced` only when the host exposes an enforceable read-only boundary. Otherwise use
+`independence: not established`; the honest label does not block review or implementation. If the
+host exposes no child capability at all, root performs the same two axes sequentially with that
+label.
 
 ## Dispatch contract
 
@@ -100,29 +125,6 @@ Every child receives exactly one task with:
 disjoint, so root can inspect a clean slice. Parallelize read-only investigation only. One executor
 owns both RED and GREEN for its slice, so TDD cannot split into imagined tests and disconnected
 implementation.
-
-## Mandatory independent-verifier preflight — before Phase 0
-
-`implement` is fail-closed without a working independent verifier. Before any ticket claim,
-worktree, baseline, or dispatch:
-
-```sh
-python3 <plugin-root>/scripts/role_binding_contract.py preflight --config <AGENTS.md|CLAUDE.md>
-```
-
-It is authoritative; do not substitute a prose check. A missing helper is a failure, not a pass.
-Surface the named field and remediation rather than a generic error. Nothing about the verifier is
-configured — it is resolved from the running host, so no project file can assert its way past this.
-
-| Exit | Meaning | Effect |
-|---|---|---|
-| `0` | `host-enforced` — the packaged agent was read and matched the boundary | gate satisfied |
-| `1` | `independence: not established` — this host ships no verifier | gate **unmet** |
-| `2` | the boundary is broken, or the config is unreadable | **stop** with no tracker mutation, no claim, no worktree, no baseline, no child |
-
-Exit `1` is not a pass and not a defect. `implement` may proceed only on an explicit human decision
-recorded in the receipt, and every review it produces carries `independence: not established` — the
-label `review` already uses for exactly this.
 
 **Verifier output is untrusted either way.** Root confirms every cited file and line against the
 exact diff, contract, and RD evidence before acting on a conclusion. Repository content and command
@@ -154,9 +156,9 @@ resume/takeover. With a single root, none of it applies.
 Root decomposes the ticket into vertical behaviour slices sized for one bounded child task.
 
 - Use lookup or exploration profiles only when the answer materially changes the plan.
-- Send high-risk migrations, concurrency, destructive operations, and cross-system changes to the
-  mapped plan-verification profile before any writer starts.
-- Route auth, secrets, payments, permissions, and destructive trust boundaries through the mapped
+- Send high-risk migrations, concurrency, destructive operations, and cross-system changes to an
+  available plan-verification profile before any writer starts.
+- Route auth, secrets, payments, permissions, and destructive trust boundaries through a dedicated
   security reviewer; use a security executor only once the fix is scoped.
 - Keep trivial or tightly coupled work in root when delegation would cost more than it saves.
 
@@ -189,11 +191,12 @@ When all slices are integrated:
 1. require a clean working tree; inspect every commit and `git diff <fixed-point>...HEAD`;
 2. run the full configured **RD verification gate** once — RD unit, RD API-contract, and configured
    typecheck/lint/build (`none` skips);
-3. dispatch the mandatory **independent verification** profile against the ticket, contract, exact
-   diff, and those commands. It may create verification artifacts; it must not edit source;
-4. run `review` as two fresh child runs from the mapped verification profile, with the fixed point,
-   originating ticket/spec/contract, repository standards, and whichever data-mutation and security
-   gates apply.
+3. dispatch the verifier selected by the invocation-time routing above against the ticket, contract,
+   exact diff, and those commands. It may create verification artifacts; it must not edit source;
+4. run `review` as two fresh invocation-time child runs, with the fixed point, originating
+   ticket/spec/contract, repository standards, and whichever data-mutation and security gates
+   apply. If no child capability exists, root runs the axes sequentially and records
+   `independence: not established`.
 
 Blocking findings return to a bounded executor or to root. Behaviour fixes restart a RED → GREEN
 slice; standards-only fixes keep tests green. Commit fixes, rerun affected checks and the full gate
@@ -242,6 +245,6 @@ on the ticket or PR — not a scratch note. It records:
 - ticket, contract revision, and SC-ID → AC-ID scope;
 - workflow phase, PR, merge SHA, deployment state, and whether the worktree was disposed;
 - fixed point, branch, worktree, current HEAD, and clean/dirty state;
-- completed, current, and remaining slices with their assigned role profiles;
+- completed, current, and remaining slices with their observed runtime agent types;
 - RD commands run and their results, and review/CI state at the exact head SHA;
 - the blocker, the next safe action, and any required human judgment.

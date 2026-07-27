@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "issue-57",
+  "classification": "minor",
+  "migration": "none",
+  "summary": "Resolve fresh reviewers from the running host instead of requiring a preconfigured verifier profile.",
+  "paths": [
+    "README.md",
+    "docs/upgrade-guide.md",
+    "scripts/role_binding_contract.py",
+    "skills/dev-workflow/SKILL.md",
+    "skills/implement/SKILL.md",
+    "skills/review/SKILL.md",
+    "skills/setup/SKILL.md",
+    "skills/tdd/SKILL.md",
+    "skills/testing-workflow/SKILL.md"
+  ]
+}

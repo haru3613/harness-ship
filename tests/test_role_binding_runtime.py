@@ -166,6 +166,41 @@ class ConfigVersionTests(unittest.TestCase):
         with self.assertRaises(gate.ContractError):
             gate.preflight(config, env=CLAUDE)
 
+    def test_a_malformed_config_version_fails(self) -> None:
+        for value in (
+            "`banana`",
+            "3.0",
+            "`3``",
+            "``3``",
+            "`3",
+            "\n3",
+            "\n`3`",
+            "\v3\v",
+            "\f3\f",
+            "\r3\r",
+            "\N{NO-BREAK SPACE}3\N{NO-BREAK SPACE}",
+            "\N{ARABIC-INDIC DIGIT THREE}",
+        ):
+            with self.subTest(value=value):
+                malformed = CONFIG.replace(
+                    f"`{gate.SUPPORTED_CONFIG_VERSION}`", value, 1
+                )
+                with self.assertRaises(gate.ContractError) as caught:
+                    gate.preflight(malformed, env=CLAUDE)
+                self.assertIn("must be an integer", str(caught.exception))
+
+    def test_duplicate_config_versions_fail_in_either_order(self) -> None:
+        duplicates = (
+            CONFIG.replace("## harness-ship\n", "## harness-ship\n- **Config version:** `2`\n"),
+            CONFIG + "- **Config version:** `2`\n",
+            CONFIG.replace("## harness-ship\n", "## harness-ship\n- **Config version:** `3.0`\n"),
+        )
+        for duplicate in duplicates:
+            with self.subTest(duplicate=duplicate):
+                with self.assertRaises(gate.ContractError) as caught:
+                    gate.preflight(duplicate, env=CLAUDE)
+                self.assertIn("exactly one Config version", str(caught.exception))
+
     def test_the_verdict_reports_the_config_version(self) -> None:
         self.assertEqual(gate.preflight(CONFIG, env=CLAUDE)["config_version"], gate.SUPPORTED_CONFIG_VERSION)
 

@@ -6,7 +6,7 @@ Turn feature intent into an approved acceptance contract, evidence-backed implem
 exact-artifact QA, and a human release decision.
 
 > Harness Ship is a workflow plugin, not a test framework, autonomous controller, hosted service,
-> or security boundary. It coordinates the tools and role profiles already available in your host.
+> or security boundary. It coordinates the tools and runtime capabilities available in your host.
 
 Current release: **v1.0.0** · License: **MIT** · Repository status: **private pre-release review**
 
@@ -127,8 +127,9 @@ Run `$harness-ship:setup` in Codex or `/harness-ship:setup` in Claude Code. Setu
 target repository and writes a `## harness-ship` Config v3 block into its `AGENTS.md` or
 `CLAUDE.md`.
 
-Review that block before delivery work begins. Re-run setup after changing the stack, tracker,
-branch model, test commands, QA environment, artifact path, or host role profiles.
+Review that block before delivery work begins. Re-run setup after changing its first-run inputs:
+stack, tracker or PR host, branch model, RD commands/checks, risk gate, or UI convention. Later
+workflows own QA, deployment, evidence, ready, and claim fields at the point of use.
 
 ### 4. Deliver and verify
 
@@ -144,9 +145,9 @@ Canonical direct commands remain available:
 ## Install and update details
 
 Upgrading from an earlier release? Both hosts must install the refreshed plugin, restart or reload
-the real host process, start a new session, and re-run setup. Follow the
-[upgrade guide](docs/upgrade-guide.md); a project whose block does not match the current Config
-version is a fail-closed stop, not an automatic migration — re-run setup once to regenerate it.
+the real host process, and start a new session. Re-run setup only when the installed release does
+not support the project's Config version. Follow the [upgrade guide](docs/upgrade-guide.md); an
+unsupported block is a fail-closed stop, not an automatic migration.
 
 ### Stable, next, and editable source
 
@@ -189,11 +190,11 @@ codex plugin add harness-ship@harness-ship
 The marketplace upgrade refreshes the Git source; the second command activates the refreshed
 plugin. Start a new Codex session afterward.
 
-Codex installation supplies skills only; it does not supply an independent verifier. Preflight
-therefore reports `independence: not established` and `implement`'s independent gate stays unmet —
-you may proceed on an explicit decision, and every review carries that label. Nothing is configured
-to make this so: the verifier is resolved from the running host, because that is the only thing that
-determines which agent actually loads. Setup never creates or overwrites global agents or settings.
+Codex review needs no custom verifier profile. At invocation, Harness Ship resolves fresh reviewers
+from the subagent types the running host exposes; a specialised verifier is preferred, while a
+generic host child remains valid. The receipt records the actual run identity and either
+`host-enforced` or `independence: not established`. Setup never creates or overwrites global agents
+or settings.
 
 If installation reports `could not read Username for 'https://github.com'` while the repository is
 private, run `gh auth setup-git`, verify that
@@ -212,8 +213,8 @@ The marketplace update refreshes the catalog; the plugin update installs the ref
 Restart Claude Code afterward.
 
 Install supplies the verifier capability as the scoped Claude plugin agent
-`harness-ship:harness-ship-independent-verifier`. The preflight gate reads that agent definition at
-check time and compares its tools, model and effort against the required boundary —
+`harness-ship:harness-ship-independent-verifier`. The lifecycle diagnostic reads that agent
+definition and compares its tools, model and effort against the required boundary —
 `assurance: host-enforced`. There is nothing to configure and nothing to keep in sync. Because the tool whitelist is `Read`, `Grep`, `Glob`, the permission
 layer makes the boundary physical: the verifier cannot edit source and has no tool with which to
 dispatch a child. Harness Ship never copies agents into `~/.claude/agents` and never overwrites
@@ -244,14 +245,11 @@ bundled skills. They share one evidence model but remain usable as focused comma
 
 - **Tracker and branch topology** — issue/PR systems, integration branch, and protected release
   branch.
-- **Versioned RD/QA commands** — RD unit/API-contract commands stay separate from QA
-  integration/P0/full-suite commands.
-- **QA evidence boundary** — QA environment, artifact provenance, and durable evidence location.
-- **Role profiles** — live host definitions, model/effort, write scope, capabilities, MCP/plugin
-  boundary, and no-spawn policy.
-- **Ready and claim rules** — ticket eligibility, owner/session claim, recovery, and fencing.
-- **Deployment path** — how QA obtains an exact-source deployment or artifact receipt.
+- **RD commands and checks** — unit/API-contract, lint, typecheck, and build commands.
 - **Risk gates** — optional data-mutation checks and the repository UI convention.
+
+Later workflows append QA commands/environment, artifact and evidence paths, deployment, ready, and
+claim fields only when they need them.
 
 **A block from an earlier Config version:** re-run `setup` once. There is no automatic migration —
 a block whose `Config version` is not the one this release supports is a zero-mutation stop, and
@@ -266,7 +264,7 @@ provenance, and evidence location. Unknown capability stays
 | Boundary | Codex | Claude Code |
 |---|---|---|
 | Bundled skills | Yes | Yes |
-| Bundled independent verifier | No — `independence: not established` | Yes — scoped plugin agent, `host-enforced` |
+| Review dispatch | Invocation-time host subagents; no custom profile required | Packaged verifier preferred, with runtime fallback |
 | Global agent/settings mutation | Never | Never |
 | Controller/runtime | Supplied by the host | Supplied by the host |
 | Evidence authority | Live repository, tracker, CI, and artifact receipts | Live repository, tracker, CI, and artifact receipts |
@@ -281,7 +279,7 @@ to approve.
   environment.
 - It complements your test frameworks, CI, tracker, and deployment system; it does not replace
   them.
-- It cannot create missing QA infrastructure, credentials, artifacts, or safe host profiles.
+- It cannot create missing QA infrastructure, credentials, or artifacts.
 - The workflow adds useful discipline to agentic delivery, but critical systems still need
   domain-specific security, performance, accessibility, and manual testing.
 - This repository's local maintainer `AGENTS.md` is an operator configuration, not a consumer
