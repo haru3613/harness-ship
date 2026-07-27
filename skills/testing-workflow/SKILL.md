@@ -72,8 +72,8 @@ method, or `not-configured`. A `not-configured` capability cannot run: record **
 the result **Not ready**; never infer PASS from an unknown capability.
 
 Run a fail-closed **QA execution ownership preflight** immediately before every trigger-capable QA
-action. Re-read the current validated Config v2, the capability's QA ownership, and the current command,
-workflow, and job wiring; revalidate the handoff-bound source/artifact/provenance and evidence
+action. Re-read the current validated Config block, the capability's QA ownership, and the
+current command, workflow, and job wiring; revalidate the handoff-bound source/artifact/provenance and evidence
 destination. On configuration or ownership drift, an RD-owned/unclassified action, or a mismatch,
 do not execute: append raw `NOT RUN` → `NOT TESTED` with preflight evidence.
 

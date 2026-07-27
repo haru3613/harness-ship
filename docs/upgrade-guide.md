@@ -3,7 +3,7 @@
 Choose one channel, upgrade its marketplace source, install the refreshed plugin, restart or reload
 the real host process, start a new session, and re-run setup in every configured project.
 
-`harness-ship` is the stable channel pinned to `v0.7.0`; `harness-ship-next` is an explicit
+`harness-ship` is the stable channel pinned to `v1.0.0`; `harness-ship-next` is an explicit
 unreleased channel pinned to `main`. Both resolve to the same underlying plugin namespace and are
 mutually exclusive. Remove the installed channel before switching. A local editable checkout is a
 development source and does not receive managed upgrades or prove the tagged release.
@@ -52,11 +52,9 @@ definition was read and compared at check time — it is reported on a failing c
 established` (every other host) means this plugin ships no verifier there; preflight exits `1`,
 which marks `implement`'s gate unmet rather than passed.
 
-**v0.7.0 migration:** setup proposes Config v1 → v2 without writing it. Review the complete plan
-and exact configuration diff, correct unsafe or unknown bindings, and explicitly confirm that exact
-proposal. Only then apply it. If repository state or the proposal changes, discard the old
-confirmation and repeat plan → review → exact confirmation → apply. Restart/reload Codex and begin
-a new session before trusting the new plugin source.
+**v0.7.0 migration (historical):** setup proposed Config v1 → v2 without writing it, and applied
+the proposal only after an exact confirmation of the reviewed diff. That two-phase planner was
+removed in v1.0.0; a block on an unsupported Config version is now regenerated, not migrated.
 
 **v0.6.4 migration:** upgrade and activate the plugin, then restart Codex. If the verifier
 diagnostic reports an unsafe boundary, configure or select one **safe live verifier** with
@@ -101,11 +99,9 @@ Run it from a Claude Code session — the host sets `CLAUDECODE`, and a plain te
 `assurance: host-enforced`, meaning the packaged verifier agent definition was read and compared at
 check time; `status: pass` is what reports that its tools, model and effort matched.
 
-**v0.7.0 migration:** setup proposes Config v1 → v2 without writing it. Review the complete plan
-and exact configuration diff, correct unsafe or unknown bindings, and explicitly confirm that exact
-proposal. Only then apply it. If repository state or the proposal changes, discard the old
-confirmation and repeat plan → review → exact confirmation → apply. Restart Claude Code and begin
-a new session before trusting the new plugin source.
+**v0.7.0 migration (historical):** setup proposed Config v1 → v2 without writing it, and applied
+the proposal only after an exact confirmation of the reviewed diff. That two-phase planner was
+removed in v1.0.0; a block on an unsupported Config version is now regenerated, not migrated.
 
 **v0.6.4 migration:** upgrade the plugin, then restart Claude Code. If the verifier diagnostic
 reports an unsafe boundary, configure or select one **safe live verifier** with host-enforced
@@ -128,13 +124,13 @@ local plugin-directory facility for attended testing. Do not register or alter g
 as part of repository validation. Local source changes are immediate, so restart/reload the
 consumer after each source change; managed marketplace upgrade commands do not update a checkout.
 
-## Earlier Config v1 projects
+## Projects on an earlier Config version
 
-Setup proposes the upgraded Harness Ship block before applying it. Known values are preserved while RD
-unit/API-contract commands remain separate from QA integration/P0/full-suite commands. It records
-the QA environment, artifact provenance, and evidence location; unavailable capabilities remain
-`not-configured`.
+A block whose `Config version` is not the one this release supports is a zero-mutation stop, not an
+automatic migration. Re-run setup once to regenerate it. Known values are preserved while RD
+unit/API-contract commands remain separate from QA integration/P0/full-suite commands. The
+regenerated block keeps the QA environment, artifact provenance, and evidence location;
+unavailable capabilities remain `not-configured`.
 
 Harness Ship updates only the current host section. It does not replace global agents or settings,
-and it does not silently weaken or select an ambiguous verifier profile. Config v2 apply requires
-review and exact confirmation of the current proposal.
+and it does not silently weaken or select an ambiguous verifier profile.
