@@ -1,6 +1,7 @@
 from pathlib import Path
 import importlib.util
 import json
+import re
 import shutil
 import subprocess
 import tempfile
@@ -12,6 +13,11 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "scripts" / "check_release_contract.py"
 PUBLISHER = ROOT / "scripts" / "publish_release.py"
+# The current release version, read from the policy ledger so a version PR does not have to edit
+# these tests, and so asserting it against both manifests stays a real cross-file check.
+VERSION = json.loads((ROOT / "release" / "policy.json").read_text(encoding="utf-8"))[
+    "releases"
+][-1]["version"]
 
 
 def run(command, cwd: Path, *, check: bool = True) -> subprocess.CompletedProcess:
@@ -728,7 +734,7 @@ class ReleaseContractTests(unittest.TestCase):
                 ".claude-plugin/plugin.json",
             )
         }
-        self.assertEqual(versions, {"0.7.0"})
+        self.assertEqual(versions, {VERSION})
         for relative in (
             ".agents/plugins/marketplace.json",
             ".claude-plugin/marketplace.json",
@@ -738,7 +744,7 @@ class ReleaseContractTests(unittest.TestCase):
             self.assertEqual(
                 set(channels), {"harness-ship", "harness-ship-next"}
             )
-            self.assertEqual(channels["harness-ship"]["ref"], "v0.7.0")
+            self.assertEqual(channels["harness-ship"]["ref"], f"v{VERSION}")
             self.assertEqual(channels["harness-ship-next"]["ref"], "main")
             self.assertIsInstance(channels["harness-ship"], dict)
             self.assertNotEqual(channels["harness-ship"], "./")
@@ -762,9 +768,8 @@ class ReleaseContractTests(unittest.TestCase):
             "claude plugin marketplace add haru3613/harness-ship@main",
             docs,
         )
-        self.assertNotIn(
-            "plugin marketplace add haru3613/harness-ship --ref v0.7.0",
-            docs,
+        self.assertIsNone(
+            re.search(r"marketplace add haru3613/harness-ship --ref v\d", docs)
         )
 
     def test_repository_channels_reject_untrusted_origins_and_extra_fields(
@@ -968,7 +973,7 @@ class ReleaseContractTests(unittest.TestCase):
                     ".git", ".worktrees", "__pycache__", "*.pyc"
                 ),
             )
-            self.commit(repo, "merged v0.7.0 release state")
+            self.commit(repo, f"merged v{VERSION} release state")
             helper = repo / "scripts" / "role_binding_contract.py"
             helper.write_text(
                 helper.read_text(encoding="utf-8")
@@ -989,7 +994,7 @@ class ReleaseContractTests(unittest.TestCase):
                     "--main-ref",
                     "refs/heads/main",
                     "--tag",
-                    "v0.7.0",
+                    f"v{VERSION}",
                     "--dry-run",
                 ],
                 repo,
@@ -1003,7 +1008,7 @@ class ReleaseContractTests(unittest.TestCase):
             self.assertIn(f"upgrade receipt: from={previous}:0.6.3", result.stdout)
             self.assertNotEqual(
                 run(
-                    ["git", "rev-parse", "--verify", "refs/tags/v0.7.0"],
+                    ["git", "rev-parse", "--verify", f"refs/tags/v{VERSION}"],
                     repo,
                     check=False,
                 ).returncode,

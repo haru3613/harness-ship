@@ -33,7 +33,7 @@ the block records what wrote it and is never a gate, so a patch or compatible mi
 every configured project working. `preflight` reports the config version it read and fails closed —
 with an actionable message — when the schema is one this release does not support.
 
-**v0.8.0 migration (breaking):** Config version 2 → 3, and the verifier binding format changed.
+**v1.0.0 migration (breaking):** Config version 2 → 3, and the verifier binding format changed.
 The 13-column host binding table, the `Verifier binding-contract version` field, and the
 discovery-receipt input are gone. Re-run setup once per configured project to regenerate the
 `## harness-ship` block; setup writes a single `Independent verifier:` line in their place and
@@ -47,7 +47,8 @@ A project still carrying the old table fails closed on its `Config version`, whi
 detection.
 
 The gate now reports an `assurance` field. `host-enforced` (Claude Code) means the packaged agent
-definition was read at check time and its tools, model and effort matched. `independence: not
+definition was read and compared at check time — it is reported on a failing check too, so read
+`status: pass` for whether its tools, model and effort actually matched. `independence: not
 established` (every other host) means this plugin ships no verifier there; preflight exits `1`,
 which marks `implement`'s gate unmet rather than passed.
 
@@ -87,6 +88,18 @@ To opt in to unreleased next source after uninstalling stable:
 claude plugin marketplace add haru3613/harness-ship@main
 claude plugin install harness-ship-next@harness-ship
 ```
+
+**v1.0.0 migration (breaking):** Config version 2 → 3, and the verifier binding format changed.
+The 13-column host binding table, the `Verifier binding-contract version` field, and the
+discovery-receipt input are gone. Re-run setup once per configured project to regenerate the
+`## harness-ship` block; setup writes a single `Independent verifier:` line in their place and
+stamps `Config version: 3`. No automatic migration is attempted. Verify with
+`python3 <plugin-root>/scripts/role_binding_contract.py preflight --config CLAUDE.md`; a project
+still carrying the old table fails closed on its `Config version`, which is the intended detection.
+Run it from a Claude Code session — the host sets `CLAUDECODE`, and a plain terminal instead reports
+`independence: not established` and exits `1`. From that session the gate reports
+`assurance: host-enforced`, meaning the packaged verifier agent definition was read and compared at
+check time; `status: pass` is what reports that its tools, model and effort matched.
 
 **v0.7.0 migration:** setup proposes Config v1 → v2 without writing it. Review the complete plan
 and exact configuration diff, correct unsafe or unknown bindings, and explicitly confirm that exact

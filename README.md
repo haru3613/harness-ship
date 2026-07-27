@@ -145,8 +145,8 @@ Canonical direct commands remain available:
 
 Upgrading from an earlier release? Both hosts must install the refreshed plugin, restart or reload
 the real host process, start a new session, and re-run setup. Follow the
-[upgrade guide](docs/upgrade-guide.md); every Config v1 project must review and explicitly confirm
-its generated Config v2 migration after installing v0.7.0.
+[upgrade guide](docs/upgrade-guide.md); a project whose block does not match the current Config
+version is a fail-closed stop, not an automatic migration — re-run setup once to regenerate it.
 
 ### Stable, next, and editable source
 

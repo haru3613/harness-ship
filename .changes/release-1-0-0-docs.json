@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "id": "release-1-0-0-docs",
+  "classification": "patch",
+  "migration": "none",
+  "summary": "Name the pending breaking release v1.0.0, mirror its migration note for Claude Code, and read the asserted version from the release policy ledger.",
+  "paths": [
+    "docs/upgrade-guide.md",
+    "skills/setup/SKILL.md"
+  ]
+}

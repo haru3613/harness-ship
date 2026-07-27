@@ -170,7 +170,7 @@ Use `manual: <steps + required evidence>` only when concrete manual steps and ev
 `not-configured`, missing CI, or a manual method never infer PASS. Undetectable QA fields are written
 `not-configured`.
 
-Blocks written before v0.8.0 carried a 13-column host binding table per host and a
+Blocks written before v1.0.0 carried a 13-column host binding table per host and a
 **Verifier binding-contract version** field. Both are gone: the gate reads the binding line directly
 and fails closed on anything it cannot parse, so a separate version for it detected nothing the gate
 does not. Re-run setup once to regenerate the block.
