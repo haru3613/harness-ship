@@ -6,33 +6,33 @@ verifier is read-only, cannot spawn children, and runs at high effort — checke
 now, against the definition the host will actually load, not against something
 recorded earlier.
 
-Two hosts, two different strengths of guarantee, stated honestly rather than
-papered over:
+Nothing about the verifier is persisted. It is resolved from the running host,
+because that is the only thing that determines which agent will actually load:
 
-* **Claude Code** — the packaged agent file is read at check time and its
-  declared tools, model and effort are compared against the required boundary.
-  The tool whitelist is enforced by the host permission layer, so a verifier
-  that cannot invoke Edit is not trusting itself to abstain. This is a real
-  check, and it names the field that drifted.
-* **Codex** — no Codex interface exposes live profile metadata. The binding
-  therefore carries an operator declaration that this gate re-asserts. That
-  proves the operator wrote down the right boundary; it cannot prove the live
-  profile matches it. `assurance` reports which of the two you got.
+* **Claude Code** — this plugin ships the verifier agent. Read that file at
+  check time and compare its tools, model and effort against the boundary. The
+  whitelist is enforced by the host permission layer, so a verifier that cannot
+  invoke Edit is not trusting itself to abstain. Real check; names the field
+  that drifted.
+* **Any other host** — this plugin ships no verifier there, so independence
+  cannot be established. Say exactly that. It is not a boundary failure and not
+  a pass.
 
-This replaces a 2,249-line contract whose Codex digest chain verified the
-caller against a re-serialization of the caller's own input, and whose
-"discovery receipt" trust boundary was declared in prose addressed to the agent
-it was meant to constrain. See issue #34.
+Earlier versions recorded the verifier in project config. On Claude Code that
+recorded a constant; on Codex it recorded an operator declaration that proved
+nothing about the live profile while reading as a partial guarantee. Both are
+gone — see issues #34 and #50.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 AGENT_NAME = "harness-ship-independent-verifier"
 PLUGIN_AGENT = (Path(__file__).resolve().parents[1] / "agents" / f"{AGENT_NAME}.md").resolve()
@@ -42,28 +42,15 @@ CLAUDE_PROFILE_ID = f"harness-ship:{AGENT_NAME}"
 # Edit/Write tool and of an Agent tool is what makes the boundary physical.
 REQUIRED_TOOLS = ["Glob", "Grep", "Read"]
 HIGH_OR_HIGHER = {"high", "xhigh", "max", "ultra"}
-REQUIRED_DECLARATION = {
-    "mode": "read-only",
-    "write": "none",
-    "spawn": "no",
-    "context": "fresh",
-}
-
 # The config schema is what workflows depend on. The plugin version records what
 # wrote the block and is deliberately not a gate: a patch or compatible minor
 # release must not invalidate a configured project.
 SUPPORTED_CONFIG_VERSION = 3
 CONFIG_VERSION_RE = re.compile(r"(?mi)^\s*[-*]\s*\*\*Config version:\*\*\s*`?(?P<version>\d+)`?\s*$")
 
-SUPPORTED_HOSTS = ("claude-code", "codex")
 AGENT_FIELDS = {"name", "description", "model", "effort", "tools"}
 FRONTMATTER_RE = re.compile(r"\A---\n(.*?)\n---\n", re.S)
 SECTION_RE = re.compile(r"(?m)^## harness-ship\s*$")
-BINDING_RE = re.compile(
-    r"(?m)^- \*\*Independent verifier:\*\*\s+`(?P<host>[^`]+)`\s*/\s*"
-    r"`(?P<profile>[^`]+)`\s*(?:—\s*(?P<declaration>.+?))?\s*$"
-)
-
 # Readiness is tiered so a missing QA environment blocks QA and nothing else.
 # Modelled on skills/review/SKILL.md's `independence: not established`: degrade
 # and say so, rather than bricking every workflow.
@@ -75,9 +62,8 @@ TIERS = ("planning", "implementation", "qa")
 
 REMEDIATION = [
     "Upgrade and activate the current Harness Ship release, then restart the host.",
-    "Select a live verifier profile whose permissions match the required boundary;"
-    " Harness Ship never mutates global profiles.",
-    "Repair only this project's Independent verifier line, then rerun preflight.",
+    "Run implementation from Claude Code, where this plugin supplies the verifier agent.",
+    "Otherwise record an explicit human decision to proceed without independent verification.",
 ]
 
 
@@ -103,40 +89,14 @@ def parse_agent(text: str, expected_name: str) -> Dict[str, Any]:
     return fields
 
 
-def parse_declaration(raw: Optional[str]) -> Dict[str, str]:
-    """Parse `mode=read-only, write=none, ...` into a mapping."""
-    if not raw:
-        return {}
-    declaration: Dict[str, str] = {}
-    for item in raw.split(","):
-        key, separator, value = item.partition("=")
-        if not separator:
-            raise ContractError(f"malformed verifier declaration near {item.strip()!r}")
-        key = key.strip()
-        if key in declaration:
-            raise ContractError(f"duplicate verifier declaration key {key!r}")
-        declaration[key] = value.strip()
-    return declaration
+def detect_host(env: Optional[Mapping[str, str]] = None) -> str:
+    """Identify the running host from its own runtime, never from an argument.
 
-
-def read_binding(config_text: str) -> Dict[str, Any]:
-    """Extract the single Independent verifier line from a harness-ship block."""
-    if not SECTION_RE.search(config_text):
-        raise ContractError("config has no `## harness-ship` block")
-    matches = BINDING_RE.findall(config_text)
-    if not matches:
-        raise ContractError("config declares no Independent verifier")
-    if len(matches) > 1:
-        raise ContractError(f"config declares {len(matches)} Independent verifier lines, expected 1")
-    match = BINDING_RE.search(config_text)
-    host = match.group("host")
-    if host not in SUPPORTED_HOSTS:
-        raise ContractError(f"unsupported verifier host {host!r}; expected one of {list(SUPPORTED_HOSTS)}")
-    return {
-        "host": host,
-        "profile_id": match.group("profile"),
-        "declaration": parse_declaration(match.group("declaration")),
-    }
+    A caller that could name its host could also name the one whose guarantee it
+    wants, so this reads the environment the host sets for itself.
+    """
+    environ = os.environ if env is None else env
+    return "claude-code" if environ.get("CLAUDECODE") else "unknown"
 
 
 def _effort_violation(observed: str) -> Optional[Dict[str, str]]:
@@ -145,13 +105,8 @@ def _effort_violation(observed: str) -> Optional[Dict[str, str]]:
     return {"observed": observed, "required": "high or higher"}
 
 
-def check_claude(binding: Dict[str, Any], agent_path: Path) -> Dict[str, Any]:
+def check_claude(agent_path: Path) -> Dict[str, Any]:
     """Compare the packaged agent definition the host will load against the boundary."""
-    if binding["profile_id"] != CLAUDE_PROFILE_ID:
-        raise ContractError(
-            f"Claude Code verifier must be the packaged {CLAUDE_PROFILE_ID}, "
-            f"got {binding['profile_id']!r}"
-        )
     if not agent_path.is_file():
         raise ContractError(f"packaged verifier agent is missing at {agent_path}")
     fields = parse_agent(agent_path.read_text(encoding="utf-8"), AGENT_NAME)
@@ -165,20 +120,6 @@ def check_claude(binding: Dict[str, Any], agent_path: Path) -> Dict[str, Any]:
     if effort:
         violations["effort"] = effort
     return {"assurance": "host-enforced", "violations": violations}
-
-
-def check_codex(binding: Dict[str, Any]) -> Dict[str, Any]:
-    """Re-assert the operator's written declaration. Codex exposes nothing live."""
-    declaration = binding["declaration"]
-    violations: Dict[str, Dict[str, Any]] = {}
-    for key, required in REQUIRED_DECLARATION.items():
-        observed = declaration.get(key)
-        if observed != required:
-            violations[key] = {"observed": observed, "required": required}
-    effort = _effort_violation(declaration.get("effort", ""))
-    if effort:
-        violations["effort"] = effort
-    return {"assurance": "operator-declared", "violations": violations}
 
 
 def read_config_version(config_text: str) -> int:
@@ -195,21 +136,30 @@ def read_config_version(config_text: str) -> int:
     return version
 
 
-def preflight(config_text: str, agent_path: Path = PLUGIN_AGENT) -> Dict[str, Any]:
-    """Return a pass/fail verdict for the configured independent verifier."""
+def preflight(
+    config_text: str,
+    agent_path: Path = PLUGIN_AGENT,
+    env: Optional[Mapping[str, str]] = None,
+) -> Dict[str, Any]:
+    """Resolve the independent verifier from the running host and check it."""
     config_version = read_config_version(config_text)
-    binding = read_binding(config_text)
-    if binding["host"] == "claude-code":
-        outcome = check_claude(binding, agent_path)
-    else:
-        outcome = check_codex(binding)
+    host = detect_host(env)
+    base = {"config_version": config_version, "host": host}
 
-    result = {
-        "config_version": config_version,
-        "host": binding["host"],
-        "profile_id": binding["profile_id"],
-        "assurance": outcome["assurance"],
-    }
+    if host != "claude-code":
+        return {
+            **base,
+            "status": "degraded",
+            "assurance": "independence: not established",
+            "reason": (
+                "this plugin ships an independent verifier for Claude Code only; "
+                f"on {host} it cannot establish independence"
+            ),
+            "remediation": REMEDIATION,
+        }
+
+    outcome = check_claude(agent_path)
+    result = {**base, "profile_id": CLAUDE_PROFILE_ID, "assurance": outcome["assurance"]}
     if outcome["violations"]:
         return {
             **result,
@@ -242,7 +192,11 @@ def is_set(value: Optional[str]) -> bool:
     return bool(head) and head.lower() not in UNSET_VALUES and not PLACEHOLDER_RE.match(head)
 
 
-def readiness(config_text: str, agent_path: Path = PLUGIN_AGENT) -> Dict[str, Any]:
+def readiness(
+    config_text: str,
+    agent_path: Path = PLUGIN_AGENT,
+    env: Optional[Mapping[str, str]] = None,
+) -> Dict[str, Any]:
     """Report planning / implementation / QA readiness independently.
 
     A capability that is absent blocks only the tier that needs it. Nothing is
@@ -266,11 +220,13 @@ def readiness(config_text: str, agent_path: Path = PLUGIN_AGENT) -> Dict[str, An
     if not any(is_set(fields.get(f"RD {kind} command")) for kind in ("unit", "API-contract")):
         blockers.append("configure at least one RD command")
     try:
-        verdict = preflight(config_text, agent_path)
-        if verdict["status"] != "pass":
+        verdict = preflight(config_text, agent_path, env)
+        if verdict["status"] == "degraded":
+            blockers.append(verdict["reason"])
+        elif verdict["status"] != "pass":
             blockers.append("repair the independent verifier boundary")
     except ContractError as error:
-        blockers.append(f"bind an independent verifier ({error})")
+        blockers.append(str(error))
     tier("implementation", blockers, inherits="planning")
 
     blockers = [
@@ -292,12 +248,8 @@ def validate_agent(path: Path) -> Dict[str, Any]:
 
 def self_test() -> Dict[str, Any]:
     """Prove the packaged verifier still satisfies its own boundary."""
-    config = (
-        "## harness-ship\n"
-        f"- **Config version:** `{SUPPORTED_CONFIG_VERSION}`\n"
-        f"- **Independent verifier:** `claude-code` / `{CLAUDE_PROFILE_ID}`\n"
-    )
-    result = preflight(config)
+    config = f"## harness-ship\n- **Config version:** `{SUPPORTED_CONFIG_VERSION}`\n"
+    result = preflight(config, env={"CLAUDECODE": "1"})
     if result["status"] != "pass":
         raise ContractError(f"packaged verifier fails its own boundary: {result['violations']}")
     return result
@@ -329,7 +281,9 @@ def main(argv: Optional[List[str]] = None) -> int:
             return 0 if tiers["planning"]["ready"] else 2
         result = preflight(config_text)
         print(json.dumps(result, sort_keys=True))
-        return 0 if result["status"] == "pass" else 2
+        if result["status"] == "pass":
+            return 0
+        return 1 if result["status"] == "degraded" else 2
     except (ContractError, OSError, UnicodeError) as error:
         print(json.dumps({"status": "fail", "error": str(error)}), file=sys.stderr)
         return 2

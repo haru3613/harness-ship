@@ -43,14 +43,13 @@ the digest chain it existed to preserve, and reconstructing it would cost more t
 setup.
 
 Verify with `python3 <plugin-root>/scripts/role_binding_contract.py preflight --config AGENTS.md`.
-A project still carrying the old table fails closed with `config declares no Independent verifier`,
-which is the intended detection: the gate parses the binding directly, so it needs no version field
-to notice an unreadable one.
+A project still carrying the old table fails closed on its `Config version`, which is the intended
+detection.
 
 The gate now reports an `assurance` field. `host-enforced` (Claude Code) means the packaged agent
-definition was read at check time and its tools, model and effort matched. `operator-declared`
-(Codex) means the boundary you wrote down was re-asserted — correct as written, but Codex exposes
-no live profile metadata, so it cannot be checked against the running profile.
+definition was read at check time and its tools, model and effort matched. `independence: not
+established` (every other host) means this plugin ships no verifier there; preflight exits `1`,
+which marks `implement`'s gate unmet rather than passed.
 
 **v0.7.0 migration:** setup proposes Config v1 → v2 without writing it. Review the complete plan
 and exact configuration diff, correct unsafe or unknown bindings, and explicitly confirm that exact

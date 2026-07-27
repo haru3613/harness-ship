@@ -42,16 +42,14 @@ change or guess the Spec axis.
 
 Report each axis separately. A finding on one axis never cancels a finding on the other.
 
-When `review` is orchestrated by `implement`, root dispatches Standards and Spec as **two fresh
-child runs** of the mapped, pre-defined independent-verification profile. They receive the same
-fixed-point diff and sources, but do not communicate or rerank each other; the same profile may be
-instantiated twice. If that profile is missing, drifted, or cannot be live-verified, the
-`implement` review gate is **blocked**—root-run analysis cannot be presented as independent review.
+Run the two axes as **separate child agents** so neither pollutes the other's context. Under
+`implement`, both are fresh runs of the packaged independent verifier, which cannot edit source.
+They receive the same fixed-point diff and sources and never communicate or rerank each other.
 
-When this self-contained block is invoked directly in a host without configured child profiles,
-root may perform both axes sequentially. Keep the findings separate and label the result
-`independence: not established`; it is a useful standalone review, but it cannot satisfy
-`implement`'s mandatory independent gate.
+Where that verifier is unavailable — any host but Claude Code, or a drifted agent definition — root
+may perform both axes sequentially. Keep the findings separate and label the result
+`independence: not established`. It is a useful review; it does not satisfy `implement`'s
+independent gate.
 
 ## Optional: data-mutation safety gate
 

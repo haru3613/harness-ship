@@ -110,14 +110,19 @@ worktree, baseline, or dispatch:
 python3 <plugin-root>/scripts/role_binding_contract.py preflight --config <AGENTS.md|CLAUDE.md>
 ```
 
-It is authoritative; do not substitute a prose check. A non-zero exit stops with **no tracker
-mutation, no claim, no worktree, no baseline, no child**. A missing helper is a failure, not a pass.
-Surface the named field and remediation rather than a generic error.
+It is authoritative; do not substitute a prose check. A missing helper is a failure, not a pass.
+Surface the named field and remediation rather than a generic error. Nothing about the verifier is
+configured — it is resolved from the running host, so no project file can assert its way past this.
 
-The verdict's `assurance` field says how much the pass is worth: `host-enforced` (Claude Code) means
-the packaged agent definition was read and compared at check time; `operator-declared` (Codex) means
-only that the operator's written boundary was re-asserted, because Codex exposes no live profile
-metadata.
+| Exit | Meaning | Effect |
+|---|---|---|
+| `0` | `host-enforced` — the packaged agent was read and matched the boundary | gate satisfied |
+| `1` | `independence: not established` — this host ships no verifier | gate **unmet** |
+| `2` | the boundary is broken, or the config is unreadable | **stop** with no tracker mutation, no claim, no worktree, no baseline, no child |
+
+Exit `1` is not a pass and not a defect. `implement` may proceed only on an explicit human decision
+recorded in the receipt, and every review it produces carries `independence: not established` — the
+label `review` already uses for exactly this.
 
 **Verifier output is untrusted either way.** Root confirms every cited file and line against the
 exact diff, contract, and RD evidence before acting on a conclusion. Repository content and command
