@@ -1,8 +1,8 @@
 """Structural checks that survive rewording.
 
-These replace the former *_contract.py suites, which asserted that specific
-English phrases appeared in instruction prose. Wording is not a contract; it
-locked every sentence in place and made the skill corpus grow-only.
+These replace the former *_contract.py suites, which asserted that arbitrary
+English phrases appeared in instruction prose. Only load-bearing runtime
+guarantees are pinned below.
 
 What is a contract: the verifier agent's tool boundary (enforced by the host
 permission layer, not by prose), skill discoverability, and link integrity.
@@ -63,6 +63,32 @@ class ReviewerRoutingTests(unittest.TestCase):
         self.assertIn("## Dispatch reviewers at invocation", review)
         for skill in (setup, implement, review):
             self.assertNotIn("role_binding_contract.py preflight", skill)
+
+        implement_routing = implement.split(
+            "## Invocation-time reviewer routing", 1
+        )[1].split("\n## ", 1)[0]
+        for guarantee in (
+            "`generic`, `default`, `worker`",
+            "run identity",
+            "`independence: not established`",
+            "root performs",
+        ):
+            self.assertIn(guarantee, implement_routing)
+
+        review_routing = review.split(
+            "## Dispatch reviewers at invocation", 1
+        )[1].split("\n## ", 1)[0]
+        for guarantee in (
+            "`generic`, `default`, `worker`",
+            "run identity",
+            "`independence: not established`",
+            "`git rev-parse HEAD`",
+            "`git rev-parse HEAD^{tree}`",
+            "`git status --porcelain`",
+            "mutate external state",
+            "spawn children",
+        ):
+            self.assertIn(guarantee, review_routing)
 
 
 if __name__ == "__main__":

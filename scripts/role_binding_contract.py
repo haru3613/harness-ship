@@ -141,7 +141,7 @@ def preflight(
     agent_path: Path = PLUGIN_AGENT,
     env: Optional[Mapping[str, str]] = None,
 ) -> Dict[str, Any]:
-    """Resolve the independent verifier from the running host and check it."""
+    """Inspect the packaged Claude verifier when the running host can load it."""
     config_version = read_config_version(config_text)
     host = detect_host(env)
     base = {"config_version": config_version, "host": host}

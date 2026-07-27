@@ -100,8 +100,9 @@ Record each actual agent type and run identity. Use `host-enforced` only when th
 enforceable read-only boundary; otherwise record `independence: not established` without blocking
 the review. If no child capability exists, root performs both axes sequentially with that label.
 
-Compare the clean tree before and after every run. Any source edit, external-state mutation, nested
-child dispatch, or false `host-enforced` claim invalidates the review receipt and stops the handoff.
+Before and after every run, compare `git rev-parse HEAD`, `git rev-parse HEAD^{tree}`, and
+`git status --porcelain`. Any source edit, commit, external-state mutation, nested child dispatch,
+or false `host-enforced` claim invalidates the review receipt and stops the handoff.
 
 ## Optional: data-mutation safety gate
 

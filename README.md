@@ -6,7 +6,7 @@ Turn feature intent into an approved acceptance contract, evidence-backed implem
 exact-artifact QA, and a human release decision.
 
 > Harness Ship is a workflow plugin, not a test framework, autonomous controller, hosted service,
-> or security boundary. It coordinates the tools and role profiles already available in your host.
+> or security boundary. It coordinates the tools and runtime capabilities available in your host.
 
 Current release: **v1.0.0** · License: **MIT** · Repository status: **private pre-release review**
 
@@ -128,7 +128,7 @@ target repository and writes a `## harness-ship` Config v3 block into its `AGENT
 `CLAUDE.md`.
 
 Review that block before delivery work begins. Re-run setup after changing the stack, tracker,
-branch model, test commands, QA environment, artifact path, or host role profiles.
+branch model, test commands, QA environment, or artifact path.
 
 ### 4. Deliver and verify
 
@@ -212,8 +212,8 @@ The marketplace update refreshes the catalog; the plugin update installs the ref
 Restart Claude Code afterward.
 
 Install supplies the verifier capability as the scoped Claude plugin agent
-`harness-ship:harness-ship-independent-verifier`. The preflight gate reads that agent definition at
-check time and compares its tools, model and effort against the required boundary —
+`harness-ship:harness-ship-independent-verifier`. The lifecycle diagnostic reads that agent
+definition and compares its tools, model and effort against the required boundary —
 `assurance: host-enforced`. There is nothing to configure and nothing to keep in sync. Because the tool whitelist is `Read`, `Grep`, `Glob`, the permission
 layer makes the boundary physical: the verifier cannot edit source and has no tool with which to
 dispatch a child. Harness Ship never copies agents into `~/.claude/agents` and never overwrites
@@ -247,8 +247,6 @@ bundled skills. They share one evidence model but remain usable as focused comma
 - **Versioned RD/QA commands** — RD unit/API-contract commands stay separate from QA
   integration/P0/full-suite commands.
 - **QA evidence boundary** — QA environment, artifact provenance, and durable evidence location.
-- **Role profiles** — live host definitions, model/effort, write scope, capabilities, MCP/plugin
-  boundary, and no-spawn policy.
 - **Ready and claim rules** — ticket eligibility, owner/session claim, recovery, and fencing.
 - **Deployment path** — how QA obtains an exact-source deployment or artifact receipt.
 - **Risk gates** — optional data-mutation checks and the repository UI convention.
@@ -281,7 +279,7 @@ to approve.
   environment.
 - It complements your test frameworks, CI, tracker, and deployment system; it does not replace
   them.
-- It cannot create missing QA infrastructure, credentials, artifacts, or safe host profiles.
+- It cannot create missing QA infrastructure, credentials, or artifacts.
 - The workflow adds useful discipline to agentic delivery, but critical systems still need
   domain-specific security, performance, accessibility, and manual testing.
 - This repository's local maintainer `AGENTS.md` is an operator configuration, not a consumer
