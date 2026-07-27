@@ -129,8 +129,10 @@ def read_config_version(config_text: str) -> int:
     matches = list(CONFIG_VERSION_RE.finditer(config_text))
     if len(matches) != 1:
         raise ContractError(f"config must declare exactly one Config version; found {len(matches)}")
-    raw_version = matches[0].group("version").strip()
-    version_match = re.fullmatch(r"(?:`(?P<quoted>\d+)`|(?P<plain>\d+))", raw_version)
+    raw_version = matches[0].group("version")
+    version_match = re.fullmatch(
+        r"(?:`(?P<quoted>[0-9]+)`|(?P<plain>[0-9]+))", raw_version
+    )
     if not version_match:
         raise ContractError(f"Config version must be an integer; found {raw_version!r}")
     version = int(version_match.group("quoted") or version_match.group("plain"))
