@@ -15,14 +15,10 @@ spec = importlib.util.spec_from_file_location("role_binding_contract", HELPER)
 gate = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gate)
 
-PACKAGED = (
-    f"## harness-ship\n- **Independent verifier:** `claude-code` / `{gate.CLAUDE_PROFILE_ID}`\n"
-)
+ENVELOPE = f"## harness-ship\n- **Config version:** `{gate.SUPPORTED_CONFIG_VERSION}`\n"
+PACKAGED = ENVELOPE + f"- **Independent verifier:** `claude-code` / `{gate.CLAUDE_PROFILE_ID}`\n"
 CODEX_DECLARATION = "mode=read-only, write=none, spawn=no, context=fresh, effort=high"
-CODEX = (
-    "## harness-ship\n"
-    f"- **Independent verifier:** `codex` / `Codex/verifier` — {CODEX_DECLARATION}\n"
-)
+CODEX = ENVELOPE + f"- **Independent verifier:** `codex` / `Codex/verifier` — {CODEX_DECLARATION}\n"
 
 
 def agent_file(directory: Path, **overrides) -> Path:
@@ -115,7 +111,7 @@ class CodexDeclarationTests(unittest.TestCase):
         self.assertEqual(result["assurance"], "operator-declared")
 
     def test_missing_declaration_fails(self) -> None:
-        config = "## harness-ship\n- **Independent verifier:** `codex` / `Codex/verifier`\n"
+        config = ENVELOPE + "- **Independent verifier:** `codex` / `Codex/verifier`\n"
 
         self.assertEqual(gate.preflight(config)["status"], "fail")
 
@@ -130,6 +126,42 @@ class CodexDeclarationTests(unittest.TestCase):
         self.assertEqual(set(result["violations"]), {"effort"})
 
 
+class ConfigVersionTests(unittest.TestCase):
+    """The plugin version records what wrote the block; only the schema is a gate."""
+
+    def test_any_plugin_version_leaves_a_valid_config_working(self) -> None:
+        for plugin_version in ("0.7.0", "0.7.1", "0.8.3", "1.2.0"):
+            with self.subTest(plugin_version=plugin_version):
+                config = PACKAGED.replace(
+                    "## harness-ship\n",
+                    f"## harness-ship\n- **Plugin version:** `{plugin_version}`\n",
+                )
+
+                self.assertEqual(gate.preflight(config)["status"], "pass")
+
+    def test_an_older_config_schema_fails_with_an_actionable_message(self) -> None:
+        older = gate.SUPPORTED_CONFIG_VERSION - 1
+        config = PACKAGED.replace(
+            f"`{gate.SUPPORTED_CONFIG_VERSION}`", f"`{older}`", 1
+        )
+
+        with self.assertRaises(gate.ContractError) as caught:
+            gate.preflight(config)
+
+        self.assertIn("re-run setup", str(caught.exception))
+
+    def test_a_missing_config_version_fails(self) -> None:
+        config = PACKAGED.replace(
+            f"- **Config version:** `{gate.SUPPORTED_CONFIG_VERSION}`\n", ""
+        )
+
+        with self.assertRaises(gate.ContractError):
+            gate.preflight(config)
+
+    def test_the_verdict_reports_the_config_version(self) -> None:
+        self.assertEqual(gate.preflight(PACKAGED)["config_version"], gate.SUPPORTED_CONFIG_VERSION)
+
+
 class BindingParsingTests(unittest.TestCase):
     def test_missing_block_fails(self) -> None:
         with self.assertRaises(gate.ContractError):
@@ -137,7 +169,7 @@ class BindingParsingTests(unittest.TestCase):
 
     def test_missing_binding_fails(self) -> None:
         with self.assertRaises(gate.ContractError):
-            gate.preflight("## harness-ship\n- **Integration branch:** `main`\n")
+            gate.preflight(ENVELOPE + "- **Integration branch:** `main`\n")
 
     def test_duplicate_bindings_fail(self) -> None:
         with self.assertRaises(gate.ContractError):
@@ -145,11 +177,11 @@ class BindingParsingTests(unittest.TestCase):
 
     def test_unsupported_host_fails(self) -> None:
         with self.assertRaises(gate.ContractError):
-            gate.preflight("## harness-ship\n- **Independent verifier:** `cursor` / `x`\n")
+            gate.preflight(ENVELOPE + "- **Independent verifier:** `cursor` / `x`\n")
 
     def test_claude_binding_must_be_the_packaged_profile(self) -> None:
         config = (
-            "## harness-ship\n- **Independent verifier:** `claude-code` / `Claude/user/mine`\n"
+            ENVELOPE + "- **Independent verifier:** `claude-code` / `Claude/user/mine`\n"
         )
 
         with self.assertRaises(gate.ContractError):
@@ -157,7 +189,7 @@ class BindingParsingTests(unittest.TestCase):
 
     def test_malformed_declaration_fails(self) -> None:
         with self.assertRaises(gate.ContractError):
-            gate.preflight("## harness-ship\n- **Independent verifier:** `codex` / `C/v` — read-only\n")
+            gate.preflight(ENVELOPE + "- **Independent verifier:** `codex` / `C/v` — read-only\n")
 
 
 class CliTests(unittest.TestCase):

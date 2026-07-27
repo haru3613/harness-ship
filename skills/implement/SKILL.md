@@ -13,11 +13,12 @@ description: >-
 Implement **one approved ticket** from ready state to merged evidence. The main/root session is the
 orchestrator; subagents are bounded specialists, not competing controllers.
 
-**Prerequisite:** read the project's `## harness-ship` block in `AGENTS.md` / `CLAUDE.md` and
-require exact **Plugin version 0.7.0**, **Config version 2** fields. It must identify the tracker and PR access paths, branch topology, classified
-RD/QA commands, configured checks, and **Agent role profiles**. If it is absent, Config v1,
-legacy, unversioned, duplicated, unsupported, mismatched, or lacks role profiles, run `setup` and
-stop before delegating or running a baseline. Do not reinterpret a legacy generic test command.
+**Prerequisite:** read the project's `## harness-ship` block in `AGENTS.md` / `CLAUDE.md`. It must
+identify the tracker and PR access paths, branch topology, classified RD/QA commands, configured
+checks, and the independent verifier. The preflight below is the compatibility gate: it fails closed
+on an unsupported **Config version** and ignores the plugin version, which only records what wrote
+the block. If the block is absent, duplicated, or lacks a verifier, run `setup` and stop before
+delegating or running a baseline. Do not reinterpret a legacy generic test command.
 
 ## Root ownership — never delegate the control plane
 

@@ -16,10 +16,10 @@ execution after handoff.
 
 ## Inputs — inherit the approved contract
 
-Read the project's `## harness-ship` block before a baseline or edit and require exact **Plugin
-version 0.7.0**, **Config version 2** fields. If it is
-absent, Config v1, legacy, unversioned, duplicated, unsupported, or mismatched, run `setup` and stop
-until the upgrade completes. Do not reinterpret a legacy generic test command.
+Read the project's `## harness-ship` block before a baseline or edit. A supported **Config version**
+is the gate; the plugin version is informational. If the block is absent, duplicated, or on an
+unsupported Config version, run `setup` and stop until it is regenerated. Do not reinterpret a
+legacy generic test command.
 
 Before editing code, read:
 

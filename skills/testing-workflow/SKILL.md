@@ -15,12 +15,12 @@ the bugs unit tests structurally can't. This workflow executes the **approved ac
 after the dev→QA handoff and produces a report the user can actually read and accept. Scenario
 ownership belongs to `acceptance-design`; this workflow must not author or redesign those scenarios.
 
-**Prerequisite:** require the project's exact `## harness-ship` envelope with **Plugin version
-0.7.0**, **Config version 2** in `AGENTS.md` /
-`CLAUDE.md`. Its QA environment, artifact-provenance source, QA evidence location, and tracker must
-be concrete and non-placeholder. If the block is absent, Config v1, legacy, unversioned,
-duplicated, unsupported, mismatched, or has a missing/placeholder/`not-configured` required field,
-run `setup` and stop before Stage 2. Never guess or downgrade it. Do not reinterpret a legacy
+**Prerequisite:** require the project's `## harness-ship` block on a supported **Config version** in
+`AGENTS.md` / `CLAUDE.md`; the plugin version is informational and never a gate. Its QA environment,
+artifact-provenance source, QA evidence location, and tracker must be concrete and non-placeholder.
+If the block is absent, duplicated, on an unsupported Config version, or has a
+missing/placeholder/`not-configured` required field, run `setup` and stop before Stage 2. Never
+guess or downgrade it. Do not reinterpret a legacy
 generic test command. Individual QA command capabilities may remain `not-configured`; Stage 3
 records those scenarios NOT TESTED rather than inferring PASS.
 

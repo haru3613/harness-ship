@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "id": "issue-38",
+  "classification": "breaking",
+  "migration": "required",
+  "summary": "Gate on the Config version only; the plugin version becomes informational.",
+  "paths": [
+    "docs/upgrade-guide.md",
+    "scripts/role_binding_contract.py",
+    "skills/dev-workflow/SKILL.md",
+    "skills/implement/SKILL.md",
+    "skills/setup/SKILL.md",
+    "skills/tdd/SKILL.md",
+    "skills/testing-workflow/SKILL.md"
+  ]
+}
