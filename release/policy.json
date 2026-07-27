@@ -22,6 +22,13 @@
         "issue-52",
         "release-1-0-0-docs"
       ]
+    },
+    {
+      "version": "1.1.0",
+      "declarations": [
+        "issue-57",
+        "post-v1-0-0-pins"
+      ]
     }
   ]
 }

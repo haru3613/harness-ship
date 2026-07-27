@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.0
+
+- [issue-57] Resolve fresh reviewers from the running host instead of requiring a preconfigured verifier profile. (classification: minor; migration: none).
+- [post-v1-0-0-pins] Point the stable channel documentation at the published v1.0.0 tag and describe the current fail-closed Config stop instead of the removed v1 to v2 migration. (classification: patch; migration: none).
+
 ## 1.0.0
 
 - [issue-27-release-identity] Provide an explicit tagger identity to the attended release publisher. (classification: patch; migration: none).
