@@ -46,14 +46,14 @@ the load-bearing forks** (don't interrogate).
   in the code → the `review` safety gate should be **on**.
 - **UI convention** — a `docs/design/` mocks directory or an existing design-system/tokens file →
   front-end-first applies.
-- **Deployment / test environment** — infer the non-production environment, deployment/status
-  access method, artifact revision/source-SHA surface, URL, fixtures/accounts, and whether deploy is
-  automatic or manual. Record `none/manual` honestly; `implement` then stops before QA until an
-  external deployment receipt exists.
-- **Agent role profiles** — inspect the current host's existing agent registry. Record each useful
-  profile's ID and work nature. Profiles must already exist in the host: **do not create or override**
-  global agents, models, effort, mode, permissions, or MCP/plugin access during project setup.
-  Undefined generic/default workers do not satisfy a required role.
+- **Agent role profiles** — inspect the current host's existing agent registry and record each
+  useful profile's ID and work nature. Profiles must already exist in the host: **do not create or
+  override** global agents, models, effort, mode, permissions, or MCP/plugin access during project
+  setup. Undefined generic/default workers do not satisfy a required role.
+
+Do **not** detect or ask about the QA environment, artifact-provenance source, QA evidence location,
+deployment path, or claim/fencing policy at first run. They are irrelevant until a workflow reaches
+them, and demanding them up front is what made setup an all-or-nothing exercise.
 
 #### The independent-verifier gate
 
@@ -84,25 +84,20 @@ The two hosts give different strengths of guarantee, and the gate reports which 
 A non-zero exit stops setup and `implement` with zero mutation. Never replace a failing binding with
 a discovered default, and never write global agent or settings files.
 
-### 2. Propose, then ask only the forks
+### 2. Propose, then ask at most three questions
 
-Present the detected config as an **Assumptions** list (each line with its *why*). Ask ONLY the
-questions a wrong guess would get wrong — typically at most ~3:
-- which branch is the **protected release branch** (never auto-merged) vs the integration branch
-  (skip if only one branch exists — they're the same);
-- the **tracker system and its access method**, if ambiguous — and whether issues/PRs are split;
-- the **data-mutation gate** on/off, if cron/batch writes are unclear.
-- the **ready criteria** and atomic **claim transition**, if the tracker does not expose an obvious
-  ready → claimed/in-progress path with owner/session identity;
-- the **claim recovery** policy (atomic claim + initial recovery receipt, lease/heartbeat,
-  generation/fencing token, write-ahead checkpoints, receipt-backed resume, expired-claim takeover,
-  and release) when the tracker does not provide one;
-- the deployment/test environment path when no non-production target or artifact-source receipt is
-  discoverable;
-- a missing required verifier/security profile. Do not ask about profiles that can be read from the
-  host config.
+Present the detected config as an **Assumptions** list, each line with its *why*. Then ask **no more
+than three** questions — only the forks where a wrong guess changes the plan:
 
-Everything with a safe default → state the default, don't ask.
+1. the **protected release branch** vs the integration branch — skip when only one branch exists,
+   which is the common case and needs no question at all;
+2. the **tracker system and its access method**, when ambiguous, including whether issues and PRs
+   live in different systems;
+3. the **data-mutation gate**, when cron or batch DB writes are unclear.
+
+Everything else has a safe default: state it, do not ask. Never ask about a profile that can be read
+from the host config, and never ask about a field that belongs to a later tier — those are asked at
+the point of use, by the workflow that needs them.
 
 ### 3. Write the config where the workflows read it
 
@@ -111,6 +106,9 @@ Write (creating if absent) a `## harness-ship` section into the project's **`AGE
 with the user. After this, every harness-ship workflow consumes it automatically.
 
 <config-template>
+
+Write only the **first-run block**. Later tiers are appended by the workflow that needs them, not
+requested up front.
 
 ## harness-ship
 
@@ -123,26 +121,49 @@ with the user. After this, every harness-ship workflow consumes it automatically
 - **Protected release branch:** <e.g. `main`> — human + release gate only; workflows never merge here.
 - **RD unit command:** `<command | not-configured>`
 - **RD API-contract command:** `<command | not-configured>`
-- **QA integration command:** `<command | manual: <steps + required evidence> | not-configured>`
-- **QA P0 command:** `<command | manual: <steps + required evidence> | not-configured>`
-- **QA full-suite command:** `<command | manual: <steps + required evidence> | not-configured>`
-- **Legacy test-command migration note:** <none | prior field name + verbatim command + classification evidence>
 - **Lint / typecheck / build:** `<lint cmd>` / `<typecheck cmd>` / `<build cmd>` — write `none` only when the project is known not to have that check.
-- **QA environment:** <non-production environment + URL/access + fixtures/accounts | not-configured>
-- **Artifact-provenance source:** <provider/API/build manifest that binds full source SHA to artifact revision | not-configured>
-- **QA evidence location:** <durable artifact store/path accessible from the tracker | not-configured>
-- **Ready criteria:** <label / status / sprint that makes a ticket eligible, e.g. `ready-for-agent`>
-- **Claim transition:** <atomic assignment + claimed/in-progress state with root/session identity, fencing generation, and initial recovery receipt | single-root/manual claim policy>
-- **Claim recovery:** <lease + heartbeat interval; ownership/fencing checks before mutations; write-ahead checkpoints; live-state reconciliation; same-owner resume; receipt validation; expired-claim takeover; release policy>
-- **Remote CI infrastructure retry:** <attempt limit + backoff | none> — applies only to unrelated infrastructure failures, never code/test failures.
-- **Deployment / test environment:** <artifact producer + deploy/status path; its receipt must agree with the QA environment and artifact-provenance source above | manual/none>
-- **Agent orchestration:** root session owns planning, delegation, integration, external state, and final decision; children may not spawn.
+- **Legacy test-command migration note:** <none | prior field name + verbatim command + classification evidence>
 - **Independent verifier:** `<claude-code | codex>` / `<profile id>`<` — mode=…, write=…, spawn=…, context=…, effort=…` for Codex>
-- **Writer scheduling:** serialize all write-capable children in one ticket worktree; only read-only work may run in parallel.
 - **Data-mutation safety gate:** <on | off> — on when the project has scheduled/batch DB writers.
 - **UI convention:** <front-end-first mocks under `docs/design/` | none>
 
+Appended later, each by the workflow that first needs it — absent means the tier is not ready, never
+that it passed:
+
+- **QA integration command:** / **QA P0 command:** / **QA full-suite command:** `<command | manual: <steps + required evidence> | not-configured>`
+- **QA environment:** <non-production environment + URL/access + fixtures/accounts>
+- **Artifact-provenance source:** <provider/API/build manifest binding full source SHA to artifact revision>
+- **QA evidence location:** <durable artifact store/path reachable from the tracker>
+- **Deployment / test environment:** <artifact producer + deploy/status path | manual/none>
+- **Ready criteria:** <label / status / sprint that makes a ticket eligible>
+- **Claim transition:** / **Claim recovery:** <only when more than one session works this tracker>
+- **Remote CI infrastructure retry:** <attempt limit + backoff | none>
+- **Agent orchestration:** root owns planning, delegation, integration, external state, and the final decision; children may not spawn.
+- **Writer scheduling:** serialize write-capable children in one ticket worktree; parallelize read-only work only.
+
 </config-template>
+
+## Report readiness, do not report a verdict
+
+A project is not ready or unready as a whole. Report the three tiers separately so a missing
+capability blocks only what depends on it:
+
+```sh
+python3 <plugin-root>/scripts/role_binding_contract.py readiness --config <AGENTS.md|CLAUDE.md>
+```
+
+| Tier | Needs | Unlocks |
+|---|---|---|
+| `planning` | a tracker | `clarify`, `spec`, `acceptance-design`, `tickets` |
+| `implementation` | + integration branch, one RD command, a valid verifier | `implement`, `tdd`, `review` |
+| `qa` | + QA environment, artifact provenance, evidence location, one QA command | `testing-workflow` |
+
+Show the blockers and the smallest next action for every tier that is not ready. A tier that is
+blocked is reported as blocked — never as PASS, and never by declaring the whole project unusable.
+This is the same degrade-and-say-so pattern `review` uses when it labels a result
+`independence: not established`.
+
+
 
 ## Existing configuration
 
@@ -164,8 +185,16 @@ does not. Re-run setup once to regenerate the block.
 
 ## Idempotent
 
-Re-running `setup` re-detects and plans updates to the existing `## harness-ship` block rather than
-duplicating it. For Config v2, it changes a field only when newly observed evidence or an explicit
-user choice changes the value. Unsupported versions and duplicate blocks remain zero-mutation
-stops. Safe to run again after the stack, tracker, branch topology, deployment path, QA capability,
-or host role definitions change.
+Re-running `setup` updates the existing `## harness-ship` block rather than duplicating it, and
+changes a field only when newly observed evidence or an explicit user choice changes its value. A
+second run over unchanged repository and host inputs must leave the block byte-identical.
+Unsupported Config versions and duplicate blocks remain zero-mutation stops.
+
+That byte-identity is now a **discipline, not a guarantee**: the two-phase planner that enforced it
+was removed with the digest machinery it existed to protect. The block is written with an ordinary
+edit, and the recovery from a bad write is `git checkout AGENTS.md` — the file is version-controlled
+by design. Say so rather than implying an atomicity that is no longer there.
+
+Safe to run again after the stack, tracker, branch topology, or host role definitions change. A
+later tier's fields are added when its workflow first needs them, so reaching QA does not mean
+re-running setup from scratch.

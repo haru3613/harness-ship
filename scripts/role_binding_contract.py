@@ -64,6 +64,14 @@ BINDING_RE = re.compile(
     r"`(?P<profile>[^`]+)`\s*(?:—\s*(?P<declaration>.+?))?\s*$"
 )
 
+# Readiness is tiered so a missing QA environment blocks QA and nothing else.
+# Modelled on skills/review/SKILL.md's `independence: not established`: degrade
+# and say so, rather than bricking every workflow.
+FIELD_RE = re.compile(r"(?m)^\s*[-*]\s*\*\*(?P<name>[^*]+?):\*\*\s*(?P<value>.*?)\s*$")
+PLACEHOLDER_RE = re.compile(r"^<.*>$")
+UNSET_VALUES = {"", "not-configured", "not configured", "tbd"}
+TIERS = ("planning", "implementation", "qa")
+
 REMEDIATION = [
     "Upgrade and activate the current Harness Ship release, then restart the host.",
     "Select a live verifier profile whose permissions match the required boundary;"
@@ -212,6 +220,65 @@ def preflight(config_text: str, agent_path: Path = PLUGIN_AGENT) -> Dict[str, An
     return {**result, "status": "pass"}
 
 
+def read_fields(config_text: str) -> Dict[str, str]:
+    """Every `- **Name:** value` line in the block, backticks stripped."""
+    return {
+        m.group("name").strip(): m.group("value").strip().strip("`").strip()
+        for m in FIELD_RE.finditer(config_text)
+    }
+
+
+def is_set(value: Optional[str]) -> bool:
+    if value is None:
+        return False
+    value = value.strip().strip("`").strip()
+    return bool(value) and value.lower() not in UNSET_VALUES and not PLACEHOLDER_RE.match(value)
+
+
+def readiness(config_text: str, agent_path: Path = PLUGIN_AGENT) -> Dict[str, Any]:
+    """Report planning / implementation / QA readiness independently.
+
+    A capability that is absent blocks only the tier that needs it. Nothing is
+    ever reported ready on the strength of a missing field.
+    """
+    fields = read_fields(config_text)
+    result: Dict[str, Any] = {}
+
+    def tier(name: str, blockers: List[str], inherits: Optional[str] = None) -> None:
+        if inherits and not result[inherits]["ready"]:
+            blockers = [f"{inherits} is not ready"] + blockers
+        result[name] = (
+            {"ready": True} if not blockers else {"ready": False, "blockers": blockers}
+        )
+
+    tier("planning", [] if is_set(fields.get("Issue tracker")) else ["configure the issue tracker"])
+
+    blockers: List[str] = []
+    if not is_set(fields.get("Integration branch")):
+        blockers.append("configure the integration branch")
+    if not any(is_set(fields.get(f"RD {kind} command")) for kind in ("unit", "API-contract")):
+        blockers.append("configure at least one RD command")
+    try:
+        verdict = preflight(config_text, agent_path)
+        if verdict["status"] != "pass":
+            blockers.append("repair the independent verifier boundary")
+    except ContractError as error:
+        blockers.append(f"bind an independent verifier ({error})")
+    tier("implementation", blockers, inherits="planning")
+
+    blockers = [
+        f"configure the {name.lower()}"
+        for name in ("QA environment", "Artifact-provenance source", "QA evidence location")
+        if not is_set(fields.get(name))
+    ]
+    if not any(
+        is_set(fields.get(f"QA {kind} command")) for kind in ("integration", "P0", "full-suite")
+    ):
+        blockers.append("configure at least one QA command or manual procedure")
+    tier("qa", blockers, inherits="implementation")
+    return result
+
+
 def validate_agent(path: Path) -> Dict[str, Any]:
     return parse_agent(path.read_text(encoding="utf-8"), path.stem)
 
@@ -236,6 +303,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     preflight_parser.add_argument("--config", required=True, type=Path)
     agent_parser = subparsers.add_parser("validate-agent")
     agent_parser.add_argument("path", type=Path)
+    readiness_parser = subparsers.add_parser("readiness")
+    readiness_parser.add_argument("--config", required=True, type=Path)
     subparsers.add_parser("self-test")
     args = parser.parse_args(argv)
 
@@ -246,7 +315,12 @@ def main(argv: Optional[List[str]] = None) -> int:
         if args.command == "self-test":
             print(json.dumps(self_test(), sort_keys=True))
             return 0
-        result = preflight(args.config.read_text(encoding="utf-8"))
+        config_text = args.config.read_text(encoding="utf-8")
+        if args.command == "readiness":
+            tiers = readiness(config_text)
+            print(json.dumps(tiers, sort_keys=True))
+            return 0 if tiers["planning"]["ready"] else 2
+        result = preflight(config_text)
         print(json.dumps(result, sort_keys=True))
         return 0 if result["status"] == "pass" else 2
     except (ContractError, OSError, UnicodeError) as error:
