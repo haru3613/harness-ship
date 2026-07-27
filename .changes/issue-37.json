@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "id": "issue-37",
+  "classification": "minor",
+  "migration": "recommended",
+  "summary": "Defer later-tier config to its point of use and report planning/implementation/QA readiness separately.",
+  "paths": [
+    "scripts/role_binding_contract.py",
+    "skills/setup/SKILL.md"
+  ]
+}
