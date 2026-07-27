@@ -166,6 +166,15 @@ class ConfigVersionTests(unittest.TestCase):
         with self.assertRaises(gate.ContractError):
             gate.preflight(config, env=CLAUDE)
 
+    def test_a_non_integer_config_version_fails(self) -> None:
+        malformed = CONFIG.replace(
+            f"`{gate.SUPPORTED_CONFIG_VERSION}`", "`banana`", 1
+        )
+
+        with self.assertRaises(gate.ContractError) as caught:
+            gate.preflight(malformed, env=CLAUDE)
+        self.assertIn("must be an integer", str(caught.exception))
+
     def test_duplicate_config_versions_fail_in_either_order(self) -> None:
         duplicates = (
             CONFIG.replace("## harness-ship\n", "## harness-ship\n- **Config version:** `2`\n"),
