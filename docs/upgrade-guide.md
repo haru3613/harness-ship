@@ -28,11 +28,17 @@ codex plugin marketplace add haru3613/harness-ship --ref main
 codex plugin add harness-ship-next@harness-ship
 ```
 
-**v0.8.0 migration (breaking):** the verifier binding format changed. The 13-column host binding
-table, the `Verifier binding-contract version` field, and the discovery-receipt input are gone.
-Re-run setup once per configured project to regenerate the `## harness-ship` block; setup writes a
-single `Independent verifier:` line in their place. Nothing else in the block changes, and no
-automatic migration is attempted — the machinery that migrated the old table was removed along with
+**Which upgrades need a re-run of setup:** only a **Config version** change. The plugin version in
+the block records what wrote it and is never a gate, so a patch or compatible minor release leaves
+every configured project working. `preflight` reports the config version it read and fails closed —
+with an actionable message — when the schema is one this release does not support.
+
+**v0.8.0 migration (breaking):** Config version 2 → 3, and the verifier binding format changed.
+The 13-column host binding table, the `Verifier binding-contract version` field, and the
+discovery-receipt input are gone. Re-run setup once per configured project to regenerate the
+`## harness-ship` block; setup writes a single `Independent verifier:` line in their place and
+stamps `Config version: 3`. Nothing else in the block changes, and no automatic migration is
+attempted — the machinery that migrated the old table was removed along with
 the digest chain it existed to preserve, and reconstructing it would cost more than re-running
 setup.
 

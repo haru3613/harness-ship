@@ -49,6 +49,12 @@ REQUIRED_DECLARATION = {
     "context": "fresh",
 }
 
+# The config schema is what workflows depend on. The plugin version records what
+# wrote the block and is deliberately not a gate: a patch or compatible minor
+# release must not invalidate a configured project.
+SUPPORTED_CONFIG_VERSION = 3
+CONFIG_VERSION_RE = re.compile(r"(?mi)^\s*[-*]\s*\*\*Config version:\*\*\s*`?(?P<version>\d+)`?\s*$")
+
 SUPPORTED_HOSTS = ("claude-code", "codex")
 AGENT_FIELDS = {"name", "description", "model", "effort", "tools"}
 FRONTMATTER_RE = re.compile(r"\A---\n(.*?)\n---\n", re.S)
@@ -166,8 +172,23 @@ def check_codex(binding: Dict[str, Any]) -> Dict[str, Any]:
     return {"assurance": "operator-declared", "violations": violations}
 
 
+def read_config_version(config_text: str) -> int:
+    """Workflows depend on the config schema, not on which plugin build wrote it."""
+    match = CONFIG_VERSION_RE.search(config_text)
+    if not match:
+        raise ContractError("config declares no Config version")
+    version = int(match.group("version"))
+    if version != SUPPORTED_CONFIG_VERSION:
+        raise ContractError(
+            f"config is version {version}, this release reads version "
+            f"{SUPPORTED_CONFIG_VERSION}; re-run setup to regenerate the block"
+        )
+    return version
+
+
 def preflight(config_text: str, agent_path: Path = PLUGIN_AGENT) -> Dict[str, Any]:
     """Return a pass/fail verdict for the configured independent verifier."""
+    config_version = read_config_version(config_text)
     binding = read_binding(config_text)
     if binding["host"] == "claude-code":
         outcome = check_claude(binding, agent_path)
@@ -175,6 +196,7 @@ def preflight(config_text: str, agent_path: Path = PLUGIN_AGENT) -> Dict[str, An
         outcome = check_codex(binding)
 
     result = {
+        "config_version": config_version,
         "host": binding["host"],
         "profile_id": binding["profile_id"],
         "assurance": outcome["assurance"],
@@ -196,7 +218,11 @@ def validate_agent(path: Path) -> Dict[str, Any]:
 
 def self_test() -> Dict[str, Any]:
     """Prove the packaged verifier still satisfies its own boundary."""
-    config = f"## harness-ship\n- **Independent verifier:** `claude-code` / `{CLAUDE_PROFILE_ID}`\n"
+    config = (
+        "## harness-ship\n"
+        f"- **Config version:** `{SUPPORTED_CONFIG_VERSION}`\n"
+        f"- **Independent verifier:** `claude-code` / `{CLAUDE_PROFILE_ID}`\n"
+    )
     result = preflight(config)
     if result["status"] != "pass":
         raise ContractError(f"packaged verifier fails its own boundary: {result['violations']}")

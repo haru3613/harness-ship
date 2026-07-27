@@ -114,8 +114,8 @@ with the user. After this, every harness-ship workflow consumes it automatically
 
 ## harness-ship
 
-- **Plugin version:** `0.7.0`
-- **Config version:** `2`
+- **Plugin version:** `<version that wrote this block>` — informational, not a gate.
+- **Config version:** `3`
 - **Issue tracker:** <system + access method, e.g. `Jira project CB via Atlassian MCP` | `GitHub issues via gh` | `Linear MCP` | `local .scratch/ files`>
 - **Code review / PR host:** <e.g. `GitHub via MCP` | `GitHub via gh` | `GitLab MR`> — may differ from the issue tracker.
 - **Forbidden tools:** <e.g. `gh` CLI (policy) | none> — workflows must avoid these even when installed.
