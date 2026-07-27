@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Independent-verifier boundary gate.
+"""Packaged Claude verifier diagnostic and project-readiness report.
 
-`implement` must not proceed unless the agent that will serve as independent
-verifier is read-only, cannot spawn children, and runs at high effort — checked
-now, against the definition the host will actually load, not against something
-recorded earlier.
+Claude Code's packaged verifier must remain read-only, unable to spawn children,
+and high effort. This helper checks that definition for lifecycle validation.
+Reviewer routing itself happens at invocation and does not gate implementation
+readiness.
 
 Nothing about the verifier is persisted. It is resolved from the running host,
 because that is the only thing that determines which agent will actually load:
@@ -14,9 +14,9 @@ because that is the only thing that determines which agent will actually load:
   whitelist is enforced by the host permission layer, so a verifier that cannot
   invoke Edit is not trusting itself to abstain. Real check; names the field
   that drifted.
-* **Any other host** — this plugin ships no verifier there, so independence
-  cannot be established. Say exactly that. It is not a boundary failure and not
-  a pass.
+* **Any other host** — this plugin ships no verifier there, so this diagnostic
+  cannot establish independence. Review still resolves a host child at
+  invocation and records the assurance it can observe.
 
 Earlier versions recorded the verifier in project config. On Claude Code that
 recorded a constant; on Codex it recorded an operator declaration that proved
@@ -62,8 +62,8 @@ TIERS = ("planning", "implementation", "qa")
 
 REMEDIATION = [
     "Upgrade and activate the current Harness Ship release, then restart the host.",
-    "Run implementation from Claude Code, where this plugin supplies the verifier agent.",
-    "Otherwise record an explicit human decision to proceed without independent verification.",
+    "Use review to resolve a fresh child from the running host at invocation.",
+    "Treat this diagnostic as an assurance label, not an implementation-readiness gate.",
 ]
 
 

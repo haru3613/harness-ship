@@ -189,11 +189,11 @@ codex plugin add harness-ship@harness-ship
 The marketplace upgrade refreshes the Git source; the second command activates the refreshed
 plugin. Start a new Codex session afterward.
 
-Codex installation supplies skills only; it does not supply an independent verifier. Preflight
-therefore reports `independence: not established` and `implement`'s independent gate stays unmet —
-you may proceed on an explicit decision, and every review carries that label. Nothing is configured
-to make this so: the verifier is resolved from the running host, because that is the only thing that
-determines which agent actually loads. Setup never creates or overwrites global agents or settings.
+Codex review needs no custom verifier profile. At invocation, Harness Ship resolves fresh reviewers
+from the subagent types the running host exposes; a specialised verifier is preferred, while a
+generic host child remains valid. The receipt records the actual run identity and either
+`host-enforced` or `independence: not established`. Setup never creates or overwrites global agents
+or settings.
 
 If installation reports `could not read Username for 'https://github.com'` while the repository is
 private, run `gh auth setup-git`, verify that
@@ -266,7 +266,7 @@ provenance, and evidence location. Unknown capability stays
 | Boundary | Codex | Claude Code |
 |---|---|---|
 | Bundled skills | Yes | Yes |
-| Bundled independent verifier | No — `independence: not established` | Yes — scoped plugin agent, `host-enforced` |
+| Review dispatch | Invocation-time host subagents; no custom profile required | Packaged verifier preferred, with runtime fallback |
 | Global agent/settings mutation | Never | Never |
 | Controller/runtime | Supplied by the host | Supplied by the host |
 | Evidence authority | Live repository, tracker, CI, and artifact receipts | Live repository, tracker, CI, and artifact receipts |

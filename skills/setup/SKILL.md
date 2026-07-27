@@ -46,36 +46,19 @@ the load-bearing forks** (don't interrogate).
   in the code → the `review` safety gate should be **on**.
 - **UI convention** — a `docs/design/` mocks directory or an existing design-system/tokens file →
   front-end-first applies.
-- **Agent role profiles** — inspect the current host's existing agent registry and record each
-  useful profile's ID and work nature. Profiles must already exist in the host: **do not create or
-  override** global agents, models, effort, mode, permissions, or MCP/plugin access during project
-  setup. Undefined generic/default workers do not satisfy a required role.
-
 Do **not** detect or ask about the QA environment, artifact-provenance source, QA evidence location,
 deployment path, or claim/fencing policy at first run. They are irrelevant until a workflow reaches
 them, and demanding them up front is what made setup an all-or-nothing exercise.
 
-#### The independent verifier is not configured
+#### Reviewer routing is not configured
 
-Nothing about the verifier is recorded in project config. It is resolved from the **running host**,
-which is the only thing that determines which agent will actually load:
+Nothing about reviewer identity belongs in project or global setup. `implement` and `review` resolve
+fresh children from the running host when review starts: prefer a purpose-built read-only verifier
+when one exists, otherwise use an available generic host child with the same bounded brief. Record
+the actual run identity and assurance afterward. Setup never creates, overrides, or asks for an
+agent profile.
 
-```sh
-python3 <plugin-root>/scripts/role_binding_contract.py preflight --config <AGENTS.md|CLAUDE.md>
-```
-
-- **Claude Code** — this plugin ships the verifier agent. The gate reads that file at check time and
-  compares its tools, model and effort against the required boundary: read-only, no spawn, effort
-  high or higher. The whitelist is enforced by the host permission layer, so a verifier that cannot
-  invoke Edit is not merely promising to abstain. Exit `0`, `assurance: host-enforced`. A drift names
-  the field.
-- **Any other host** — this plugin ships no verifier there and cannot establish independence. Exit
-  `1`, `independence: not established`. That is neither a pass nor a broken boundary, and `implement`
-  treats it as an unmet gate.
-
-Earlier versions wrote an `Independent verifier:` line into config. On Claude Code it recorded a
-constant; elsewhere it recorded an operator declaration that proved nothing about the live profile
-while reading as a partial guarantee. A line left over from those versions is ignored, not an error.
+Earlier versions wrote an `Independent verifier:` line into config. It is ignored, not an error.
 
 ### 2. Propose, then ask at most three questions
 
@@ -88,9 +71,9 @@ than three** questions — only the forks where a wrong guess changes the plan:
    live in different systems;
 3. the **data-mutation gate**, when cron or batch DB writes are unclear.
 
-Everything else has a safe default: state it, do not ask. Never ask about a profile that can be read
-from the host config, and never ask about a field that belongs to a later tier — those are asked at
-the point of use, by the workflow that needs them.
+Everything else has a safe default: state it, do not ask. Never ask the user to create or select a
+reviewer profile, and never ask about a field that belongs to a later tier — those are asked at the
+point of use, by the workflow that needs them.
 
 ### 3. Write the config where the workflows read it
 
@@ -147,13 +130,12 @@ python3 <plugin-root>/scripts/role_binding_contract.py readiness --config <AGENT
 | Tier | Needs | Unlocks |
 |---|---|---|
 | `planning` | a tracker | `clarify`, `spec`, `acceptance-design`, `tickets` |
-| `implementation` | + integration branch, one RD command, a valid verifier | `implement`, `tdd`, `review` |
+| `implementation` | + integration branch, one RD command | `implement`, `tdd`, `review` |
 | `qa` | + QA environment, artifact provenance, evidence location, one QA command | `testing-workflow` |
 
 Show the blockers and the smallest next action for every tier that is not ready. A tier that is
 blocked is reported as blocked — never as PASS, and never by declaring the whole project unusable.
-This is the same degrade-and-say-so pattern `review` uses when it labels a result
-`independence: not established`.
+Reviewer assurance is recorded by `review` after dispatch and is not a setup-readiness field.
 
 
 

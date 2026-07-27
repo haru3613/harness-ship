@@ -85,16 +85,23 @@ Fowler's code smells (*Refactoring*, ch. 3), each as *what it is* → *how to fi
 - **Refused Bequest** — a subclass that ignores or overrides most of what it inherits. → drop the
   inheritance, use composition.
 
-Run the two axes as **separate child agents**, dispatched in one message so they run in parallel and
-neither pollutes the other's context. Each brief carries the diff command, the commit list, its own
-sources, and a **400-word cap** on its report — an unbounded reviewer pads. Under
-`implement`, both are fresh runs of the packaged independent verifier, which cannot edit source.
-They receive the same fixed-point diff and sources and never communicate or rerank each other.
+## Dispatch reviewers at invocation
 
-Where that verifier is unavailable — any host but Claude Code, or a drifted agent definition — root
-may perform both axes sequentially. Keep the findings separate and label the result
-`independence: not established`. It is a useful review; it does not satisfy `implement`'s
-independent gate.
+Resolve reviewer identity from the subagent types the running host exposes now; never require or
+persist a project/global profile. Prefer a purpose-built read-only verifier. If none exists, use a
+fresh `generic`, `default`, `worker`, or equivalent host child for each axis.
+
+Dispatch the two axes in one message so they run in parallel and neither pollutes the other's
+context. Each brief carries the diff command, commit list, its own sources, a **400-word cap**, and
+instructions not to edit source, mutate external state, or spawn children. They receive the same
+fixed-point diff and never communicate or rerank each other.
+
+Record each actual agent type and run identity. Use `host-enforced` only when the host exposes an
+enforceable read-only boundary; otherwise record `independence: not established` without blocking
+the review. If no child capability exists, root performs both axes sequentially with that label.
+
+Compare the clean tree before and after every run. Any source edit, external-state mutation, nested
+child dispatch, or false `host-enforced` claim invalidates the review receipt and stops the handoff.
 
 ## Optional: data-mutation safety gate
 
