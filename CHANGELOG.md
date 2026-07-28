@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.0.0
+
+- [issue-60] Redesign the README around first-time positioning, activation, proof, and a legible delivery overview. (classification: patch; migration: none).
+- [issue-62] Remove mandatory TDD commit receipts and assertion-ratio fake-green gates. (classification: breaking; migration: required).
+
 ## 1.1.0
 
 - [issue-57] Resolve fresh reviewers from the running host instead of requiring a preconfigured verifier profile. (classification: minor; migration: none).
