@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.0
+
+- [issue-65] Make setup a fast policy-only step and defer optional test-framework choices to the workflow that needs them. (classification: breaking; migration: required).
+
 ## 2.0.0
 
 - [issue-60] Redesign the README around first-time positioning, activation, proof, and a legible delivery overview. (classification: patch; migration: none).
