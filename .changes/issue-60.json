@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "id": "issue-60",
+  "classification": "patch",
+  "migration": "none",
+  "summary": "Redesign the README around first-time positioning, activation, proof, and a legible delivery overview.",
+  "paths": [
+    "README.md",
+    "docs/upgrade-guide.md"
+  ]
+}
