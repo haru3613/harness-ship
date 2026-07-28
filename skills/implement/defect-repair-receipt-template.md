@@ -14,9 +14,9 @@
 - **Repair attempt:** `<same number>`
 - **Root-cause repair scope:** `<approved seam and changed behaviour>`
 - **Exact fixed source SHA / PR:** `<40-character SHA + PR>`
-- **RD unit regression RED → GREEN:** `<command + receipt>`
-- **RD API-contract regression RED → GREEN:** `<command + receipt | not-applicable reason>`
-- **TDD / review / CI evidence:** `<durable links>`
+- **RD unit regression verification:** `<command + result>`
+- **RD API-contract regression verification:** `<command + result | not-applicable reason>`
+- **Review / CI evidence:** `<durable links>`
 - **Controller worktree / recovery / tracker receipt:** `<durable link>`
 
 ## New deployment receipt

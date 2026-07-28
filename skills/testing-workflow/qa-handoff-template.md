@@ -39,7 +39,7 @@ Complete this section only when returning a repaired Bug Case to QA:
 - **Exact new deployed artifact/environment revision:** <immutable fixed artifact + QA environment>
 - **New deployment receipt:** <provenance receipt that binds the new artifact to the new SHA>
 - **Affected SC-IDs:** <original observation / journeys to rerun>
-- **RD verification summary:** <unit/API-contract/TDD/review evidence; informational only>
+- **RD verification summary:** <unit/API-contract/review evidence; informational only>
 - **Neighbouring regression scope:** <proportionate approved QA scope>
 
 ## Validation

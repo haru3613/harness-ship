@@ -107,7 +107,7 @@ work is done:
 
 - A versioned acceptance contract with AC-ID/SC-ID traceability.
 - Independently verifiable vertical-slice tickets.
-- TDD, review, and CI evidence tied to a full source SHA.
+- Test, review, and CI evidence tied to a full source SHA.
 - An exact-source and artifact QA handoff.
 - Scenario-level QA results with explicit gaps and caveats.
 - A plain-language acceptance report for the human release decision.

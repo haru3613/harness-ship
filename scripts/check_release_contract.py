@@ -49,8 +49,6 @@ RELEASE_SENSITIVE_EXACT = {
     "scripts/check_release_contract.py",
     "scripts/publish_release.py",
     "scripts/role_binding_contract.py",
-    "scripts/fake_green.py",
-    "scripts/tdd_receipt.py",
     "scripts/validate_plugin_lifecycle.sh",
     "skills/implement/SKILL.md",
     "skills/setup/SKILL.md",

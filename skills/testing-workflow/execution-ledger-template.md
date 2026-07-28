@@ -67,21 +67,6 @@ Every attempt inherits and records the ledger's full source SHA, exact artifact/
 revision, artifact-provenance source, and provenance receipt. If any value changes, start a new
 QA-RUN-ID and retain the old ledger.
 
-## Assertion audit
-
-One section per QA-RUN-ID and scenario audited in Stage 4. The denominator must equal the number of
-rows; `scripts/fake_green.py check` recomputes the verdict and rejects a count that disagrees.
-
-### Assertion audit — <QA-RUN-ID> / <SC-ID>
-- Denominator: <N> assertions in the QA checks executed for this scenario
-
-| Assertion | Classification | Reason |
-|---|---|---|
-| `<file:line>` | <static / weak / ok> | <required unless `ok`> |
-
-A rejected audit appends a new raw `BLOCKED` observation and `BLOCKED` scenario classification for
-each affected scenario, preserving every earlier attempt.
-
 ## Resume state
 
 - **Last durable attempt:** <attempt>

@@ -80,9 +80,6 @@ tests are **invalid REDs**. Repair the test harness and rerun until the failure 
 gap. If the new test passes immediately, determine whether the behaviour already exists or the
 assertion is insensitive; do not manufacture a failure.
 
-**Commit the RED before writing any implementation** — failing test, no production code. Its SHA is
-what makes the receipt checkable rather than a claim.
-
 ### 3. GREEN — add the smallest implementation
 
 Change only enough production code to satisfy that behaviour. Do not anticipate later slices or
@@ -90,8 +87,8 @@ add speculative options. Run the focused test, then the relevant surrounding RD 
 
 ### 4. Repeat
 
-Select the next behaviour slice and return to RED — the receipt records the cycle. Keep the ticket
-vertical: one test → one implementation increment → one verified outcome.
+Select the next behaviour slice and return to RED. Keep the ticket vertical: one test → one
+implementation increment → one verified outcome.
 
 ## Refactoring and review
 
@@ -102,33 +99,3 @@ behaviour, start a new RED cycle. A wide prefactor remains its own ticket as def
 A pure refactor ticket has no honest missing-behaviour RED. State that exception, establish
 characterization or existing regression coverage, and keep it green throughout instead of creating
 a fake failing test.
-
-## TDD receipt
-
-Attach to the ticket or PR before review:
-
-````markdown
-## TDD receipt
-- Contract: <spec-id>/acceptance-vN
-- Slice: <SC-ID> → <AC-ID> (or regression criterion)
-- Seam/interface: <where behaviour is observed>
-- RED commit: `<sha>`
-- RED: `<command>` — first 20 lines of the failing output, verbatim:
-```
-<paste>
-```
-- GREEN commit: `<sha>`
-- GREEN: `<command>` — passed
-- Regression: `<command>` — passed
-- Not covered: <honest exclusions>
-````
-
-Root checks it mechanically; a non-zero exit rejects the slice:
-
-```sh
-python3 <plugin-root>/scripts/tdd_receipt.py check --receipt <file> --repo <worktree>
-```
-
-It confirms RED adds a test and no implementation, GREEN adds implementation, and RED precedes
-GREEN. Whether the failure was for the *right* reason stays with the invalid-RED rules above. Every
-behaviour-changing slice needs its own pair.
