@@ -220,6 +220,12 @@ class CliTests(unittest.TestCase):
     def test_self_test_exits_zero(self) -> None:
         self.assertEqual(self.run_cli("self-test").returncode, 0)
 
+    def test_removed_readiness_subcommand_is_rejected(self) -> None:
+        result = self.run_cli("readiness", "--config", "AGENTS.md")
+
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("invalid choice", result.stderr)
+
     def test_validate_agent_accepts_the_packaged_agent(self) -> None:
         self.assertEqual(self.run_cli("validate-agent", str(gate.PLUGIN_AGENT)).returncode, 0)
 

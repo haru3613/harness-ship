@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "issue-65",
+  "classification": "breaking",
+  "migration": "required",
+  "summary": "Make setup a fast policy-only step and defer optional test-framework choices to the workflow that needs them.",
+  "paths": [
+    "README.md",
+    "docs/upgrade-guide.md",
+    "scripts/role_binding_contract.py",
+    "skills/implement/SKILL.md",
+    "skills/review/SKILL.md",
+    "skills/setup/SKILL.md",
+    "skills/tdd/SKILL.md",
+    "skills/testing-workflow/SKILL.md"
+  ]
+}

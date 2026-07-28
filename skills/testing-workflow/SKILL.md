@@ -37,6 +37,18 @@ than inferring PASS.
 Keep the pyramid shape: **many unit, some integration, few E2E.** An E2E-heavy suite is slow and
 flaky — reach for E2E only where a journey crosses the whole stack.
 
+### Choose E2E tooling at the point of use
+
+Do not select an E2E framework during setup. When an approved browser journey crosses meaningful
+product boundaries — for example authentication plus multiple routes or services — and no browser
+runner exists, ask whether the user wants to add Playwright. The approved scenario, not repository
+size alone, is the evidence that E2E is warranted.
+
+Do not ask for an empty repository, a non-browser product, or a slice covered honestly at unit or
+integration seams. Never install Playwright or append a QA command without approval. If declined,
+keep the capability manual or `not-configured`, mark only the affected scenarios NOT TESTED, and
+continue unrelated QA scope.
+
 ## Stage 2 — Route approved scenarios by ownership
 
 Resume here only after the dev→QA handoff uses `qa-handoff-template.md`. Validate its handoff
