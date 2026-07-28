@@ -29,6 +29,13 @@
         "issue-57",
         "post-v1-0-0-pins"
       ]
+    },
+    {
+      "version": "2.0.0",
+      "declarations": [
+        "issue-60",
+        "issue-62"
+      ]
     }
   ]
 }
