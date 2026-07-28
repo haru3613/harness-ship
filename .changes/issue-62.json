@@ -9,10 +9,12 @@
     "scripts/fake_green.py",
     "scripts/tdd_receipt.py",
     "scripts/validate_plugin_lifecycle.sh",
+    "skills/dev-workflow/SKILL.md",
     "skills/implement/SKILL.md",
     "skills/implement/defect-repair-receipt-template.md",
     "skills/tdd/SKILL.md",
     "skills/testing-workflow/SKILL.md",
-    "skills/testing-workflow/execution-ledger-template.md"
+    "skills/testing-workflow/execution-ledger-template.md",
+    "skills/testing-workflow/qa-handoff-template.md"
   ]
 }

@@ -87,8 +87,8 @@ add speculative options. Run the focused test, then the relevant surrounding RD 
 
 ### 4. Repeat
 
-Select the next behaviour slice and return to RED — the receipt records the cycle. Keep the ticket
-vertical: one test → one implementation increment → one verified outcome.
+Select the next behaviour slice and return to RED. Keep the ticket vertical: one test → one
+implementation increment → one verified outcome.
 
 ## Refactoring and review
 

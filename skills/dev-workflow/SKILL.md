@@ -101,7 +101,7 @@ decision; bounded implementation and security work uses the host's pre-defined r
 while reviewer identity is resolved when review starts.
 
 `implement` pins the exact base/fixed point, creates one repository-local worktree and PR, drives
-approved behaviour slices through `tdd`, integrates clean GREEN checkpoint commits, runs
+approved behaviour slices through `tdd`, integrates the resulting committed changes, runs
 independent verification plus fixed-point `review`, and waits for required CI on the exact head SHA
 before policy-allowed merge. It performs cleanup immediately after merge. It then captures
 deployment evidence for the configured non-production environment before QA handoff and writes a durable
