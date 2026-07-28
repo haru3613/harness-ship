@@ -2,8 +2,8 @@
 name: testing-workflow
 description: >-
   Execute an approved acceptance contract after the dev handoff — split ownership (RD:
-  unit+contract; QA: integration+E2E), run tests on a test environment, gate against fake-green
-  suites, and produce a plain-language acceptance report the user can sign off. Use after a dev→QA
+  unit+contract; QA: integration+E2E), run tests on a test environment, review test quality, and
+  produce a plain-language acceptance report the user can sign off. Use after a dev→QA
   handoff, or when someone says /testing-workflow, "QA this", "write e2e tests", or "is this ready
   to ship?".
 ---
@@ -117,32 +117,13 @@ Then:
   **PR smoke gate**, when needed before handoff, is an **RD-owned** command and must not invoke a QA
   command. Never run QA P0/full-suite commands against an unhanded-off PR artifact.
 
-## Stage 4 — Anti-fake-green gate
+## Stage 4 — Review test quality
 
-Before trusting any green, audit the executed QA checks — not RD's unit/API-contract suite — for
-tests that *look* like coverage but assert nothing. Classifying an assertion needs judgement; the
-threshold does not. **Write the judgement down per assertion and let the arithmetic be checked.**
-
-Append an assertion audit to the execution ledger: state the denominator, then classify every
-assertion in scope as `static`, `weak`, or `ok`, each with its location and — for anything not `ok` —
-a reason. Then recompute the verdict:
-
-```sh
-python3 <plugin-root>/scripts/fake_green.py check --ledger <execution-ledger>
-```
-
-- **static** — status-200 / element-exists / title-only; asserts no operation or flow. Over **50%** → reject.
-- **weak** — no real assert, tautological, or recomputes the expected value with the implementation's logic. Over **30%** → reject.
-- **Console/runtime errors must be intercepted**, not ignored.
-- "Verified only what's visible → marked PASS" → reject.
-
-A missing, unenumerated, or miscounted audit exits non-zero and is itself a blocking result: an
-unauditable verdict is not a verdict. A green suite that fails this gate is worse than none — it
-manufactures false confidence.
-For every affected scenario, append a new raw `BLOCKED` observation and `BLOCKED` scenario
-classification to the execution ledger with the audit evidence. Preserve every earlier PASS and
-attempt; never rewrite them. The verdict is **Not ready**. After the QA check is repaired, execute
-it again and append a new attempt with new evidence before that scenario can return to PASS.
+Before trusting any green, inspect the executed QA checks proportionately. Reject a result when its
+checks do not observe the approved behaviour, use tautological expectations, recompute expectations
+with implementation logic, or ignore console/runtime errors. Record the concrete gap, append a
+`BLOCKED` observation for the affected scenario, repair the check, and rerun it before returning the
+scenario to PASS.
 
 ## Stage 5 — Acceptance report
 
@@ -182,8 +163,8 @@ artifact from a green RD check.
 
 After the fixed-artifact addendum passes **Stage 2** handoff validation, execute every recheck
 through the existing **Stage 3** QA ownership preflight, per-scenario artifact/evidence
-revalidation, and ordered first-match normalization. Then apply the **Stage 4** anti-fake-green
-gate. The fixed-artifact section of the ledger indexes these canonical attempts; it does not create
+revalidation, and ordered first-match normalization. Then apply the **Stage 4** test-quality review.
+The fixed-artifact section of the ledger indexes these canonical attempts; it does not create
 a parallel result model. In particular, retry-green remains `FLAKY` and cannot become `verified`.
 
 On the fixed artifact, QA reruns:

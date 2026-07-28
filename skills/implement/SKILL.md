@@ -167,20 +167,13 @@ No child chooses its own role, risk tier, acceptance meaning, or next ticket.
 ## Phase 2 — Execute TDD slices
 
 Root dispatches the mapped executor with the dispatch contract above. The executor runs `tdd` at the
-approved seam and produces **two commits inside the ticket worktree**: a RED commit containing the
-failing test and no production code, then a GREEN commit containing the smallest implementation,
-with the focused test and surrounding regression rerun.
-
-Root verifies the receipt mechanically before accepting the slice — a non-zero exit rejects it:
-
-```sh
-python3 <plugin-root>/scripts/tdd_receipt.py check --receipt <file> --repo <worktree>
-```
+approved seam, adds the smallest implementation, and reruns the focused test plus surrounding
+regression.
 
 Root then inspects the diff and rejects out-of-scope files, implementation-coupled tests,
 speculative behaviour, or unexplained command failures, and runs a proportionate **typecheck** /
-lint check. Slice commits make review see the actual `fixed-point...HEAD` change; root alone pushes,
-merges, and mutates external state.
+lint check. Commit the integrated changes before final review so it sees the actual
+`fixed-point...HEAD` range; root alone pushes, merges, and mutates external state.
 
 Standards-only refactoring keeps tests green; it does not invent a RED.
 
@@ -198,9 +191,9 @@ When all slices are integrated:
    apply. If no child capability exists, root runs the axes sequentially and records
    `independence: not established`.
 
-Blocking findings return to a bounded executor or to root. Behaviour fixes restart a RED → GREEN
-slice; standards-only fixes keep tests green. Commit fixes, rerun affected checks and the full gate
-where impact warrants, and repeat verification and review until no blockers remain.
+Blocking findings return to a bounded executor or to root. Behaviour fixes add or update regression
+coverage; standards-only fixes keep tests green. Commit fixes, rerun affected checks and the full
+gate where impact warrants, and repeat verification and review until no blockers remain.
 
 ## Phase 4 — Publish exact evidence
 
@@ -210,14 +203,14 @@ Root alone, in order:
    prior review and verification evidence as superseded — require a clean tree and rerun the full RD
    gate, independent verification, and `review` against the new range before publishing;
 2. push the feature branch and open or update **one** PR targeting the integration branch;
-3. attach the contract revision, SC-ID → AC-ID trace, TDD receipts, fixed point, commit list, and
+3. attach the contract revision, SC-ID → AC-ID trace, fixed point, commit list, and
    verification results;
 4. run the **remote feedback loop** on the exact head SHA. Classify each review request and CI
-   failure before editing: an approved-behaviour defect takes a bounded RED → GREEN slice, a
-   standards-only fix keeps tests green, a requested contract change returns to the acceptance gate.
-   Commit fixes, rerun affected checks plus the full RD gate, rerun verification and two fresh
-   review runs, push a new HEAD, wait again. Retry unrelated infrastructure failures only within the
-   configured bound, then stop with evidence;
+   failure before editing: an approved-behaviour defect adds regression coverage and the smallest
+   fix, a standards-only fix keeps tests green, and a requested contract change returns to the
+   acceptance gate. Commit fixes, rerun affected checks plus the full RD gate, rerun verification
+   and two fresh review runs, push a new HEAD, wait again. Retry unrelated infrastructure failures
+   only within the configured bound, then stop with evidence;
 5. proceed only when required review, RD-owned CI, and every other non-QA branch-required check is
    green on the **exact head SHA** — stale green does not count;
 6. merge only under the configured branch policy, and record the observed merge SHA;

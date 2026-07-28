@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "issue-62",
+  "classification": "breaking",
+  "migration": "required",
+  "summary": "Remove mandatory TDD commit receipts and assertion-ratio fake-green gates.",
+  "paths": [
+    "scripts/check_release_contract.py",
+    "scripts/fake_green.py",
+    "scripts/tdd_receipt.py",
+    "scripts/validate_plugin_lifecycle.sh",
+    "skills/implement/SKILL.md",
+    "skills/implement/defect-repair-receipt-template.md",
+    "skills/tdd/SKILL.md",
+    "skills/testing-workflow/SKILL.md",
+    "skills/testing-workflow/execution-ledger-template.md"
+  ]
+}
