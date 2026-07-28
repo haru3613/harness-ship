@@ -255,12 +255,14 @@ test does not prove the tagged managed channel.
 
 ## Configuration model
 
-`setup` records the tracker and branch topology, implementation commands and checks, optional risk
-gates, and the repository UI convention. Later workflows append QA commands and environment,
-artifact and evidence paths, deployment, ready, and claim fields only when they need them.
+`setup` records only policy that workflows cannot safely infer: tracker/PR access, forbidden tools,
+and branch topology. It does not choose lint, unit-test, or E2E frameworks for an empty repository.
+`tdd`, `implement`, `review`, and `testing-workflow` resolve those capabilities when an actual slice
+needs them and ask before adding dependencies such as pytest or Playwright.
 
 An unsupported Config version is a zero-mutation stop, not an automatic migration. Re-run `setup`
-once to regenerate it. Unknown capability stays `not-configured`; it never implies PASS.
+once to regenerate it. A supported existing block is a fast no-op unless the user requests a policy
+change. Unknown capability never implies PASS.
 
 ## Boundaries and limitations
 

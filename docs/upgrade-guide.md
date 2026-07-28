@@ -34,10 +34,14 @@ Codex profile is required. Review resolves fresh children from the running host.
 read-only verifier is preferred; an available generic host child is valid and carries the assurance
 the host can actually establish. This change needs no setup migration.
 
+**After v2.0.0:** the generic `role_binding_contract.py readiness` command is removed. Delete direct
+calls to it; each workflow now resolves missing test, QA, UI, and data-mutation capabilities only
+when an actual task needs them. Existing Config v3 blocks remain valid and do not need setup again.
+
 **Which upgrades need a re-run of setup:** only a **Config version** change. The plugin version in
 the block records what wrote it and is never a gate, so a patch or compatible minor release leaves
-every configured project working. Readiness fails with an actionable message when the schema is one
-this release does not support.
+every configured project working. Workflow preflight fails with an actionable message when the
+schema is one this release does not support.
 
 **v1.0.0 migration (breaking):** Config version 2 → 3, and the verifier binding format changed.
 The 13-column host binding table, the `Verifier binding-contract version` field, and the

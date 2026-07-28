@@ -14,11 +14,11 @@ Implement **one approved ticket** from ready state to merged evidence. Root orch
 are bounded specialists, not competing controllers.
 
 **Prerequisite:** read the project's `## harness-ship` block in `AGENTS.md` / `CLAUDE.md`. It must
-identify the tracker and PR access paths, branch topology, classified RD/QA commands, configured
-checks, and a supported **Config version**. If the block is absent or unsupported, run `setup` and
-stop before delegating or running a baseline. Reconcile duplicate blocks directly; setup must not
-guess which one to replace. Configure missing later-tier fields when their workflow first needs
-them. Do not reinterpret a legacy generic test command.
+identify the tracker and PR access paths, branch topology, and a supported **Config version**.
+Testing and static-check commands may be absent until a workflow first needs them. If the block is
+absent or unsupported, run `setup` and stop before delegating or running a baseline. Reconcile
+duplicate blocks directly; setup must not guess which one to replace. Do not reinterpret a legacy
+generic test command.
 
 ## Stop conditions, in priority order
 
@@ -144,8 +144,9 @@ narrows how the verifier can misbehave; it never makes its findings authoritativ
    task/branch, or reuse an active or dirty worktree.
 4. Record the integration-branch SHA and `git merge-base HEAD <integration-ref>` as the **fixed
    point**, with the branch, worktree path, and starting `git status`.
-5. Run a narrow **baseline**: only the applicable configured RD unit and RD API-contract commands at
-   approved seams, plus the cheapest configured static check.
+5. Run a narrow **baseline** from established RD commands and static checks. If the current slice
+   needs an RD capability that does not exist, let `tdd` offer the smallest native or
+   user-approved runner before claiming a baseline; never invent PASS.
 
 If the project configures a concurrent-claim policy, apply
 [concurrent-claims.md](concurrent-claims.md) — claim generation, lease, write-ahead checkpoints, and
@@ -182,8 +183,9 @@ Standards-only refactoring keeps tests green; it does not invent a RED.
 When all slices are integrated:
 
 1. require a clean working tree; inspect every commit and `git diff <fixed-point>...HEAD`;
-2. run the full configured **RD verification gate** once — RD unit, RD API-contract, and configured
-   typecheck/lint/build (`none` skips);
+2. run the full established **RD verification gate** once — applicable RD unit, RD API-contract,
+   and typecheck/lint/build commands; record absent capabilities honestly instead of inventing
+   setup-time defaults;
 3. dispatch the verifier selected by the invocation-time routing above against the ticket, contract,
    exact diff, and those commands. It may create verification artifacts; it must not edit source;
 4. run `review` as two fresh invocation-time child runs, with the fixed point, originating

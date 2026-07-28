@@ -27,11 +27,18 @@ Before editing code, read:
 - the ticket's acceptance criteria and approved contract revision,
 - its SC-ID → AC-ID traceability,
 - the test seams and interfaces chosen in the spec,
-- the configured **RD unit** and **RD API-contract** commands and repository conventions.
+- any established **RD unit** and **RD API-contract** commands and repository conventions.
 
 TDD consumes only those RD commands; QA integration, P0, and full-suite belong to
-`testing-workflow`. If an applicable RD command is `not-configured`, report the missing capability
-rather than substituting a QA command or inferring PASS.
+`testing-workflow`.
+
+Resolve a missing RD capability only when the current slice needs it. Prefer an existing runner or
+the language's standard library. For Python without an established unit-test runner, ask whether
+the user wants to add `pytest`, and mention `unittest` as the no-dependency option. Do not ask during
+setup or for an empty repository with no testable slice. Never install a framework or append its
+command without approval. If the user declines and no native seam can cover this slice, report that
+capability as missing; unrelated work remains unblocked. Never substitute a QA command or infer
+PASS.
 
 Do not ask the user to approve the seams again; they were settled with the spec and acceptance
 contract. A different seam that preserves observable behaviour is a test-decision correction
@@ -57,8 +64,10 @@ See [tests.md](tests.md) for examples and [mocking.md](mocking.md) for adapter g
 
 ### 0. Baseline
 
-Run the narrowest relevant configured RD unit or RD API-contract command. If it is already red for
-an unrelated reason, stop and report the pre-existing failure; do not bury it under the new change.
+Run the narrowest relevant established RD unit or RD API-contract command. If the slice needs a
+runner that has not been selected, resolve it as described above before claiming a baseline. If the
+baseline is already red for an unrelated reason, stop and report the pre-existing failure; do not
+bury it under the new change.
 
 ### 1. Choose one behaviour slice
 

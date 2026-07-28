@@ -121,9 +121,12 @@ under `independence: not established`.
 
 ## Optional: data-mutation safety gate
 
-Enable this when the project has scheduled jobs or scripts that **batch-write a database**
-(popularity/price/stats recomputes, backfills, cron UPDATEs). For any such writer, **BLOCK** unless
-it has all three:
+At review time, inspect the changed paths and nearby workflow wiring for scheduled jobs or scripts
+that **batch-write a database** (popularity/price/stats recomputes, backfills, cron UPDATEs). Setup
+does not guess this policy before such code exists. Apply the gate when current evidence shows one;
+ask only when ownership or mutation behaviour remains ambiguous.
+
+For any such writer, **BLOCK** unless it has all three:
 
 1. an **abort guard** before the write loop (refuse to run on empty/sparse input),
 2. a **sparse-input test** proving a broken upstream can't zero/NULL real data,
