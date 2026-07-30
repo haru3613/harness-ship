@@ -38,6 +38,32 @@ DECLARATION_KEYS = {
 }
 CLASSIFICATIONS = {"patch", "minor", "breaking"}
 MIGRATIONS = {"none", "recommended", "required"}
+PRODUCT_DESCRIPTION = (
+    "Test and release confidence for AI coding agents: plan the evidence, explore before "
+    "automating, verify the exact artifact, and keep release human-owned."
+)
+PRODUCT_KEYWORDS = [
+    "testing",
+    "test-planning",
+    "exploratory-testing",
+    "release-gate",
+    "artifact-provenance",
+    "qa",
+    "evidence",
+]
+PRODUCT_LONG_DESCRIPTION = (
+    "Create a user-approved Project Test Baseline and Release Delta, explore runnable features "
+    "before adding minimum sufficient automation, execute the contract against an exact candidate, "
+    "and return an evidence-backed release verdict without prescribing development or promoting "
+    "the release."
+)
+PRODUCT_DEFAULT_PROMPTS = [
+    "Set up harness-ship for this repository.",
+    "Create or update the Test Contract for this project.",
+    "Explore this runnable feature before adding the minimum sufficient automated coverage.",
+    "Execute the Test Contract against this exact candidate.",
+    "Run the release gate for this candidate.",
+]
 RELEASE_SENSITIVE_EXACT = {
     *GENERATED_PATHS,
     ".github/pull_request_template.md",
@@ -605,6 +631,16 @@ def expected_generated_state(
         payload = read_json_at(repo, base, manifest)
         assert isinstance(payload, dict)
         payload["version"] = str(version)
+        payload["description"] = PRODUCT_DESCRIPTION
+        payload["keywords"] = PRODUCT_KEYWORDS
+        if manifest == ".codex-plugin/plugin.json":
+            interface = payload.get("interface")
+            if not isinstance(interface, dict):
+                interface = {}
+                payload["interface"] = interface
+            interface["shortDescription"] = "Test and release confidence"
+            interface["longDescription"] = PRODUCT_LONG_DESCRIPTION
+            interface["defaultPrompt"] = PRODUCT_DEFAULT_PROMPTS
         expected[manifest] = render_json(payload)
     for catalog in CATALOGS:
         payload = read_json_at(repo, base, catalog)
@@ -628,6 +664,11 @@ def expected_generated_state(
                 and item.get("name") in {"harness-ship", "harness-ship-next"}
             )
         ]
+        if catalog == ".claude-plugin/marketplace.json":
+            payload["description"] = PRODUCT_DESCRIPTION
+            stable = dict(stable)
+            stable["description"] = PRODUCT_LONG_DESCRIPTION
+            stable["keywords"] = PRODUCT_KEYWORDS
         payload["plugins"] = unrelated + [
             _channel_entry(
                 stable,

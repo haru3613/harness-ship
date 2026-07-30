@@ -1,9 +1,9 @@
 ---
 name: tickets
 description: >-
-  Break an approved spec and acceptance contract into vertical-slice tracer-bullet tickets — each a
+  Break an approved spec and Test Contract into vertical-slice tracer-bullet tickets — each a
   narrow but complete path through every layer, demoable on its own, with blocking edges and
-  traceable per-ticket acceptance criteria. Use after acceptance-scenario approval, before
+  traceable per-ticket acceptance criteria. Use after Test Contract approval, before
   implementing. Triggers: "/tickets", "break this into tickets", "split the work", "make issues".
 ---
 
@@ -27,10 +27,10 @@ units an agent (or a person) can pick up one at a time in a fresh context.
   layer-by-layer task list. No file paths (they go stale).
 - **Blocked by** — the tickets that must finish first, or "None — can start immediately."
 - **Acceptance criteria** — a checklist. Each item is independently checkable and cites the
-  approved contract revision, SC-ID, and spec AC-ID it implements.
-- **TDD starting point** — the approved seam/interface, the first smallest behaviour to prove RED,
-  and the SC-ID → AC-ID mapping it exercises. This is not a full test list; later cycles respond to
-  what implementation teaches.
+  approved Test Contract revision and scenario it implements.
+- **Verification starting point** — the approved seam/interface, the first smallest behaviour to
+  prove, and the Test Contract scenario it exercises. This is not a prescribed implementation
+  workflow or a full test list.
 
 ## Wide refactors are the exception
 

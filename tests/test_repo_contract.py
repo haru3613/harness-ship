@@ -52,6 +52,27 @@ class SkillStructureTests(unittest.TestCase):
                 with self.subTest(source=str(source.relative_to(ROOT)), target=target):
                     self.assertTrue((source.parent / target).resolve().is_file())
 
+    def test_test_confidence_surface_replaces_dev_orchestration(self) -> None:
+        for removed in ("dev-workflow", "acceptance-design"):
+            self.assertFalse((SKILLS / removed).exists())
+        for current in (
+            "test-plan",
+            "exploratory-testing",
+            "testing-workflow",
+            "release-gate",
+        ):
+            self.assertTrue((SKILLS / current / "SKILL.md").is_file())
+
+        active_skill_text = "\n".join(
+            path.read_text(encoding="utf-8") for path in SKILLS.rglob("*.md")
+        )
+        self.assertNotIn("`dev-workflow`", active_skill_text)
+        self.assertNotIn("`acceptance-design`", active_skill_text)
+        self.assertFalse((SKILLS / "implement" / "defect-repair.md").exists())
+        self.assertFalse(
+            (SKILLS / "implement" / "defect-repair-receipt-template.md").exists()
+        )
+
 
 class ReviewerRoutingTests(unittest.TestCase):
     def test_reviewer_routing_happens_at_invocation(self) -> None:

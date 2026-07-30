@@ -518,6 +518,36 @@ class ReleaseContractTests(unittest.TestCase):
             self.assertIn("[minor-change] Test release contract change.", changelog)
             self.assertIn("migration: required", changelog)
 
+    def test_version_generation_refreshes_product_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo, _ = self.make_repo(directory)
+            _, candidate = self.generate_candidate(repo, classification="breaking")
+
+            codex = json.loads(
+                run(
+                    ["git", "show", f"{candidate}:.codex-plugin/plugin.json"], repo
+                ).stdout
+            )
+            claude_catalog = json.loads(
+                run(
+                    ["git", "show", f"{candidate}:.claude-plugin/marketplace.json"],
+                    repo,
+                ).stdout
+            )
+
+            self.assertIn("release confidence", codex["description"])
+            self.assertEqual(
+                codex["interface"]["defaultPrompt"][-1],
+                "Run the release gate for this candidate.",
+            )
+            stable = next(
+                entry
+                for entry in claude_catalog["plugins"]
+                if entry["name"] == "harness-ship"
+            )
+            self.assertIn("explore runnable features", stable["description"])
+            self.assertIn("release-gate", stable["keywords"])
+
     def test_version_pr_accepts_only_exact_generated_files(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo, _ = self.make_repo(directory)

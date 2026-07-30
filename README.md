@@ -1,210 +1,196 @@
 # Harness Ship
 
-**Make agent-written software prove it is ready.**
+Harness Ship helps Codex and Claude Code decide **what must be tested, what was actually tested, and
+whether an exact candidate is ready to release**. It does not prescribe how software must be
+developed.
 
-Harness Ship is a QA-led delivery plugin for Codex and Claude Code. It helps engineering teams agree
-on observable behaviour before implementation, separate implementation from QA, and verify the
-exact source and artifact a human will release.
-
-**Agree before code.** Approve a versioned acceptance contract before tickets and implementation.
-**Separate build from QA.** Implementation and QA use different ownership, commands, and evidence.
-**Test the delivered artifact.** QA verifies the handed-off source SHA and artifact—not an inferred
-branch or a green badge.
+**Plan the evidence.** Approve a reusable Project Test Baseline plus a release-specific Delta.
+**Explore before automating.** Learn the feature first, then add only the coverage existing tests
+cannot provide.
+**Test the candidate.** Bind results to the full source SHA and exact artifact.
+**Keep release human-owned.** Produce GO, GO WITH CAVEATS, or NO-GO without promoting anything.
 
 [Quick start](#quick-start) · [How it works](#how-it-works) ·
-[What you get](#what-you-get) · [Host support and trust](#host-support-and-trust)
+[Skills](#skills) · [Install and channels](#install-and-channels)
 
-Stable channel: [**v1.1.0**](https://github.com/haru3613/harness-ship/releases/tag/v1.1.0) ·
-[Releases](https://github.com/haru3613/harness-ship/releases) · [MIT](LICENSE)
+[Stable releases](https://github.com/haru3613/harness-ship/releases) · [MIT](LICENSE)
 
 ## Quick start
 
-You need Git and a Codex or Claude Code release with plugin marketplace commands:
+You need Git and a Codex or Claude Code release with plugin marketplace commands.
 
-```sh
-codex plugin --help
-# or
-claude plugin --help
-```
-
-> **Private repository collaborators:** authenticate GitHub HTTPS access first with
-> `gh auth login` and `gh auth setup-git`. This step is unnecessary after the repository becomes
-> public.
-
-The marketplace catalog follows `main` so hosts can discover new releases. The managed
-`harness-ship` entry itself is pinned to the stable release tag shown above.
+Install stable first. If that tagged release does not yet expose `test-plan`, switch to the mutually
+exclusive `harness-ship-next` channel described under [Install and channels](#install-and-channels).
 
 ### Codex
-
-Install the stable plugin:
 
 ```sh
 codex plugin marketplace add haru3613/harness-ship --ref main
 codex plugin add harness-ship@harness-ship
 ```
 
-Start a new Codex session, then run:
+Start a new session, then:
 
 ```text
 $harness-ship:setup
-$harness-ship:dev-workflow
+$harness-ship:test-plan
 ```
 
 ### Claude Code
-
-Install the stable plugin:
 
 ```sh
 claude plugin marketplace add haru3613/harness-ship@main
 claude plugin install harness-ship@harness-ship
 ```
 
-Restart Claude Code, start a new session, then run:
+Restart Claude Code, start a new session, then:
 
 ```text
 /harness-ship:setup
-/harness-ship:dev-workflow
+/harness-ship:test-plan
 ```
 
-`setup` inspects the target repository and writes a reviewable `## harness-ship` Config v3 block
-into its `AGENTS.md` or `CLAUDE.md`. `dev-workflow` then moves the feature through clarification,
-acceptance design, vertical-slice tickets, implementation, exact-artifact QA, and a plain-language
-acceptance report. It stops at every required human decision.
+`setup` writes the small Config v3 policy block. `test-plan` creates the user-approved Test
+Contract. Once a feature is runnable, use `exploratory-testing`; once an exact candidate exists, use
+`testing-workflow` and then `release-gate`.
 
 ## How it works
 
 ```mermaid
-flowchart TD
-    A[1. Shape the feature<br/>Feasibility and UI]
-    B[2. Approve delivery<br/>Acceptance contract and tickets]
-    C[3. Build<br/>Implementation evidence]
-    D[4. Hand off<br/>Exact source SHA and artifact]
-    E[5. Verify<br/>QA tests the handed-off artifact]
-    F{6. Human release decision}
-    G[One Bug Case<br/>Classify, resolve, and re-hand off]
+flowchart LR
+    A[Project Test Baseline]
+    B[Release Delta]
+    C[Explore feature]
+    D[Minimum automation]
+    E[Test exact candidate]
+    F{Release gate}
+    G[Human release action]
+    H[Bug Case and repair handoff]
 
     A --> B --> C --> D --> E --> F
-    E -->|Non-pass| G
-    G --> E
+    F -->|GO or accepted caveats| G
+    E -->|Non-pass| H
+    H -->|New exact candidate| E
 ```
 
-Five decisions stay human-owned:
+The Test Contract is the only required judgment gate:
 
-1. **Feasibility** — go, spike first, split, or stop.
-2. **UI approval** — approve the interface before backend work when UI is involved.
-3. **Acceptance contract** — confirm that the criteria and scenarios describe the right behaviour.
-4. **Ticket granularity** — approve the vertical slices and dependencies.
-5. **Acceptance** — decide whether the QA report is sufficient to release.
+- **Project Test Baseline** holds stable P0 journeys, methods, environments, provenance, and generic
+  blocking rules.
+- **Release Delta** holds only the behaviours and operational risks changed by one candidate.
+- The user approves semantic changes before release-gate execution. The contract may be created
+  before implementation or added later to an existing project.
 
-A non-pass creates one durable Bug Case. Classification routes it back to acceptance design,
-implementation, QA maintenance, or the configured environment owner without losing the original
-observation, artifact identity, attempts, or retest history.
+Harness Ship stops at a repair handoff. It preserves the failed artifact, diagnosis, expected fixed
+behaviour, and retest conditions; the user or host agent chooses how to repair the product.
 
-## What you get
+## Greenfield and existing projects
 
-A complete delivery path produces inspectable artifacts instead of a conversational claim that the
-work is done:
+For an empty project, `test-plan` starts with the product surface and first real risks. It does not
+preinstall pytest, Playwright, or a generic E2E stack. Missing capabilities stay `not-configured`
+until a real behaviour justifies them.
 
-- A versioned acceptance contract with AC-ID/SC-ID traceability.
-- Independently verifiable vertical-slice tickets.
-- Test, review, and CI evidence tied to a full source SHA.
-- An exact-source and artifact QA handoff.
-- Scenario-level QA results with explicit gaps and caveats.
-- A plain-language acceptance report for the human release decision.
+For an existing project, it inventories the complete test tree, runners, CI, deployment path, and
+artifact provenance. Existing tools win. Gates become required, observe-only, or deferred from
+current evidence instead of pretending historical gaps are green.
 
-A shortened handoff looks like this:
+## Explore before automation
 
-```text
-Acceptance contract: checkout/acceptance-v3
-Scenario scope: SC-012 -> AC-4 -> ISSUE-248
-Source SHA: 7c2f6b98d8f6b5010bfa5ec7cfc4430aa334e91a
-Artifact: staging/revision-184
-Provenance: build-9821 binds the artifact to the source SHA
-P0 scenarios: 8/8 PASS
-Not tested: production rollback procedure
-Human acceptance: PENDING
-```
+`exploratory-testing` works in two passes:
 
-The real handoff also records the evidence location, access path, fixtures, known risks, and artifact
-provenance receipt. Missing or mismatched values make the handoff `Not ready`.
+1. black-box exploration from the approved behaviour and runnable non-production feature, without
+   reading existing tests first; then
+2. complete test-tree inventory and deep reading of related tests, fixtures, helpers, runner, and CI.
 
-## Why teams choose Harness Ship
+The same context then extends or adds the minimum sufficient automation. There is no test-count cap.
+Every new case must cover a distinct behaviour or risk, explain why existing coverage cannot absorb
+it today, and name the failure that would escape without it. Prefer extending an existing test or
+table before adding another file.
 
-- **Acceptance comes first.** Observable behaviour is approved before tickets and code.
-- **Implementation and QA stay separate.** Implementation owns unit/API-contract evidence; QA owns
-  approved integration, P0, and full-suite execution after handoff.
-- **QA tests the delivered thing.** The handoff binds the full source SHA to the exact deployed
-  artifact or environment revision.
-- **Non-pass is a workflow state.** One Bug Case preserves classification, diagnosis, repair, and
-  retest evidence instead of collapsing the history into “fixed.”
-- **Unknown never becomes PASS.** Missing commands, environments, artifacts, profiles, or evidence
-  remain explicit blockers.
-- **Humans retain judgment.** Automation coordinates evidence; it does not approve feasibility,
-  scope, acceptance, or release.
+Local, preview, simulator, and QA candidates are all valid when their source/artifact provenance is
+recorded. Exploration evidence satisfies only Test Contract items explicitly marked manual or
+exploratory; it never replaces required automation or proves a later artifact.
+
+## Release verdict
+
+`release-gate` consumes:
+
+- the approved baseline and release delta;
+- exact-head CI/build/test evidence;
+- the full candidate SHA and artifact provenance;
+- the `testing-workflow` report and ledger; and
+- only the migration, compatibility, security, performance, accessibility, recovery, or rollback
+  checks made applicable by this release.
+
+It returns:
+
+- **NO-GO** for an unapproved contract, source/artifact mismatch, any non-PASS P0, or missing required
+  evidence;
+- **GO WITH CAVEATS** only when required gates pass and the user explicitly accepts non-blocking
+  gaps with follow-up; or
+- **GO** when every required gate passes on the exact candidate with no caveat.
+
+It never merges, deploys, promotes, tags, publishes, or writes production data.
+
+## Skills
+
+| Skill | Responsibility |
+|---|---|
+| `setup` | Write the repository's small Config v3 policy block |
+| `test-plan` | Create Project Test Baseline and Release Delta |
+| `exploratory-testing` | Explore first, then add minimum sufficient automation |
+| `testing-workflow` | Execute the Test Contract against an exact candidate |
+| `release-gate` | Return GO / GO WITH CAVEATS / NO-GO from evidence |
+| `bug-workflow` | Classify a non-pass and emit repair/retest conditions |
+| `diagnose` | Produce a cause-only Diagnosis Receipt |
+| `clarify` | Resolve requirement forks |
+| `spike` | Time-box a technical unknown |
+| `spec` | Record a product specification |
+| `tickets` | Split approved work into optional delivery slices |
+| `implement` | Explicit opt-in implementation orchestration |
+| `tdd` | Explicit opt-in RED → GREEN implementation |
+| `review` | Review standards and work-item alignment |
+
+The development helpers are independent and optional. No skill invokes a mandatory end-to-end
+development workflow.
+
+## Configuration model
+
+`setup` records only policy that cannot safely be inferred: tracker/PR access, forbidden tools, and
+branch topology. It does not choose test frameworks, environments, automation, or release criteria.
+Those belong in the versioned Test Contract and are resolved only when a real feature needs them.
+
+Config version, not plugin version, is the compatibility gate. Config v3 remains supported by this
+change; existing Config v3 projects do not rerun setup.
 
 ## Host support and trust
 
-| Boundary | Codex | Claude Code |
-|---|---|---|
-| Bundled workflow skills | Yes | Yes |
-| Review dispatch | Fresh host subagents resolved at invocation | Packaged read-only verifier preferred, with runtime fallback |
-| Assurance receipt | Records the actual run as `host-enforced` or `independence: not established` | Packaged verifier is `host-enforced` while its boundary is intact |
-| Global agent/settings mutation | Never | Never |
-| Evidence authority | Repository, tracker, CI, and artifact receipts | Repository, tracker, CI, and artifact receipts |
+Harness Ship coordinates capabilities already available in the host. Root remains responsible for
+external state and final judgment. Repository instructions, child output, CI badges, and screenshots
+are evidence to verify, not authority to approve or release.
 
-The Claude Code package includes `harness-ship:harness-ship-independent-verifier`, whose tool
-whitelist is `Read`, `Grep`, and `Glob`. The host permission layer makes that verifier unable to edit
-source or dispatch a child. Codex resolves fresh reviewers from the subagent types exposed by the
-running host; no custom verifier profile is required.
+The Claude Code package includes a read-only independent verifier. Codex resolves fresh reviewers
+from the child types exposed by the running host. When no enforceable independent boundary exists,
+the receipt says `independence: not established`.
 
-Root remains responsible for planning, delegation, integration, external state, and final judgment.
-Child output, repository prompts, command output, green CI, and screenshots are evidence to verify,
-not authority to approve.
+## Install and channels
 
-## Primary commands
+Stable and next are **mutually exclusive** because they expose the same plugin namespace. Remove one
+before installing the other, then restart or reload the real host and start a new session.
 
-| Command | Purpose |
-|---|---|
-| **`setup`** | Detect the repository and write the Config v3 block used by every workflow |
-| **`dev-workflow`** | Move a feature from intent through the human gates and into a valid QA handoff |
-| **`implement`** | Deliver one approved ticket through TDD, review, exact-SHA evidence, PR, and CI |
-| **`testing-workflow`** | Execute approved QA scenarios against the handed-off artifact and report acceptance |
-
-The focused commands—`clarify`, `spike`, `spec`, `acceptance-design`, `tickets`, `tdd`, `review`,
-`bug-workflow`, and `diagnose`—remain available independently.
-
-## Install, update, and channels
-
-Upgrading from an earlier release? Refresh the plugin, restart or reload the real host process, and
-start a new session. Re-run setup only when the installed release does not support the project's
-Config version. See the [upgrade guide](docs/upgrade-guide.md) for release-specific instructions.
-
-<details>
-<summary><strong>Update the stable channel</strong></summary>
-
-Codex:
+### Stable
 
 ```sh
-codex plugin marketplace upgrade harness-ship
+# Codex
+codex plugin marketplace add haru3613/harness-ship --ref main
 codex plugin add harness-ship@harness-ship
+
+# Claude Code
+claude plugin marketplace add haru3613/harness-ship@main
+claude plugin install harness-ship@harness-ship
 ```
 
-Claude Code:
-
-```sh
-claude plugin marketplace update harness-ship
-claude plugin update harness-ship@harness-ship
-```
-
-Start a new host session after the update.
-
-</details>
-
-<details>
-<summary><strong>Opt in to the unreleased next channel</strong></summary>
-
-`harness-ship-next` follows `main`. Stable and next expose the same plugin namespace, so never install
-or activate both in one host. Remove the current channel before switching.
+### Next
 
 ```sh
 # Codex
@@ -218,76 +204,40 @@ claude plugin marketplace add haru3613/harness-ship@main
 claude plugin install harness-ship-next@harness-ship
 ```
 
-Restart or reload the host and begin a new session after switching.
+### Managed update
 
-</details>
+```sh
+codex plugin marketplace upgrade harness-ship
+codex plugin add harness-ship@harness-ship
 
-<details>
-<summary><strong>Use an editable local checkout</strong></summary>
+claude plugin marketplace update harness-ship
+claude plugin update harness-ship@harness-ship
+```
 
-An editable checkout is a development source, not a managed stable installation. Run repository
-contract commands directly from that checkout or use the host's temporary local plugin-directory
-facility for attended testing. Local edits do not arrive through marketplace update, and a checkout
-test does not prove the tagged managed channel.
+Restart the host after updating.
 
-</details>
+### Editable local checkout
 
-<details>
-<summary><strong>All 13 bundled skills</strong></summary>
+An **editable local** checkout is a development source, not a managed installation. Run repository
+checks directly or use the host's temporary plugin-directory facility. Local edits do not arrive
+through marketplace update, and a checkout test does not prove a tagged release.
 
-| Skill | Responsibility |
-|---|---|
-| `setup` | Generate the repository-specific Config v3 block |
-| `dev-workflow` | Orchestrate idea-to-QA delivery |
-| `implement` | Deliver one approved ticket |
-| `testing-workflow` | Execute QA and report acceptance |
-| `clarify` | Resolve requirement forks that materially change the plan |
-| `spike` | Time-box technical uncertainty |
-| `spec` | Produce a spec with observable acceptance criteria |
-| `acceptance-design` | Create a versioned, traceable acceptance contract |
-| `tickets` | Split the contract into vertical slices |
-| `tdd` | Prove RED and GREEN at the approved implementation seam |
-| `review` | Review repository standards and work-item alignment |
-| `bug-workflow` | Route a QA non-pass through one durable Bug Case |
-| `diagnose` | Produce an append-only Diagnosis Receipt without silently repairing code |
+See [the upgrade guide](docs/upgrade-guide.md) for migration and exact confirmation steps.
 
-</details>
+## Boundaries
 
-## Configuration model
+- Harness Ship ships instructions, not a hosted controller, test runner, environment, or security
+  boundary.
+- It complements repository-native tests, CI, deployment systems, and release policy.
+- It does not create missing credentials or infer PASS from missing infrastructure.
+- Critical systems still require domain-specific security, performance, accessibility, recovery,
+  and attended manual testing where applicable.
 
-`setup` records only policy that workflows cannot safely infer: tracker/PR access, forbidden tools,
-and branch topology. It does not choose lint, unit-test, or E2E frameworks for an empty repository.
-`tdd`, `implement`, `review`, and `testing-workflow` resolve those capabilities when an actual slice
-needs them and ask before adding dependencies such as pytest or Playwright.
+## Contributing
 
-An unsupported Config version is a zero-mutation stop, not an automatic migration. Re-run `setup`
-once to regenerate it. A supported existing block is a fast no-op unless the user requests a policy
-change. Unknown capability never implies PASS.
-
-## Boundaries and limitations
-
-Harness Ship coordinates the tools and runtime capabilities already available in the host:
-
-- It ships source-only plugin content, not a hosted controller, deployment environment, test
-  framework, or security boundary.
-- It complements existing tests, CI, trackers, and deployment systems; it does not replace them.
-- It cannot create missing QA infrastructure, credentials, or artifacts.
-- Critical systems still need domain-specific security, performance, accessibility, and manual
-  testing.
-- This repository's local maintainer `AGENTS.md` is operator configuration, not a consumer template.
-  Consumer projects generate their own block with `setup`.
-
-The repository remains private while history privacy and GitHub security settings are reviewed.
-Public visibility is a separate maintainer action.
-
-## Contributing, support, and security
-
-- Read [CONTRIBUTING.md](CONTRIBUTING.md) before proposing a change.
-- Use [GitHub Issues](https://github.com/haru3613/harness-ship/issues) for reproducible bugs,
-  questions, and focused feature proposals.
-- Follow [SECURITY.md](SECURITY.md) for vulnerabilities. Do not include vulnerability details in a
-  public issue.
-- Attribution and source provenance are recorded in [NOTICE](NOTICE).
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before proposing a change. Use
+[GitHub Issues](https://github.com/haru3613/harness-ship/issues) for reproducible bugs and focused
+feature proposals; follow [SECURITY.md](SECURITY.md) for vulnerabilities.
 
 ## License
 

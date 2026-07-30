@@ -70,4 +70,4 @@ Fix the harness first, then rerun until the test fails for the reason named by i
 ## One logical outcome per test
 
 One test may need several assertions to describe a single outcome. Split it when failures would
-represent different behaviours or different SC-ID / AC-ID mappings.
+represent different observable behaviours.
