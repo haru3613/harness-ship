@@ -42,6 +42,12 @@
       "declarations": [
         "issue-65"
       ]
+    },
+    {
+      "version": "4.0.0",
+      "declarations": [
+        "issue-68"
+      ]
     }
   ]
 }

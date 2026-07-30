@@ -4,30 +4,25 @@
     "name": "haru3613",
     "url": "https://github.com/haru3613"
   },
-  "description": "QA-led, evidence-driven software delivery for Claude Code.",
+  "description": "Test and release confidence for AI coding agents: plan the evidence, explore before automating, verify the exact artifact, and keep release human-owned.",
   "plugins": [
     {
       "name": "harness-ship",
       "source": {
         "source": "github",
         "repo": "haru3613/harness-ship",
-        "ref": "v3.0.0"
+        "ref": "v4.0.0"
       },
-      "description": "QA-led delivery through three orchestration workflows plus nine self-contained blocks: approve acceptance before code, route bounded RD work, verify the exact artifact in QA, and keep five judgment gates human-owned.",
+      "description": "Create a user-approved Project Test Baseline and Release Delta, explore runnable features before adding minimum sufficient automation, execute the contract against an exact candidate, and return an evidence-backed release verdict without prescribing development or promoting the release.",
       "category": "engineering",
       "keywords": [
-        "workflow",
-        "dev-workflow",
-        "acceptance-design",
-        "implement",
-        "subagents",
         "testing",
-        "bug-workflow",
+        "test-planning",
+        "exploratory-testing",
+        "release-gate",
+        "artifact-provenance",
         "qa",
-        "spec",
-        "tickets",
-        "code-review",
-        "tdd"
+        "evidence"
       ]
     },
     {
@@ -37,21 +32,16 @@
         "repo": "haru3613/harness-ship",
         "ref": "main"
       },
-      "description": "QA-led delivery through three orchestration workflows plus nine self-contained blocks: approve acceptance before code, route bounded RD work, verify the exact artifact in QA, and keep five judgment gates human-owned. Unstable next channel.",
+      "description": "Create a user-approved Project Test Baseline and Release Delta, explore runnable features before adding minimum sufficient automation, execute the contract against an exact candidate, and return an evidence-backed release verdict without prescribing development or promoting the release. Unstable next channel.",
       "category": "engineering",
       "keywords": [
-        "workflow",
-        "dev-workflow",
-        "acceptance-design",
-        "implement",
-        "subagents",
         "testing",
-        "bug-workflow",
+        "test-planning",
+        "exploratory-testing",
+        "release-gate",
+        "artifact-provenance",
         "qa",
-        "spec",
-        "tickets",
-        "code-review",
-        "tdd"
+        "evidence"
       ]
     }
   ]

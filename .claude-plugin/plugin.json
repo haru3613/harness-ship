@@ -1,7 +1,7 @@
 {
   "name": "harness-ship",
-  "version": "3.0.0",
-  "description": "QA-led, evidence-driven software delivery for Claude Code: acceptance contracts before code, role-routed RD implementation, exact-artifact QA, and human release decisions.",
+  "version": "4.0.0",
+  "description": "Test and release confidence for AI coding agents: plan the evidence, explore before automating, verify the exact artifact, and keep release human-owned.",
   "author": {
     "name": "haru3613",
     "url": "https://github.com/haru3613"
@@ -9,19 +9,12 @@
   "repository": "https://github.com/haru3613/harness-ship",
   "license": "MIT",
   "keywords": [
-    "workflow",
-    "dev-workflow",
-    "acceptance-design",
-    "testing-workflow",
-    "bug-workflow",
+    "testing",
+    "test-planning",
+    "exploratory-testing",
+    "release-gate",
+    "artifact-provenance",
     "qa",
-    "spec",
-    "tickets",
-    "implement",
-    "subagents",
-    "code-review",
-    "tdd",
-    "feasibility",
-    "acceptance"
+    "evidence"
   ]
 }
