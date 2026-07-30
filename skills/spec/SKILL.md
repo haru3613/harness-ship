@@ -3,7 +3,7 @@ name: spec
 description: >-
   Synthesize the current conversation into a spec/PRD — no re-interview, just write down what's
   already been decided, anchored at the highest test seam with explicit acceptance criteria. Use
-  after clarifying + feasibility, before acceptance-scenario design and tickets. Triggers: "/spec",
+  after clarifying + feasibility, before Test Contract design and tickets. Triggers: "/spec",
   "write the spec", "turn this into a PRD", "document what we decided".
 ---
 
@@ -39,7 +39,8 @@ Stable AC-IDs with externally observable outcomes. Cover success, rejection/fail
 negative behaviour. **Approved AC-IDs are immutable** and never reused: when an approved criterion's
 meaning changes, the changed criterion receives a new AC-ID and the spec must retain the superseded
 criterion so historical references remain unambiguous. Do not write Given/When/Then here —
-`acceptance-design` turns these criteria into the acceptance contract.
+`test-plan` turns these criteria into the feature's Test Contract delta when release criteria are
+needed.
 
 ## Implementation decisions
 Modules to build/modify, interfaces, architectural calls, schema changes, API contracts.
@@ -54,5 +55,5 @@ tested; prior art in the codebase; the seams from step 2.
 What this spec deliberately does not cover.
 ```
 
-Keep it about behaviour and decisions, not a task list — acceptance-scenario design is
-`acceptance-design`'s job and task breakdown is `tickets`' job.
+Keep it about behaviour and decisions, not a task list — Test Contract design is `test-plan`'s job
+and task breakdown is `tickets`' job.

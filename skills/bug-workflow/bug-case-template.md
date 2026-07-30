@@ -4,8 +4,8 @@
 - **Phase:** `intake | classification | routed | blocked | needs-evidence`
 - **Classification:** `pending | product-defect | test-defect | environment-defect | spec-ambiguity | duplicate | known-limitation`
 - **Disposition:** `<owner + next action | pending>`
-- **Acceptance contract revision:** `<contract-id/revision>`
-- **Trace:** `<SC-ID> → <AC-ID> → <originating ticket>`
+- **Test Contract revision:** `<contract-id/revision>`
+- **Trace:** `<scenario ID → baseline/release delta → originating work>`
 - **Full source SHA:** `<40-character SHA>`
 - **Exact tested artifact/environment revision:** `<artifact + non-production environment>`
 - **Artifact provenance receipt:** `<durable link/receipt>`
@@ -28,4 +28,14 @@ needs-evidence resume, and retest under the same stable BUG-ID.
 
 | Timestamp | Phase | Classification | Disposition / owner | Event and evidence | Previous event |
 |---|---|---|---|---|---|
-| `<ISO-8601>` | `intake` | `pending` | `QA triage` | `<source ledger attempt>` | `none` |
+| `<ISO-8601>` | `intake` | `pending` | `test triage` | `<source ledger attempt>` | `none` |
+
+## Repair handoff
+
+- **Diagnosis Receipt:** `<link | not produced>`
+- **Expected fixed behaviour:** `<observable outcome>`
+- **Affected scenarios:** `<scenario IDs>`
+- **Retest evidence required:** `<candidate provenance + checks>`
+
+The repair method is intentionally unspecified. A fixed candidate returns with its repair summary,
+full source SHA, exact artifact/environment revision, and new provenance receipt.

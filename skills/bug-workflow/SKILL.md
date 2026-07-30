@@ -1,22 +1,22 @@
 ---
 name: bug-workflow
 description: >-
-  Turn a QA non-pass into one traceable Bug Case, classify it before diagnosis, and route it to the
+  Turn a test non-pass into one traceable Bug Case, classify it before diagnosis, and route it to the
   correct owner without losing evidence. Use after testing-workflow records FAIL, FLAKY, BLOCKED,
-  or NOT TESTED, or when someone asks to triage a QA finding.
+  or NOT TESTED, or when someone asks to triage a test finding.
 ---
 
 # bug-workflow
 
-Create one durable Bug Case from QA evidence, then classify before choosing an owner. This is a QA
+Create one durable Bug Case from test evidence, then classify before choosing an owner. This is a
 triage workflow: it does not diagnose every failure, change product code, or run the repaired
 artifact. Use `bug-case-template.md` as the portable record.
 
 ## 1 — Intake one Bug Case
 
-Start from the execution-ledger attempt and validated QA handoff. Preserve:
+Start from the execution-ledger attempt and validated candidate handoff. Preserve:
 
-- acceptance contract revision and `SC-ID → AC-ID → originating ticket`;
+- Test Contract revision, scenario ID, and originating work;
 - full source SHA, exact tested artifact/environment revision, and provenance receipt;
 - expected and actual behaviour, reproducibility, and durable evidence.
 
@@ -34,16 +34,16 @@ Keep these independent fields:
 
 Choose exactly one classification and append the evidence for that choice:
 
-- `product-defect` → RD diagnosis through `diagnose`; append its Diagnosis Receipt to the same
-  BUG-ID.
-- `test-defect` → QA maintenance; preserve the product observation and repair the QA asset.
+- `product-defect` → diagnosis through `diagnose` when root cause is not already established; append
+  its Diagnosis Receipt to the same BUG-ID.
+- `test-defect` → test maintenance through `exploratory-testing`; preserve the product observation.
 - `environment-defect` → configured environment owner; include the failing environment receipt.
-- `spec-ambiguity` → `acceptance-design`; approve a new contract revision before any behaviour
+- `spec-ambiguity` → `test-plan`; approve a new Test Contract revision before any behaviour
   change.
 - `duplicate` → canonical BUG-ID; link the canonical case and stop parallel defect handling.
 - `known-limitation` → record explicit scope and user impact; require human disposition.
 
-Only `product-defect` may enter RD diagnosis. Never use a generic failure label as permission to run
+Only `product-defect` may enter diagnosis. Never use a generic failure label as permission to run
 `diagnose`.
 
 ## 3 — Route or pause honestly
@@ -59,19 +59,19 @@ publication receipt, or successful handoff.
 
 For every non-product classification, this workflow ends after classification and routing.
 
-## 4 — Product-defect repair and verification
+## 4 — Repair handoff and return
 
-For a `product-defect`, preserve role ownership while the root/controller advances these four
-receipts in order:
+For a diagnosed `product-defect`, append a **repair handoff** containing:
 
-1. `diagnose` appends a **Diagnosis Receipt**. Continue only when its status is `diagnosed`;
-   `inconclusive` and `reproduction-blocked` remain resumable.
-2. `implement` consumes `HS-DEFECT-PACKET/v1`, performs the RD-owned repair, and appends an
-   **implement defect receipt**.
-3. The configured controller publishes the exact fixed artifact and appends a **new deployment
-   receipt**.
-4. `testing-workflow` validates that handoff and appends a QA-owned **QA verification attempt**.
+- stable BUG-ID, Test Contract trace, and original failed-candidate evidence;
+- Diagnosis Receipt when one exists;
+- falsifiable root cause or unresolved uncertainty;
+- expected fixed behaviour and affected scenarios; and
+- the exact evidence a future candidate must provide for retest.
 
-Every fix and retest attempt stays append-only under the same stable BUG-ID. Do not overwrite the
-original failed artifact, its evidence, or any earlier receipt. Only the final QA step may set
-`verified`; release promotion and production rollout remain outside this workflow.
+Then stop. The user or host agent chooses the repair process; Harness Ship never requires
+`implement`, `tdd`, a branch strategy, or a deployment method.
+
+When a fixed candidate returns, append its repair summary, full source SHA, exact artifact and
+provenance receipt, then resume `testing-workflow`. Every repair and retest remains under the same
+BUG-ID. Never overwrite the failed artifact or infer verification from implementation evidence.

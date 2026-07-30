@@ -64,11 +64,14 @@ has one branch, record it for both branch fields.
 
 Workflows inspect capabilities when they first need them:
 
-- `tdd` resolves RD unit and contract commands and may offer a test runner;
+- `test-plan` inventories project surfaces, risks, existing tests, and release expectations;
+- `exploratory-testing` resolves automation only when a runnable feature justifies it;
+- `tdd` resolves a test runner only when the user explicitly opts into TDD;
 - `implement` resolves applicable lint, typecheck, and build checks;
 - `review` detects batch/cron database writers before applying its mutation-safety gate;
-- `spec` / `acceptance-design` apply UI conventions to an actual UI request; and
-- `testing-workflow` resolves QA environment, evidence, integration, and E2E capabilities.
+- `spec` applies UI conventions to an actual UI request;
+- `testing-workflow` resolves candidate environment, evidence, and test capabilities; and
+- `release-gate` consumes existing evidence without mutating release state.
 
 Never install a framework or append its command without explicit user approval. Do not infer PASS
 from a missing capability. Reviewer identity is resolved by `implement` and `review` at invocation,

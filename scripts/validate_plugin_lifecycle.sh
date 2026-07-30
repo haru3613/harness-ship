@@ -81,8 +81,10 @@ validate_current_install() {
     "scripts/role_binding_contract.py" \
     "skills/bug-workflow/SKILL.md" \
     "skills/diagnose/diagnosis-receipt-template.md" \
-    "skills/implement/defect-repair-receipt-template.md" \
-    "skills/testing-workflow/qa-handoff-template.md"; do
+    "skills/exploratory-testing/SKILL.md" \
+    "skills/release-gate/SKILL.md" \
+    "skills/test-plan/SKILL.md" \
+    "skills/testing-workflow/candidate-handoff-template.md"; do
     test -f "${install_root}/${required}"
   done
 

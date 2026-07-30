@@ -4,13 +4,33 @@ Choose one channel, upgrade its marketplace source, install the refreshed plugin
 the real host process, and start a new session. Re-run setup only when the installed release does
 not support the project's Config version.
 
-`harness-ship` is the stable channel pinned to `v1.1.0`; `harness-ship-next` is an explicit
-unreleased channel pinned to `main`. Both resolve to the same underlying plugin namespace and are
-mutually exclusive. Remove the installed channel before switching. A local editable checkout is a
-development source and does not receive managed upgrades or prove the tagged release.
+`harness-ship` is the stable channel pinned to the release tag recorded in the marketplace catalog;
+`harness-ship-next` is an explicit unreleased channel pinned to `main`. Both resolve to the same
+underlying plugin namespace and are mutually exclusive. Remove the installed channel before
+switching. A local editable checkout is a development source and does not receive managed upgrades
+or prove the tagged release.
 The marketplace catalog is added or refreshed from `main`; only its stable plugin entry is pinned
 to the release tag. This lets a catalog refresh discover a future stable patch without silently
 moving the already published stable source.
+
+## Test and release confidence migration
+
+Releases with the test-and-release-confidence surface remove mandatory development orchestration
+and keep Config v3.
+
+- Replace `dev-workflow` with the independent command needed now: `test-plan`,
+  `exploratory-testing`, `testing-workflow`, or `release-gate`.
+- Replace `acceptance-design` with `test-plan`. Existing acceptance criteria can become the first
+  Release Delta; reusable P0 journeys become the Project Test Baseline.
+- Bug Cases stop at a repair handoff. Remove automation that expects
+  `bug-workflow → implement → tdd`; return a new exact candidate to `testing-workflow` instead.
+- `implement` and `tdd` remain available only as explicit opt-ins. They are not release
+  prerequisites.
+- Replace links to `qa-handoff-template.md` and `acceptance-report-template.md` with
+  `candidate-handoff-template.md` and `test-report-template.md`.
+
+Existing Config v3 projects **do not rerun setup**. Approve a Test Contract before invoking
+`release-gate`.
 
 ## Codex
 
@@ -123,10 +143,8 @@ consumer after each source change; managed marketplace upgrade commands do not u
 ## Projects on an earlier Config version
 
 A block whose `Config version` is not the one this release supports is a zero-mutation stop, not an
-automatic migration. Re-run setup once to regenerate it. Known values are preserved while RD
-unit/API-contract commands remain separate from QA integration/P0/full-suite commands. The
-regenerated block keeps the QA environment, artifact provenance, and evidence location;
-unavailable capabilities remain `not-configured`.
+automatic migration. Re-run setup once to regenerate it. Test capabilities and release criteria
+belong in the Test Contract rather than Config; unavailable capabilities remain `not-configured`.
 
 Harness Ship updates only the single `## harness-ship` block. It does not replace global agents or
 settings; reviewer identity is resolved from the running host when review starts.

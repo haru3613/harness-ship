@@ -18,8 +18,8 @@ Before reviewing, establish and report:
 
 1. the exact **fixed point** supplied by `implement`, or derive it with
    `git merge-base HEAD <configured-integration-ref>`;
-2. the originating spec. Look in this order: the acceptance-contract revision and SC-ID → AC-ID
-   mappings supplied by `implement`; issue references in the commit messages (`#123`, `Closes #45`);
+2. the originating spec. Look in this order: the Test Contract revision and scenario mappings
+   supplied by `implement`; issue references in the commit messages (`#123`, `Closes #45`);
    a path the user passed; a spec file under `docs/`, `specs/`, or `.scratch/` matching the branch.
    If none resolves, ask. If the user says there is no spec, **skip the Spec axis and report "no
    spec available"** — do not invent something to review against;
