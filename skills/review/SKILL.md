@@ -1,10 +1,8 @@
 ---
 name: review
 description: >-
-  Review a change on two independent axes — Standards (is the code clean per this repo's
-  conventions?) and Spec (did it build the thing the ticket asked for?) — without letting one mask
-  the other. Optional data-mutation safety gate for batch/cron DB writers. Use before merging.
-  Triggers: "/review", "review this", "code review", "is this ready to merge".
+  Review a change on two independent axes, Standards and Spec, without letting one mask the other. Optional data-mutation safety gate for batch/cron DB writers.
+disable-model-invocation: true
 ---
 
 # review
@@ -91,7 +89,8 @@ Resolve reviewer identity from the subagent types the running host exposes now; 
 persist a project/global profile. Prefer a purpose-built read-only verifier. If none exists, use a
 fresh `generic`, `default`, `worker`, or equivalent host child for each axis.
 
-On `claude-code`, run the packaged diagnostic at invocation:
+On `claude-code`, root runs the packaged diagnostic at invocation. A child following this
+file as a raw path skips this step — it reviews the two axes only.
 
 ```sh
 python3 <plugin-root>/scripts/role_binding_contract.py preflight --config <AGENTS.md|CLAUDE.md>

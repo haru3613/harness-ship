@@ -1,11 +1,8 @@
 ---
 name: implement
 description: >-
-  Opt in to a root-owned, role-routed delivery loop for one approved ticket: establish an exact
-  baseline, delegate bounded TDD slices only to pre-defined host agent profiles, integrate and
-  review committed work, then push, verify CI, merge, update the tracker, and clean up. Use only
-  when the user explicitly requests Harness Ship implementation orchestration. Trigger:
-  "/implement".
+  Run a root-owned, role-routed delivery loop for one approved ticket: baseline, bounded TDD slices, integration review, push, CI, merge, tracker, cleanup.
+disable-model-invocation: true
 ---
 
 # implement
@@ -87,7 +84,8 @@ Reviewer identity is runtime state, not project configuration. When verification
 - never create, overwrite, or require a global agent profile;
 - record the actual type, run identity, and observed assurance in the implementation receipt.
 
-On `claude-code`, run the packaged diagnostic at invocation:
+On `claude-code`, run the packaged diagnostic at invocation. `<plugin-root>` is the installed
+plugin directory this skill was loaded from; only root can expand it.
 
 ```sh
 python3 <plugin-root>/scripts/role_binding_contract.py preflight --config <AGENTS.md|CLAUDE.md>
@@ -114,7 +112,11 @@ Every child receives exactly one task with:
 4. the ticket, Test Contract revision, scenario mapping, and approved seam;
 5. behavioural and operational **constraints**, including forbidden tools;
 6. a concrete **verification** command or evidence request;
-7. an instruction not to spawn agents, push, mutate tracker/PR state, or expand scope.
+7. an instruction not to spawn agents, push, mutate tracker/PR state, or expand scope;
+8. when the task requires a packaged discipline, the **absolute** path of the `SKILL.md` to
+   follow — root expands `<plugin-root>` before dispatch, so a child never receives the
+   placeholder. A child that cannot read that path reports a missing capability and stops,
+   exactly as it would for any other absent tool; it never proceeds freehand.
 
 **Serialize all write-capable children** in the ticket worktree, even when their planned files are
 disjoint, so root can inspect a clean slice. Parallelize read-only investigation only. One executor
@@ -140,8 +142,8 @@ narrows how the verifier can misbehave; it never makes its findings authoritativ
 4. Record the integration-branch SHA and `git merge-base HEAD <integration-ref>` as the **fixed
    point**, with the branch, worktree path, and starting `git status`.
 5. Run a narrow **baseline** from established test commands and static checks. If the current slice
-   needs a capability that does not exist, let `tdd` offer the smallest native or
-   user-approved runner before claiming a baseline; never invent PASS.
+   needs a capability that does not exist, follow `<plugin-root>/skills/tdd/SKILL.md` to offer the
+   smallest native or user-approved runner before claiming a baseline; never invent PASS.
 
 If the project configures a concurrent-claim policy, apply
 [concurrent-claims.md](concurrent-claims.md) — claim generation, lease, write-ahead checkpoints, and
@@ -162,9 +164,9 @@ No child chooses its own role, risk tier, acceptance meaning, or next ticket.
 
 ## Phase 2 — Execute TDD slices
 
-Root dispatches the mapped executor with the dispatch contract above. The executor runs `tdd` at the
-approved seam, adds the smallest implementation, and reruns the focused test plus surrounding
-regression.
+Root dispatches the mapped executor with the dispatch contract above. The executor reads and follows
+`<plugin-root>/skills/tdd/SKILL.md` at the approved seam, adds the smallest implementation, and reruns
+the focused test plus surrounding regression.
 
 Root then inspects the diff and rejects out-of-scope files, implementation-coupled tests,
 speculative behaviour, or unexplained command failures, and runs a proportionate **typecheck** /
@@ -183,10 +185,10 @@ When all slices are integrated:
    setup-time defaults;
 3. dispatch the verifier selected by the invocation-time routing above against the ticket, contract,
    exact diff, and those commands. It may create verification artifacts; it must not edit source;
-4. run `review` as two fresh invocation-time child runs, with the fixed point, originating
-   ticket/spec/contract, repository standards, and whichever data-mutation and security gates
-   apply. If no child capability exists, root runs the axes sequentially and records
-   `independence: not established`.
+4. run `<plugin-root>/skills/review/SKILL.md` as two fresh invocation-time child runs, each child
+   reading that file directly, with the fixed point, originating ticket/spec/contract, repository
+   standards, and whichever data-mutation and security gates apply. If no child capability exists,
+   root reads the same file and runs the axes sequentially, recording `independence: not established`.
 
 Blocking findings return to a bounded executor or to root. Behaviour fixes add or update regression
 coverage; standards-only fixes keep tests green. Commit fixes, rerun affected checks and the full

@@ -1,0 +1,5 @@
+interface:
+  display_name: "Tickets"
+  short_description: "Split work into delivery slices"
+policy:
+  allow_implicit_invocation: false

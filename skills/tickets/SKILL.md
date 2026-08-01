@@ -1,10 +1,8 @@
 ---
 name: tickets
 description: >-
-  Break an approved spec and Test Contract into vertical-slice tracer-bullet tickets — each a
-  narrow but complete path through every layer, demoable on its own, with blocking edges and
-  traceable per-ticket acceptance criteria. Use after Test Contract approval, before
-  implementing. Triggers: "/tickets", "break this into tickets", "split the work", "make issues".
+  Split an approved spec and Test Contract into vertical-slice tracer-bullet tickets, each demoable on its own with traceable acceptance criteria.
+disable-model-invocation: true
 ---
 
 # tickets

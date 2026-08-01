@@ -1,10 +1,8 @@
 ---
 name: spec
 description: >-
-  Synthesize the current conversation into a spec/PRD — no re-interview, just write down what's
-  already been decided, anchored at the highest test seam with explicit acceptance criteria. Use
-  after clarifying + feasibility, before Test Contract design and tickets. Triggers: "/spec",
-  "write the spec", "turn this into a PRD", "document what we decided".
+  Record a product specification from what the conversation already decided, anchored at the highest test seam with explicit acceptance criteria.
+disable-model-invocation: true
 ---
 
 # spec

@@ -143,13 +143,25 @@ It never merges, deploys, promotes, tags, publishes, or writes production data.
 | `release-gate` | Return GO / GO WITH CAVEATS / NO-GO from evidence |
 | `bug-workflow` | Classify a non-pass and emit repair/retest conditions |
 | `diagnose` | Produce a cause-only Diagnosis Receipt |
-| `clarify` | Resolve requirement forks |
-| `spike` | Time-box a technical unknown |
-| `spec` | Record a product specification |
-| `tickets` | Split approved work into optional delivery slices |
-| `implement` | Explicit opt-in implementation orchestration |
-| `tdd` | Explicit opt-in RED → GREEN implementation |
-| `review` | Review standards and work-item alignment |
+
+### Development helpers (user-invoked only)
+
+These carry `disable-model-invocation: true` (Claude Code) and
+`policy.allow_implicit_invocation: false` (Codex). No agent can reach them — only the human
+typing the command — so they never compete with whatever development stack the repository
+already uses.
+
+| Skill | Responsibility |
+|---|---|
+| `/harness-ship:clarify` | Resolve requirement forks |
+| `/harness-ship:spike` | Time-box a technical unknown |
+| `/harness-ship:spec` | Record a product specification |
+| `/harness-ship:tickets` | Split approved work into optional delivery slices |
+| `/harness-ship:implement` | Explicit opt-in implementation orchestration |
+| `/harness-ship:tdd` | Explicit opt-in RED → GREEN implementation |
+| `/harness-ship:review` | Review standards and work-item alignment |
+
+In Codex use the `$harness-ship:<name>` form.
 
 The development helpers are independent and optional. No skill invokes a mandatory end-to-end
 development workflow.

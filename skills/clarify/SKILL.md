@@ -1,10 +1,8 @@
 ---
 name: clarify
 description: >-
-  Pull out the 90% a user didn't state — by answering it yourself with stated assumptions and
-  asking only the few forks that change the plan. Use at the start of a feature, when a request is
-  vague, or when you catch yourself about to ask a wall of questions. Triggers: "/clarify",
-  "clarify this", "what do you need to know", the opening of any new feature.
+  Resolve requirement forks: answer the 90% a user didn't state with explicit assumptions, and ask only the few questions that change the plan.
+disable-model-invocation: true
 ---
 
 # clarify
