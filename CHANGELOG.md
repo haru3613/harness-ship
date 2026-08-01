@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.1.0
+
+- [dev-helpers-command-only] Make the seven development helpers user-invoked only in both harnesses so no agent selects them over the repository's own development stack; type /harness-ship:<name> (Codex $harness-ship:<name>) to run them. (classification: minor; migration: recommended).
+
 ## 4.0.0
 
 - [issue-68] Replace mandatory development orchestration with test planning, exploratory automation, exact-candidate testing, and a read-only release gate. (classification: breaking; migration: required).

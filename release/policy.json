@@ -48,6 +48,12 @@
       "declarations": [
         "issue-68"
       ]
+    },
+    {
+      "version": "4.1.0",
+      "declarations": [
+        "dev-helpers-command-only"
+      ]
     }
   ]
 }
