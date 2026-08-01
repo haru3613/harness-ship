@@ -26,6 +26,10 @@ and keep Config v3.
   `bug-workflow → implement → tdd`; return a new exact candidate to `testing-workflow` instead.
 - `implement` and `tdd` remain available only as explicit opt-ins. They are not release
   prerequisites.
+- The seven development helpers — `clarify`, `spike`, `spec`, `tickets`, `implement`, `tdd`,
+  `review` — are now user-invoked only. Natural language no longer reaches them: "review this"
+  runs whatever your own stack provides. Type `/harness-ship:review` (Codex:
+  `$harness-ship:review`) to run this plugin's version.
 - Replace links to `qa-handoff-template.md` and `acceptance-report-template.md` with
   `candidate-handoff-template.md` and `test-report-template.md`.
 

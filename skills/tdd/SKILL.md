@@ -1,10 +1,8 @@
 ---
 name: tdd
 description: >-
-  Opt in to evidence-backed test-driven development for one ticket: establish a green baseline,
-  prove one behaviour is missing with a valid RED, add the smallest implementation for GREEN, and
-  repeat at the approved test seams. Use only when the user explicitly requests TDD. Triggers:
-  "/tdd", "test first", "red green", "write the failing test".
+  Run evidence-backed test-driven development for one ticket: green baseline, valid RED, smallest GREEN, repeated at the approved test seams.
+disable-model-invocation: true
 ---
 
 # tdd

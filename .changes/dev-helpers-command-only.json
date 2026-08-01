@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "id": "dev-helpers-command-only",
+  "classification": "minor",
+  "migration": "recommended",
+  "summary": "Make the seven development helpers user-invoked only in both harnesses so no agent selects them over the repository's own development stack; type /harness-ship:<name> (Codex $harness-ship:<name>) to run them.",
+  "paths": [
+    "README.md",
+    "docs/upgrade-guide.md",
+    "skills/clarify/SKILL.md",
+    "skills/clarify/agents/openai.yaml",
+    "skills/implement/SKILL.md",
+    "skills/implement/agents/openai.yaml",
+    "skills/review/SKILL.md",
+    "skills/review/agents/openai.yaml",
+    "skills/spec/SKILL.md",
+    "skills/spec/agents/openai.yaml",
+    "skills/spike/SKILL.md",
+    "skills/spike/agents/openai.yaml",
+    "skills/tdd/SKILL.md",
+    "skills/tdd/agents/openai.yaml",
+    "skills/tickets/SKILL.md",
+    "skills/tickets/agents/openai.yaml",
+    "tests/test_repo_contract.py"
+  ]
+}

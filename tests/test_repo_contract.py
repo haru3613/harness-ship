@@ -46,6 +46,27 @@ class SkillStructureTests(unittest.TestCase):
                 self.assertIsNotNone(name, "SKILL.md frontmatter has no name")
                 self.assertEqual(name.group(1), skill.name)
 
+    def test_development_helpers_are_user_invoked_in_both_harnesses(self) -> None:
+        helpers = {"clarify", "spike", "spec", "tickets", "implement", "tdd", "review"}
+        claude = {
+            skill.name
+            for skill in SKILLS.iterdir()
+            if skill.is_dir()
+            and re.search(r"(?m)^disable-model-invocation:\s*true\s*$", frontmatter(skill / "SKILL.md"))
+        }
+        # Literal block, so the key must sit under `policy:` at the right indent —
+        # misfiled under `interface:` it would be ignored by Codex, and must fail here.
+        policy_block = "policy:\n  allow_implicit_invocation: false\n"
+        codex = {
+            skill.name
+            for skill in SKILLS.iterdir()
+            if (skill / "agents" / "openai.yaml").is_file()
+            and policy_block in (skill / "agents" / "openai.yaml").read_text(encoding="utf-8")
+        }
+        # Equality, not subset: a helper losing the key and a testing skill gaining it both fail.
+        self.assertEqual(claude, helpers, "Claude Code user-invoked set drifted")
+        self.assertEqual(codex, helpers, "Codex user-invoked set drifted from Claude Code")
+
     def test_every_markdown_link_resolves(self) -> None:
         for source in sorted(SKILLS.rglob("*.md")):
             for target in MD_LINK.findall(source.read_text(encoding="utf-8")):

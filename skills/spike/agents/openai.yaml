@@ -1,0 +1,5 @@
+interface:
+  display_name: "Spike"
+  short_description: "Time-box a technical unknown"
+policy:
+  allow_implicit_invocation: false

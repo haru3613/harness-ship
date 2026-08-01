@@ -1,10 +1,8 @@
 ---
 name: spike
 description: >-
-  Prove or kill a technical unknown with a throwaway, time-boxed prototype that returns a verdict —
-  feasible / not / needs-more. Use when feasibility is uncertain ("not sure if this is even
-  possible, but…"), before committing to a spec. Triggers: "/spike", "spike this", "is this
-  possible", "prototype to find out", "de-risk".
+  Time-box a technical unknown with a throwaway prototype that returns feasible / not / needs-more.
+disable-model-invocation: true
 ---
 
 # spike
