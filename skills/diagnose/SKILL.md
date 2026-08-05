@@ -48,8 +48,15 @@ Use `diagnosis-receipt-template.md` and append one outcome to the same stable BU
 `inconclusive` and `reproduction-blocked` are resumable outcomes, not guesses or closure. Record the
 missing evidence and exact resume condition. Do not force a diagnosis.
 
+A `diagnosed` root cause is not established until its **reach** is: enumerate the callers and entry
+points of the root cause and record, for each, the evidence that it is affected or the evidence that
+rules it out. A seam narrowed to the caller the report happened to name leaves the identical defect
+in every sibling caller, where it returns later as a separate Bug Case. An unenumerated caller is not
+a caller ruled out; when reach cannot be established from safe observation, the outcome is
+`inconclusive` with the missing evidence recorded, never `diagnosed` with a narrower seam.
+
 ## Handoff
 
-A `diagnosed` receipt supplies the root cause, safe repair seam, expected fixed behaviour, and retest
-conditions. Append it to the Bug Case and stop. The user or host agent chooses how to repair and
+A `diagnosed` receipt supplies the root cause, its reach, safe repair seam, expected fixed behaviour,
+and retest conditions. Append it to the Bug Case and stop. The user or host agent chooses how to repair and
 produce a new candidate; `testing-workflow` verifies that exact candidate later.

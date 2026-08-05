@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "issue-76",
+  "classification": "minor",
+  "migration": "none",
+  "summary": "Require a diagnosed root cause to establish its reach across every caller, and carry that reach into the bug-workflow repair handoff.",
+  "paths": [
+    "skills/bug-workflow/SKILL.md",
+    "skills/bug-workflow/bug-case-template.md",
+    "skills/diagnose/SKILL.md",
+    "skills/diagnose/diagnosis-receipt-template.md"
+  ]
+}
