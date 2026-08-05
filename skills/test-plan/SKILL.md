@@ -121,6 +121,10 @@ Record the reusable release expectations:
 P0 covers core value, auth, money, destructive state changes, or a flow that must not regress.
 Unknown capability is `not-configured`, never PASS.
 
+Read [scenario-craft.md](scenario-craft.md) before writing the scenario table. It covers how to cut
+journeys so their IDs outlive the UI, and how to write the forbidden half — the column that decides
+whether the contract can catch anything, and the one most often left as a restatement of "fails".
+
 ### Release Delta
 
 For one candidate, record:
