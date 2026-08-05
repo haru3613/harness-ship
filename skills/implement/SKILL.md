@@ -132,8 +132,8 @@ narrows how the verifier can misbehave; it never makes its findings authoritativ
 
 1. Resolve one frontier ticket matching the configured **ready criteria**, and claim it per the
    configured transition.
-2. Load the approved spec, Test Contract revision, scenario mapping, test seams, and the
-   explicit out-of-scope list.
+2. Load the approved spec, the Test Contract revision at `.harness-ship/test-contract.md`,
+   scenario mapping, test seams, and the explicit out-of-scope list.
 3. Inspect `git worktree list`, then create a worktree at **`<repo-root>/.worktrees/<task-slug>`**
    on a new feature branch from the configured integration branch. Ensure `.worktrees/` is ignored,
    preferably via `.git/info/exclude`. Build-only worktrees live there too, at detached HEAD on an

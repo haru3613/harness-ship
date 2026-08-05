@@ -12,8 +12,9 @@ description: >-
 Learn how the feature actually behaves before choosing automation. This skill may edit test code;
 it never edits product code or changes expected behaviour to match an implementation.
 
-Read repository instructions and the current Test Contract first. Exploration may proceed against a
-draft, but do not author automated expectations until the relevant behaviour is user-approved.
+Read repository instructions and the current Test Contract at `.harness-ship/test-contract.md`
+first. Exploration may proceed against a draft, but do not author automated expectations until the
+relevant behaviour is user-approved.
 
 ## Candidate boundary
 
@@ -38,8 +39,9 @@ surface. Exercise a bounded set of paths chosen by risk:
 - interactions with the nearest external boundary.
 
 Capture exact steps, observations, console/runtime failures, and durable evidence. If observed
-behaviour contradicts the Test Contract, record a Bug Case; do not automate the defect as expected
-behaviour. If expected behaviour is ambiguous, stop for a revised Test Contract.
+behaviour contradicts the Test Contract, record a Bug Case at `.harness-ship/bugs/<BUG-ID>.md`; do
+not automate the defect as expected behaviour. If expected behaviour is ambiguous, stop for a
+revised Test Contract.
 
 ## Pass B — existing-test audit
 

@@ -1,5 +1,7 @@
 # Bug Case
 
+Written to `.harness-ship/bugs/<BUG-ID>.md`. Diagnosis Receipts append to the same file.
+
 - **Stable BUG-ID:** `BUG-<tracker-or-portable-id>` — assign once
 - **Phase:** `intake | classification | routed | blocked | needs-evidence`
 - **Classification:** `pending | product-defect | test-defect | environment-defect | spec-ambiguity | duplicate | known-limitation`

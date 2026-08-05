@@ -38,7 +38,9 @@ cause before you accept it. "Plausible because it matches last time" is exactly 
 
 ## 3 — Append the Diagnosis Receipt
 
-Use `diagnosis-receipt-template.md` and append one outcome to the same stable BUG-ID:
+Use `diagnosis-receipt-template.md` and append one outcome to the same stable BUG-ID, in the same
+`.harness-ship/bugs/<BUG-ID>.md` file the Bug Case lives in — append-only, never overwriting a
+previous attempt:
 
 - `diagnosed` — evidence identifies a falsifiable root cause and a safe repair seam;
 - `inconclusive` — safe observations exist, but the evidence does not distinguish the remaining

@@ -73,6 +73,54 @@ class SkillStructureTests(unittest.TestCase):
                 with self.subTest(source=str(source.relative_to(ROOT)), target=target):
                     self.assertTrue((source.parent / target).resolve().is_file())
 
+    def test_record_paths_agree_across_every_skill(self) -> None:
+        """One skill writing a record another cannot find is a silent failure.
+
+        Nothing at runtime resolves these strings, so a typo or an invented
+        variant costs nothing until `release-gate` reports NO-GO because it
+        looked in the wrong place. Pin the vocabulary instead.
+        """
+        canonical = {
+            ".harness-ship/",
+            ".harness-ship/test-contract.md",
+            ".harness-ship/test-contract.draft.md",
+            ".harness-ship/bugs/",
+            ".harness-ship/bugs/<BUG-ID>.md",
+            ".harness-ship/candidates/",
+            ".harness-ship/candidates/<short-sha>/",
+            ".harness-ship/candidates/<short-sha>/handoff.md",
+            ".harness-ship/candidates/<short-sha>/ledger.md",
+            ".harness-ship/candidates/<short-sha>/report.md",
+        }
+        # README and the upgrade guide cite these paths too. Their tree diagrams
+        # list bare filenames inside fenced blocks and are not covered here —
+        # what is pinned is every backticked path an agent is told to act on.
+        sources = [*SKILLS.rglob("*.md"), ROOT / "README.md", ROOT / "docs" / "upgrade-guide.md"]
+        # Only inside backticks: the tree in test-plan's table and any prose that
+        # names a path. A bare mention in a sentence is not a path reference.
+        cited = {
+            path
+            for source in sources
+            for path in re.findall(
+                r"`(\.harness-ship[^`]*)`", source.read_text(encoding="utf-8")
+            )
+        }
+        self.assertTrue(cited, "no skill names a record path")
+        self.assertEqual(
+            cited - canonical, set(), "skill cites a record path outside the layout"
+        )
+
+        # The writers must actually be present; a layout nothing writes is dead.
+        for skill, path in (
+            ("test-plan", ".harness-ship/test-contract.md"),
+            ("release-gate", ".harness-ship/test-contract.md"),
+            ("bug-workflow", ".harness-ship/bugs/<BUG-ID>.md"),
+            ("diagnose", ".harness-ship/bugs/<BUG-ID>.md"),
+        ):
+            with self.subTest(skill=skill):
+                text = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
+                self.assertIn(f"`{path}`", text)
+
     def test_test_confidence_surface_replaces_dev_orchestration(self) -> None:
         for removed in ("dev-workflow", "acceptance-design"):
             self.assertFalse((SKILLS / removed).exists())

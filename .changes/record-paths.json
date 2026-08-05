@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "id": "record-paths",
+  "classification": "breaking",
+  "migration": "required",
+  "summary": "Give every Harness Ship record a fixed home under .harness-ship/ instead of leaving it a portable template with no address, so release-gate can locate an approved contract, a provenance receipt, and an append-only ledger from a cold start rather than requiring the user to paste them into the session.",
+  "paths": [
+    "README.md",
+    "docs/upgrade-guide.md",
+    "skills/bug-workflow/SKILL.md",
+    "skills/bug-workflow/bug-case-template.md",
+    "skills/diagnose/SKILL.md",
+    "skills/diagnose/diagnosis-receipt-template.md",
+    "skills/exploratory-testing/SKILL.md",
+    "skills/implement/SKILL.md",
+    "skills/release-gate/SKILL.md",
+    "skills/tdd/SKILL.md",
+    "skills/test-plan/SKILL.md",
+    "skills/test-plan/test-contract-template.md",
+    "skills/testing-workflow/SKILL.md",
+    "skills/testing-workflow/candidate-handoff-template.md",
+    "skills/testing-workflow/execution-ledger-template.md",
+    "skills/testing-workflow/test-report-template.md",
+    "tests/test_repo_contract.py"
+  ]
+}

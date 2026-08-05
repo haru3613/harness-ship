@@ -10,11 +10,12 @@ description: >-
 
 Create one durable Bug Case from test evidence, then classify before choosing an owner. This is a
 triage workflow: it does not diagnose every failure, change product code, or run the repaired
-artifact. Use `bug-case-template.md` as the portable record.
+artifact. Write it from `bug-case-template.md` to `.harness-ship/bugs/<BUG-ID>.md`.
 
 ## 1 — Intake one Bug Case
 
-Start from the execution-ledger attempt and validated candidate handoff. Preserve:
+Start from the failing attempt in `.harness-ship/candidates/<short-sha>/ledger.md` and the validated
+handoff beside it at `handoff.md`. Preserve:
 
 - Test Contract revision, scenario ID, and originating work;
 - full source SHA, exact tested artifact/environment revision, and provenance receipt;
@@ -52,10 +53,10 @@ Append the owner, next action, timestamp, and evidence link to the history. `blo
 `needs-evidence` are resumable phases, not closure dispositions: record the blocker or missing
 evidence plus the exact resume condition, then stop without pretending triage completed.
 
-Use the configured tracker adapter to publish or update the same case. If the tracker adapter is
-unavailable, emit the filled **portable Bug Case** from `bug-case-template.md`, state exactly
-**publication did not occur**, and preserve the next safe action. Do not invent a tracker ID,
-publication receipt, or successful handoff.
+Write the Bug Case to `.harness-ship/bugs/<BUG-ID>.md` regardless of tracker availability. Use the
+configured tracker adapter to publish or update the same case and mirror its ID into the file. If
+the tracker adapter is unavailable, state exactly **publication did not occur** and preserve the
+next safe action. Do not invent a tracker ID, publication receipt, or successful handoff.
 
 For every non-product classification, this workflow ends after classification and routing.
 

@@ -1,5 +1,8 @@
 # Test Contract — `<contract-id>` rev.`<n>` — `DRAFT | APPROVED`
 
+Drafted to `.harness-ship/test-contract.draft.md`; at approval it replaces
+`.harness-ship/test-contract.md`, which holds only the approved revision.
+
 While `DRAFT`, `release-gate` returns `NO-GO`. Only the user approves this contract.
 
 - **Product type and supported surfaces:** `<what ships, on what>`
@@ -34,7 +37,7 @@ a seam cannot prove a scenario, say so in the seam column rather than recording 
 ### Source-to-artifact provenance
 
 - **Method:** `<how a tested artifact is bound to a full source SHA | not-configured>`
-- **Durable evidence location:** `<path or system>`
+- **Durable evidence location:** `.harness-ship/candidates/`, one directory per candidate
 
 `not-configured` provenance blocks release on its own; no amount of passing tests substitutes for it.
 

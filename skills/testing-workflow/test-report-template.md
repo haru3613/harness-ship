@@ -1,10 +1,12 @@
 # Test Report — <feature / release>
 
+Written to `.harness-ship/candidates/<short-sha>/report.md`.
+
 **<Ready for release gate | Not ready>** — <one-sentence reason>
 
 - **Test Contract:** <project-test-id/revision>
 - **Project Test Baseline / Release Delta:** <links>
-- **TEST-RUN-ID / ledger:** <run + durable link>
+- **TEST-RUN-ID / ledger:** <run ID> + `.harness-ship/candidates/<short-sha>/ledger.md`
 - **Source SHA:** <full 40-character SHA>
 - **Artifact/environment:** <exact revision>
 - **Artifact provenance:** <source + receipt>

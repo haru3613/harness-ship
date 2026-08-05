@@ -20,7 +20,8 @@ baseline. Do not reinterpret a legacy generic test command.
 
 Before editing code, read:
 
-- the ticket's expected behaviour and approved Test Contract revision when one exists,
+- the ticket's expected behaviour and approved Test Contract revision at
+  `.harness-ship/test-contract.md` when one exists,
 - its scenario traceability,
 - the test seams and interfaces chosen in the spec,
 - any established test commands and repository conventions.
