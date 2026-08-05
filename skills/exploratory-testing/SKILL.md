@@ -73,6 +73,12 @@ Write the minimum sufficient tests in the same context as exploration. Run the c
 the nearest relevant regression scope. Run a full suite only when repository policy requires it or
 the suite is already cheap. Never install a framework without explicit user approval.
 
+Choosing the right seam does not make the test at that seam a good one. Follow
+[behaviour-first tests](../tdd/tests.md) and [replacing dependencies](../tdd/mocking.md) for the
+test's own construction, and [scenario-craft.md](../test-plan/scenario-craft.md) when exploration
+turns up a risk the contract has no scenario for. Reading these is independent of the `tdd` workflow,
+which stays user-invoked.
+
 ## Exploration report
 
 Publish one durable report containing candidate provenance, paths explored, observations and Bug

@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "scenario-craft",
+  "classification": "minor",
+  "migration": "none",
+  "summary": "Teach the craft the contract's shape assumes: how to cut journeys so their IDs outlive the UI, and how to write the forbidden half as one of the four ways a system goes wrong while still appearing to work, plus a readiness check that rejects a row whose seam cannot reach its own forbidden clause. Also connect exploratory-testing to the behaviour-first test and dependency-replacement references, which were reachable only through the user-invoked tdd workflow even though exploratory-testing is the skill that writes the tests.",
+  "paths": [
+    "skills/exploratory-testing/SKILL.md",
+    "skills/test-plan/SKILL.md",
+    "skills/test-plan/scenario-craft.md"
+  ]
+}
