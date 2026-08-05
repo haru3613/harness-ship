@@ -40,7 +40,7 @@ class VerifierBoundaryTests(unittest.TestCase):
 
 class SkillStructureTests(unittest.TestCase):
     def test_every_skill_is_discoverable_under_its_own_name(self) -> None:
-        for skill in sorted(SKILLS.iterdir()):
+        for skill in sorted(s for s in SKILLS.iterdir() if s.is_dir()):
             with self.subTest(skill=skill.name):
                 name = re.search(r"(?m)^name:\s*(\S+)\s*$", frontmatter(skill / "SKILL.md"))
                 self.assertIsNotNone(name, "SKILL.md frontmatter has no name")
