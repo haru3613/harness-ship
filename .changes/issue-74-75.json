@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "issue-74-75",
+  "classification": "minor",
+  "migration": "none",
+  "summary": "Direct test-plan to mine prior failure evidence when auditing an existing project, and add a portable Test Contract template.",
+  "paths": [
+    "scripts/validate_plugin_lifecycle.sh",
+    "skills/test-plan/SKILL.md",
+    "skills/test-plan/test-contract-template.md"
+  ]
+}

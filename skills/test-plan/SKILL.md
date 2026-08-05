@@ -19,7 +19,8 @@ release criteria in the Test Contract instead of expanding project configuration
 
 ## Two-layer Test Contract
 
-Give the contract a stable ID and revision. It has two independently reviewable layers:
+Give the contract a stable ID and revision. It has two independently reviewable layers. Use
+`test-contract-template.md` as the portable record.
 
 ### Project Test Baseline
 
@@ -63,8 +64,20 @@ Inspect before proposing change:
 
 1. inventory the complete test tree, runners, CI jobs, deployment path, and artifact provenance;
 2. identify current green, red, flaky, skipped, and missing capabilities;
-3. map existing tests to user journeys and risks; and
-4. preserve repository-native tools while classifying gates as required, observe-only, or deferred.
+3. map existing tests to user journeys and risks;
+4. mine the project's own defect history — closed defect issues, revert and fix commits, incident
+   records, and the Bug Cases and Diagnosis Receipts this contract has already produced — plus the
+   predecessor's when the project is a rewrite, clustering by failure mechanism rather than by file;
+   and
+5. preserve repository-native tools while classifying gates as required, observe-only, or deferred.
+
+What has already broken is the most reliable evidence of what must be proven. A recurring mechanism
+that no journey describes is a **baseline gap**: add the scenario before adding coverage. A mechanism
+that recurred despite an existing defence has disproved that defence — the defence is not evidence,
+and the scenario keeps whatever classification its own priority earns. When the history is sampled
+rather than read in full, say so; a sampled count is a floor, never a reason to lower a
+classification. A defect caught before release is evidence about seam adequacy, not a production
+incident; record which one it is.
 
 Do not replace a framework or duplicate coverage merely to make the project resemble a template.
 
