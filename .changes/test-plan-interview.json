@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "id": "test-plan-interview",
+  "classification": "minor",
+  "migration": "none",
+  "summary": "Require test-plan to complete a round of real user answers before drafting any scenario table, naming what inspection cannot reach — P0 priority, what counts as money or irreversible state, forbidden behaviour, whether an existing red or skipped test is accepted or forgotten, acceptable deferrals, and the release target — instead of generating a full baseline from inspection and asking for one blanket approval.",
+  "paths": [
+    "README.md",
+    "skills/test-plan/SKILL.md"
+  ]
+}

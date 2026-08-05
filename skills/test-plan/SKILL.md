@@ -105,6 +105,9 @@ create E2E infrastructure for an empty repository. A draft may honestly leave ca
 `not-configured` until a testable slice exists. Add automation only when a real behaviour and seam
 justify it.
 
+Here there is nothing to inspect, so every answer comes from the interview below. Never synthesize a
+baseline from the sentence that started the session.
+
 ## Existing project
 
 Inspect before proposing change:
@@ -127,6 +130,44 @@ classification. A defect caught before release is evidence about seam adequacy, 
 incident; record which one it is.
 
 Do not replace a framework or duplicate coverage merely to make the project resemble a template.
+
+## Ask before drafting
+
+Inspection establishes what the project *has*. It cannot establish what *matters*, and the contract
+is a statement about what matters. Complete at least one round of real answers before drafting any
+scenario table.
+
+Use the harness's structured question tool where one exists. Ask one topic per question and wait for
+the answer before the next; add rounds rather than folding several topics into one choice. Where
+inspection suggests an answer, lead with it as a hypothesis to confirm or correct — never as a
+finished fact. Skip anything the repository already answers with explicit evidence; a purpose
+transcribed from a README is a hypothesis, not evidence. A topic the user has already answered
+unprompted is answered — do not re-ask it to satisfy the round.
+
+Ask about what inspection cannot reach:
+
+- **Priority.** Which journeys are P0. Code shows what exists, not what the business cannot afford
+  to break. Never derive P0 from test coverage — the best-covered path is often the easiest one.
+- **Money and destruction.** What counts as money, irreversible state, or data loss *in this
+  product*. A refund, a scheduled send, a bulk delete, and a published post are not recognizable
+  from a call graph.
+- **Forbidden behaviour.** What must never happen, per journey. The scenario table's `Forbidden`
+  column is almost never inferable; an expected-behaviour-only contract passes every test while the
+  thing the user actually fears still ships.
+- **Existing red, flaky, and skipped tests.** For each, whether it is a known-accepted state or an
+  unreported gap. Both look identical in the tree, and guessing wrong either manufactures a blocker
+  or launders a real failure into the baseline.
+- **Acceptable deferral.** Which gaps may be deferred and why. A deferral the user did not make is
+  the model deciding what may ship broken.
+- **Release target.** What this baseline is being written against.
+
+Then propose. Inferred answers may be presented for confirmation only after that first round, and
+each still names what it was inferred from.
+
+Do not generate the complete baseline and delta from inspection alone and ask for one blanket
+approval. An approved contract nobody chose is the failure mode this whole workflow exists to
+prevent: `release-gate` will enforce it exactly, and every later Bug Case, Diagnosis Receipt, and
+verdict traces back to a scenario the user never actually agreed to.
 
 ## Approval and revision
 
