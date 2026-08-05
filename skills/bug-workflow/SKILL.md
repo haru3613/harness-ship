@@ -66,8 +66,13 @@ For a diagnosed `product-defect`, append a **repair handoff** containing:
 - stable BUG-ID, Test Contract trace, and original failed-candidate evidence;
 - Diagnosis Receipt when one exists;
 - falsifiable root cause or unresolved uncertainty;
+- the root cause's **reach** as the Diagnosis Receipt established it — every affected caller, not
+  only the one this Bug Case reported;
 - expected fixed behaviour and affected scenarios; and
 - the exact evidence a future candidate must provide for retest.
+
+Carrying a narrower reach than the receipt established leaves the identical defect in every sibling
+caller, where it returns later as a separate Bug Case.
 
 Then stop. The user or host agent chooses the repair process; Harness Ship never requires
 `implement`, `tdd`, a branch strategy, or a deployment method.

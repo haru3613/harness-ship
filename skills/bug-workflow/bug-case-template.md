@@ -33,7 +33,8 @@ needs-evidence resume, and retest under the same stable BUG-ID.
 ## Repair handoff
 
 - **Diagnosis Receipt:** `<link | not produced>`
-- **Expected fixed behaviour:** `<observable outcome>`
+- **Shared-root-cause reach:** `<affected callers, from the Diagnosis Receipt | reaches only the reported caller>`
+- **Expected fixed behaviour:** `<observable outcome, covering every affected caller>`
 - **Affected scenarios:** `<scenario IDs>`
 - **Retest evidence required:** `<candidate provenance + checks>`
 
