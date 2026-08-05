@@ -84,6 +84,7 @@ validate_current_install() {
     "skills/exploratory-testing/SKILL.md" \
     "skills/release-gate/SKILL.md" \
     "skills/test-plan/SKILL.md" \
+    "skills/test-plan/test-contract-template.md" \
     "skills/testing-workflow/candidate-handoff-template.md"; do
     test -f "${install_root}/${required}"
   done
