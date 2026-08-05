@@ -11,7 +11,7 @@
       "source": {
         "source": "github",
         "repo": "haru3613/harness-ship",
-        "ref": "v4.1.0"
+        "ref": "v4.2.0"
       },
       "description": "Create a user-approved Project Test Baseline and Release Delta, explore runnable features before adding minimum sufficient automation, execute the contract against an exact candidate, and return an evidence-backed release verdict without prescribing development or promoting the release.",
       "category": "engineering",

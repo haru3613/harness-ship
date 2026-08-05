@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.2.0
+
+- [issue-74-75] Direct test-plan to mine prior failure evidence when auditing an existing project, and add a portable Test Contract template. (classification: minor; migration: none).
+- [issue-76] Require a diagnosed root cause to establish its reach across every caller, and carry that reach into the bug-workflow repair handoff. (classification: minor; migration: none).
+
 ## 4.1.0
 
 - [dev-helpers-command-only] Make the seven development helpers user-invoked only in both harnesses so no agent selects them over the repository's own development stack; type /harness-ship:<name> (Codex $harness-ship:<name>) to run them. (classification: minor; migration: recommended).
