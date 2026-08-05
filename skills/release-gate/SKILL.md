@@ -19,7 +19,10 @@ Given the candidate's full source SHA, read these before asking the user for any
 - `.harness-ship/test-contract.md` — the user-approved contract containing Project Test Baseline
   plus Release Delta. Gate against this file only. A `.harness-ship/test-contract.draft.md` beside
   it is an unapproved revision in progress and is never evidence, but its presence is also never a
-  reason to reject a candidate the approved file covers;
+  reason to reject a candidate the approved file covers. When this file is a pointer, follow it and
+  gate against the document it names; its `Not carried by that document` field states what this
+  project's criteria genuinely do not cover, and an item listed there is an unevaluated gap, never a
+  pass;
 - `.harness-ship/candidates/<short-sha>/report.md` and `ledger.md` — the `testing-workflow` report
   and its append-only ledger for this candidate;
 - `.harness-ship/candidates/<short-sha>/handoff.md` — the exact artifact/environment revision and

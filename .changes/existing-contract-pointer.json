@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "existing-contract-pointer",
+  "classification": "minor",
+  "migration": "none",
+  "summary": "Let a project whose release criteria already live in an accepted document keep that document as its Test Contract, with .harness-ship/test-contract.md as a pointer that must name what the two-layer model carries and the document does not, so a mature project is not made to restate working criteria into a weaker parallel copy that immediately drifts.",
+  "paths": [
+    "README.md",
+    "skills/release-gate/SKILL.md",
+    "skills/test-plan/SKILL.md"
+  ]
+}

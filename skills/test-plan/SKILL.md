@@ -52,10 +52,45 @@ other, and one shared contract would force a revision bump on surface A to be re
 B's untested candidates. Say so and stop rather than inventing a per-surface path; a repository that
 needs this needs a contract change, not a directory convention.
 
+## An existing document may already be the contract
+
+Before drafting anything, check whether this project already states what must be proven, under
+another name — a journey coverage map, a release gate checklist, an accepted acceptance-criteria
+document. A mature project usually does.
+
+It qualifies when it carries all four:
+
+- stable per-item IDs that survive the item being retired;
+- both expected behaviour **and** the negative — what must never happen;
+- a priority or blocking classification the project actually honours; and
+- a record that the user accepted it, not just that someone wrote it.
+
+When it qualifies, **do not restate it**. `.harness-ship/test-contract.md` becomes a pointer:
+
+```markdown
+# Test Contract — pointer
+
+- **Contract:** `<path>` — the document this project already treats as its release criteria
+- **Qualifies because:** `<where its stable IDs, expected, forbidden, and priority live>`
+- **Approved by / date:** `<user + date>`
+- **Kept honest by:** `<the check that fails when it drifts | nothing>`
+- **Not carried by that document:** `<what the two-layer model has and it does not>`
+```
+
+The last field is what stops a pointer from being a way to skip the work. A document written for
+one release usually has no reusable baseline separable from its delta, so re-reviewing one candidate
+means re-reviewing everything; say that rather than letting the pointer imply full coverage. If the
+gap is large enough that release criteria cannot be read out of the document at all, it does not
+qualify — draft a contract instead.
+
+A project whose existing document is enforced by its own check is ahead of this template, not behind
+it. Replacing it with a restatement loses that enforcement and creates a second source of truth that
+begins drifting immediately.
+
 ## Two-layer Test Contract
 
-Give the contract a stable ID and revision. It has two independently reviewable layers. Draft it
-from `test-contract-template.md`.
+Only when no qualifying document exists. Give the contract a stable ID and revision. It has two
+independently reviewable layers. Draft it from `test-contract-template.md`.
 
 `.harness-ship/test-contract.md` holds only the currently approved revision. Draft every revision —
 including the first — to `.harness-ship/test-contract.draft.md`, and replace the approved file from

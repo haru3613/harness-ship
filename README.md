@@ -104,6 +104,11 @@ being tested or gated against the current one.
 The layout carries no product or surface qualifier, so it assumes **one release surface per
 repository**. A monorepo whose services release on independent cadences does not fit.
 
+A project that already states its release criteria somewhere — a journey coverage map, an accepted
+gate checklist — keeps that document. `test-contract.md` then holds a pointer to it rather than a
+restatement, and names what the two-layer model carries that the document does not. Existing
+criteria that a project's own CI already enforces are ahead of this template, not behind it.
+
 This is what makes a verdict reproducible. `release-gate` needs an approved contract, a provenance
 receipt, and an append-only ledger bound to one SHA — a session that has to be told where those are
 cannot gate anything it did not personally watch happen. A project that also tracks this work in an
