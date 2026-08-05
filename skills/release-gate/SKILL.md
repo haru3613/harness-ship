@@ -14,15 +14,26 @@ promotes, tags, publishes, seeds data, or changes release criteria.
 
 ## Required inputs
 
-- a user-approved Test Contract revision containing Project Test Baseline plus Release Delta;
-- full candidate source SHA and intended release target;
-- exact artifact/environment revision and provenance receipt binding it to that SHA;
-- exact-head CI/build/test evidence;
-- the `testing-workflow` report and append-only ledger for this candidate;
-- applicable operational-risk evidence and known gaps; and
-- rollback or recovery evidence when the release delta makes it required.
+Given the candidate's full source SHA, read these before asking the user for anything:
 
-Missing or placeholder required input is evidence of `NO-GO`, not permission to infer PASS.
+- `.harness-ship/test-contract.md` — the user-approved contract containing Project Test Baseline
+  plus Release Delta. Gate against this file only. A `.harness-ship/test-contract.draft.md` beside
+  it is an unapproved revision in progress and is never evidence, but its presence is also never a
+  reason to reject a candidate the approved file covers;
+- `.harness-ship/candidates/<short-sha>/report.md` and `ledger.md` — the `testing-workflow` report
+  and its append-only ledger for this candidate;
+- `.harness-ship/candidates/<short-sha>/handoff.md` — the exact artifact/environment revision and
+  the provenance receipt binding it to that SHA; and
+- `.harness-ship/bugs/` — any Bug Case still open against a scenario this candidate must pass.
+
+Then establish from outside the repository: the intended release target, exact-head CI/build/test
+evidence, applicable operational-risk evidence and known gaps, and rollback or recovery evidence
+when the release delta makes it required.
+
+A record that is absent, `DRAFT`, or still carries a template placeholder is evidence of `NO-GO`,
+not permission to infer PASS. An absent `.harness-ship/` is `NO-GO` with the reason that this
+project has no contract to gate against — say that, rather than offering to evaluate the candidate
+from whatever the user can paste into the session.
 
 ## Evaluate in order
 

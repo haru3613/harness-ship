@@ -13,6 +13,39 @@ The marketplace catalog is added or refreshed from `main`; only its stable plugi
 to the release tag. This lets a catalog refresh discover a future stable patch without silently
 moving the already published stable source.
 
+## Records move into the repository
+
+Records used to be "portable" — a filled template with no home, which in practice meant it lived in
+the conversation that produced it. They now have fixed paths under `.harness-ship/`, committed with
+the code. Config stays v3; **do not rerun setup**.
+
+```text
+.harness-ship/
+  test-contract.md              # the approved Project Test Baseline + Release Delta
+  test-contract.draft.md        # a revision in progress, until the user approves it
+  bugs/<BUG-ID>.md              # Bug Case, with each Diagnosis Receipt appended
+  candidates/<short-sha>/       # handoff.md, ledger.md, report.md
+```
+
+To migrate a project already using Harness Ship:
+
+- Move the current approved Test Contract into `.harness-ship/test-contract.md`, keeping its
+  contract ID, revision number, and `APPROVED` header. Approval does not need to be re-obtained; an
+  unchanged contract that only moved is the same revision.
+- If a revision was mid-review when you upgraded, put it at `.harness-ship/test-contract.draft.md`
+  instead. The approved file must never carry a `DRAFT` header — `release-gate` gates against it,
+  and a draft parked there would block every candidate the approved revision still covers.
+- Move open Bug Cases to `.harness-ship/bugs/<BUG-ID>.md`, keeping each stable BUG-ID as the
+  filename, and append their existing Diagnosis Receipts to the same file in attempt order.
+- Leave closed candidates where they are. Backfilling `.harness-ship/candidates/` for releases that
+  already shipped proves nothing; the next candidate `testing-workflow` runs writes its own.
+- Where a tracker holds this work, keep it. The tracker holds the discussion, the repository holds
+  the evidence — the file carries the durable link to its tracker item.
+
+Until the contract is at its path, `release-gate` returns `NO-GO` with the reason that the project
+has no contract to gate against. That is the intended behaviour, not a regression: a verdict the
+session cannot re-derive from the repository is not a verdict.
+
 ## Test and release confidence migration
 
 Releases with the test-and-release-confidence surface remove mandatory development orchestration

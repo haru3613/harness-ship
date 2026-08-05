@@ -84,6 +84,32 @@ The Test Contract is the only required judgment gate:
 Harness Ship stops at a repair handoff. It preserves the failed artifact, diagnosis, expected fixed
 behaviour, and retest conditions; the user or host agent chooses how to repair the product.
 
+## Where the records live
+
+Every record is a file under `.harness-ship/` at the repository root, committed with the code it
+describes:
+
+```text
+.harness-ship/
+  test-contract.md              # the approved Project Test Baseline + Release Delta
+  test-contract.draft.md        # a revision in progress, until the user approves it
+  bugs/<BUG-ID>.md              # Bug Case, with each Diagnosis Receipt appended
+  candidates/<short-sha>/       # handoff.md, ledger.md, report.md for one exact candidate
+```
+
+`test-plan` creates the tree; the other workflows read and extend it. The paths are fixed, not
+configured. Drafts stay separate so that planning the next revision never disturbs a candidate
+being tested or gated against the current one.
+
+The layout carries no product or surface qualifier, so it assumes **one release surface per
+repository**. A monorepo whose services release on independent cadences does not fit.
+
+This is what makes a verdict reproducible. `release-gate` needs an approved contract, a provenance
+receipt, and an append-only ledger bound to one SHA — a session that has to be told where those are
+cannot gate anything it did not personally watch happen. A project that also tracks this work in an
+issue tracker still writes the files: the tracker holds the discussion, the repository holds the
+evidence the next session can find on its own.
+
 ## Greenfield and existing projects
 
 For an empty project, `test-plan` starts with the product surface and first real risks. It does not

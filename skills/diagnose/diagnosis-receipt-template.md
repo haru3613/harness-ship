@@ -1,5 +1,7 @@
 # Diagnosis Receipt
 
+Appended to `.harness-ship/bugs/<BUG-ID>.md`, after the Bug Case it diagnoses.
+
 - **Stable BUG-ID:** `<existing BUG-ID>`
 - **Diagnosis attempt:** `<append-only number>`
 - **Status:** `diagnosed | inconclusive | reproduction-blocked`

@@ -1,14 +1,14 @@
 # Test Execution Ledger — <feature / release>
 
-Append attempts; never overwrite them.
+Written to `.harness-ship/candidates/<short-sha>/ledger.md`. Append attempts; never overwrite them.
 
 - **TEST-RUN-ID:** <stable run ID>
 - **Test Contract:** <project-test-id/revision>
-- **Candidate handoff:** <durable link>
+- **Candidate handoff:** `.harness-ship/candidates/<short-sha>/handoff.md`
 - **Full source SHA:** <40-character SHA>
 - **Exact artifact/environment revision:** <immutable artifact + non-production environment>
 - **Artifact-provenance source / receipt:** <source + durable receipt>
-- **Evidence location:** <durable path>
+- **Evidence location:** `.harness-ship/candidates/<short-sha>/`
 
 | Attempt | Previous | Started / completed | Scenario | Baseline / delta | Method / seam | Raw outcome | Normalized result | Evidence | Notes |
 |---|---|---|---|---|---|---|---|---|---|

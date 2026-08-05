@@ -1,5 +1,7 @@
 # Test Candidate Handoff — <feature / release>
 
+Written to `.harness-ship/candidates/<short-sha>/handoff.md`.
+
 - **Status:** <Ready | Not ready>
 - **Test Contract:** <project-test-id/revision>
 - **Project Test Baseline:** <revision/link>
@@ -8,7 +10,7 @@
 - **Full source SHA:** <40-character SHA>
 - **Exact artifact/environment revision:** <immutable artifact + non-production environment>
 - **Artifact-provenance source / receipt:** <provider/build manifest + durable receipt>
-- **Evidence location:** <writable durable location>
+- **Evidence location:** `.harness-ship/candidates/<short-sha>/`
 - **Access path:** <URL/app build/API endpoint/local command>
 - **Fixtures/accounts:** <safe fixtures, roles, permissions; no secrets>
 - **Known risks:** <release-delta risks>

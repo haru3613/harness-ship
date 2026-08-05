@@ -19,13 +19,14 @@ framework without approval or infer PASS from `not-configured`.
 
 ## 1 — Validate the candidate handoff
 
-Use [candidate-handoff-template.md](candidate-handoff-template.md). Require:
+Use [candidate-handoff-template.md](candidate-handoff-template.md), written to
+`.harness-ship/candidates/<short-sha>/handoff.md`. Require:
 
 - approved Test Contract revision and scenario scope;
 - full source SHA;
 - exact non-production artifact/environment revision;
 - provenance source and receipt binding the artifact to the SHA;
-- writable durable evidence location; and
+- a writable `.harness-ship/candidates/<short-sha>/`; and
 - access path, safe fixtures/accounts, known risks, and established test evidence.
 
 Any missing, placeholder, stale, or mismatched required value makes the handoff `Not ready`. Do not
@@ -50,7 +51,8 @@ artifact cannot prove a later candidate.
 
 ## 3 — Execute append-only
 
-Use [execution-ledger-template.md](execution-ledger-template.md). Immediately before each action,
+Use [execution-ledger-template.md](execution-ledger-template.md), written to
+`.harness-ship/candidates/<short-sha>/ledger.md`. Immediately before each action,
 revalidate the Test Contract revision, source SHA, artifact revision, provenance receipt, evidence
 destination, and command/manual method. On drift, append NOT RUN / NOT TESTED and stop that item.
 
@@ -75,16 +77,21 @@ or tautological check becomes BLOCKED until corrected and rerun.
 
 ## 5 — Report and route
 
-Produce [test-report-template.md](test-report-template.md) from the ledger. State each user journey,
-exact candidate, method, evidence, gaps, and one verdict: `Ready for release gate` or `Not ready`.
+Produce [test-report-template.md](test-report-template.md) at
+`.harness-ship/candidates/<short-sha>/report.md` from the ledger. State each user journey, exact
+candidate, method, evidence, gaps, and one verdict: `Ready for release gate` or `Not ready`.
 
-For every non-pass, run `bug-workflow` under one stable BUG-ID. Harness Ship classifies the finding,
-preserves evidence, and emits repair/retest conditions; it does not dictate the repair workflow.
+For every non-pass, run `bug-workflow` under one stable BUG-ID, recorded at
+`.harness-ship/bugs/<BUG-ID>.md`. Harness Ship classifies the finding, preserves evidence, and
+emits repair/retest conditions; it does not dictate the repair workflow.
 
-When a fixed candidate returns, require the same BUG-ID, original failed evidence, diagnosis when
-available, repair summary, new full source SHA, new artifact/environment revision, new provenance
-receipt, affected scenarios, and neighbouring regression scope. Rerun the original observation,
-affected scenarios, and proportionate neighbours through this same ledger. Never overwrite the
-failed artifact or call implementation evidence a verification result.
+When a fixed candidate returns, it is a new candidate at a new SHA: it gets its own directory and its
+own ledger at `.harness-ship/candidates/<short-sha>/ledger.md`, keyed by its own SHA and seeded with
+a link back to the failed candidate's directory. Require the same BUG-ID, original failed evidence,
+diagnosis when available, repair summary, new full source SHA, new artifact/environment revision,
+new provenance receipt, affected scenarios, and neighbouring regression scope — continuity runs
+through the BUG-ID, not through reusing a prior candidate's ledger file. Rerun the original
+observation, affected scenarios, and proportionate neighbours. Never overwrite the failed artifact
+or call implementation evidence a verification result.
 
 `release-gate` consumes this report. Release promotion remains a separate human-authorized action.
