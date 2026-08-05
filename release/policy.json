@@ -54,6 +54,13 @@
       "declarations": [
         "dev-helpers-command-only"
       ]
+    },
+    {
+      "version": "4.2.0",
+      "declarations": [
+        "issue-74-75",
+        "issue-76"
+      ]
     }
   ]
 }
