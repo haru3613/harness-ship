@@ -90,6 +90,10 @@ A row is not ready while any of these is true:
   implementation claim; it belongs in a test, not a contract.
 - no evidence would distinguish a pass from a fail. If a passing run and a failing run produce the
   same artifact, the row's evidence requirement is not written yet.
+- an `automated` row names its seam in a form nobody can resolve later. *"Covered by the pricing
+  tests"* cannot be checked against the repository; a file path plus test name, a command, or a CI
+  job can. `release-gate` re-resolves these at the candidate SHA, and an unresolvable citation
+  blocks — so a vague seam does not buy leniency, it costs the row its result.
 - the seam named cannot actually reach the forbidden half. A widget test cannot prove two tenants
   stay separated. Say the seam cannot prove it rather than recording the weaker proof.
 

@@ -40,7 +40,24 @@ from whatever the user can paste into the session.
 
 ## Evaluate in order
 
-1. **Contract** — the baseline and delta are approved, current, and cover the candidate scope.
+1. **Contract** — the baseline and delta are approved, current, and cover the candidate scope, and
+   the contract still describes this repository. Every gate below reads this document; nothing else
+   checks whether it is still true. At the candidate SHA, resolve what each `required` and P0 row
+   with an `automated` method names as its seam — the test file, test name, command, or CI job.
+   A citation that no longer resolves makes that row **unevaluated**, which blocks exactly as a
+   missing result does. It is never a pass, and a report claiming PASS for it is evidence the report
+   was produced against a different tree.
+
+   Resolve, do not execute: `release-gate` never runs the suite. Rows whose method is `manual`,
+   `exploratory`, or `not-configured` name steps rather than code and are out of scope here — they
+   are already governed by their own evidence rules.
+
+   Where the contract is a pointer and the document it names is enforced by the project's own check,
+   record that check and its result instead of repeating it. A project that already fails CI when a
+   cited test disappears has solved this better than an inspection at gate time.
+
+   A contract nobody has audited grows more authoritative and less true at the same rate. This is
+   the one failure mode that produces a confident `GO` with nothing behind it.
 2. **Source** — required checks ran successfully on the full candidate SHA; skipped or stale jobs do
    not count.
 3. **Artifact** — provenance binds the tested artifact to that SHA and intended environment.
