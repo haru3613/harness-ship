@@ -120,6 +120,12 @@ For an existing project, it inventories the complete test tree, runners, CI, dep
 artifact provenance. Existing tools win. Gates become required, observe-only, or deferred from
 current evidence instead of pretending historical gaps are green.
 
+Either way it interviews before it drafts. Inspection establishes what a project has, never what
+matters: which journeys are P0, what counts as money or irreversible state, what must never happen,
+and whether an existing red test is accepted or forgotten. `test-plan` asks those one at a time and
+waits, rather than generating a full scenario table and requesting one blanket approval — an
+approved contract nobody chose is what `release-gate` would then enforce exactly.
+
 ## Explore before automation
 
 `exploratory-testing` works in two passes:
