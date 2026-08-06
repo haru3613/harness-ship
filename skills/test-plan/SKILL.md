@@ -27,13 +27,34 @@ the code it describes. `test-plan` creates this tree; the other workflows read a
 | Approved Test Contract | `.harness-ship/test-contract.md` | `test-plan` |
 | Test Contract revision in progress | `.harness-ship/test-contract.draft.md` | `test-plan` |
 | Bug Case, then its Diagnosis Receipts appended | `.harness-ship/bugs/<BUG-ID>.md` | `bug-workflow`, `diagnose` |
-| Candidate handoff, execution ledger, test report | `.harness-ship/candidates/<short-sha>/` | `testing-workflow` |
+| Candidate handoff, execution ledger, test report | `.harness-ship/candidates/<short-sha>/` — or the contract-defined candidate identifier, below | `testing-workflow` |
 
 `<short-sha>` is the first 12 characters of the candidate's full source SHA; the full SHA stays
 inside each record and is what binds evidence, so on any mismatch the record wins and the directory
 name is wrong. Twelve rather than git's displayed seven: a colliding directory would let two
 candidates share one ledger, which is the older-artifact-proves-a-later-candidate failure this
 workflow exists to prevent.
+
+That is the default because a project that builds its own candidate can always resolve a SHA. A
+project testing someone else's release has only whatever identifier the candidate exposes — a
+version string, a build number, an image digest — so there the directory takes the candidate
+identifier the contract defines, and the contract states what it is read from.
+
+Two things do not move with it. The collision rule holds: the identifier must be unique per
+candidate, and a version string usually is not — two builds of `v2.1` would land in one directory
+and one would prove the other — so where the exposed identifier can repeat, the contract says what
+is appended to make it unique. And a looser directory name buys no looser evidence. Naming the
+directory is a filing decision; what binds evidence to a candidate is unchanged, and the records
+still ask for a full source SHA.
+
+Which is the constraint to be honest about. Where the candidate exposes a source SHA — a service
+returning its commit id, a build manifest naming one — the records fill normally. Where it exposes
+none, they cannot be completed, and the only 40-character SHA within reach is this repository's own
+`HEAD`. **Never write it.** Recording this repository's `HEAD` as the candidate's source SHA is the
+same substitution `release-gate` refuses, performed one workflow earlier and frozen into the
+handoff, the ledger, the report, and every Bug Case that cites them — and it is worse there, because
+the refusal never sees it. A candidate whose source revision this repository cannot obtain is a
+blocker to raise with the team that owns it, not a field to fill with the nearest plausible value.
 
 One directory per candidate, not per attempt — within one candidate's ledger, append attempts rather
 than starting a second ledger. A fixed candidate is a new SHA and gets its own directory; continuity
@@ -51,6 +72,28 @@ from the same commit would write into one `.harness-ship/candidates/<short-sha>/
 other, and one shared contract would force a revision bump on surface A to be reconciled by surface
 B's untested candidates. Say so and stop rather than inventing a per-surface path; a repository that
 needs this needs a contract change, not a directory convention.
+
+**Or no release surface at all.** The mirror case is a repository that ships nothing: a QA-owned
+test suite, a contract-test repository, a vendor-acceptance suite, holding criteria for a service a
+different team builds, deploys, and releases. This topology is common wherever a QA function is
+separate from the delivery team, and unlike the monorepo it is not a misfit: planning belongs here,
+execution belongs here whenever the candidate exposes a source revision this repository can record,
+and only the verdict belongs elsewhere.
+
+Record it in the contract, because every workflow downstream needs to know it before it can behave
+correctly:
+
+- **where the release surface is** — the repository, team, or vendor that owns the candidate and
+  will decide its release;
+- **what identifies a candidate**, per the identifier rule above, since this repository cannot
+  resolve a SHA it did not produce; and
+- **what this repository can and cannot see** of the owning side's CI, provenance, and artifacts.
+
+A pointer contract carries all three under `Carried here`; a two-layer contract states the first two
+in its **Release surface owner** and **Visible from here** fields, beside product type and release
+target, and the third in **Candidate identifier** beside the provenance method it belongs to.
+`release-gate` reads these and refuses rather than gating — which is the point of recording them,
+not a limitation to work around.
 
 ## An existing document may already be the contract
 
@@ -93,7 +136,9 @@ When it qualifies, **do not restate it**. `.harness-ship/test-contract.md` becom
   record live>`
 - **Kept honest by:** `<the check that fails when it drifts | nothing>`
 - **Approved by / date:** `<user + date>`
-- **Carried here:** `<criteria this project supplies that the document does not>`
+- **Carried here:** `<criteria this project supplies that the document does not, and the facts every
+  workflow needs before it can behave correctly — who owns the release surface, what identifies a
+  candidate, what this repository can see of that owner>`
 - **Not carried by that document:**
   - `<undecided: what nobody has ruled on yet>`
   - `<unreadable: a scenario whose authoritative detail this document delegates to something that
@@ -109,9 +154,11 @@ established.
 The last two fields are what stop a pointer from being a way to skip the work, and they are not the
 same field. **Carried here** holds what this project can answer now and the document simply never
 covered — safe test-data rules, environment, evidence location. Its content comes from the
-interview in `## Ask before drafting`, never from inspection alone: it is the one part of a pointer
-that `release-gate` reads as criteria to pass, so criteria the model wrote and nobody chose would
-pass against themselves. A pointer may extend the document it names, never contradict it, and the
+interview in `## Ask before drafting`, never from inspection alone: most of it is read by
+`release-gate` as criteria to pass, so criteria the model wrote and nobody chose would pass against
+themselves. It also carries the declarations that are not criteria at all and pass or fail nothing —
+who owns the release surface, what identifies a candidate, what this repository can see of that
+owner — which `release-gate` acts on before it evaluates anything rather than gating. A pointer may extend the document it names, never contradict it, and the
 extension is approved with the pointer. Without this the mature-project path cannot satisfy the
 Project Test Baseline's operational half, and mature projects are exactly the ones whose document
 was written for another purpose and omits it.
@@ -167,14 +214,17 @@ interpretable, and do not keep superseded copies alongside the approved file.
 
 Record the reusable release expectations:
 
-- product type, supported surfaces, and release target;
+- product type, supported surfaces, and release target — including who owns the release surface when
+  it is not this repository, and what this repository can and cannot see of that owner's CI,
+  provenance, and artifacts;
 - P0/P1 user journeys with stable scenario IDs and externally observable expected and forbidden
   behaviour;
 - the cheapest stable seam that can prove each journey or risk;
 - method: `automated`, `manual`, `exploratory`, or `not-configured`;
 - established command or exact manual steps, required evidence, environment, fixtures, permissions,
   and safe test-data rules;
-- source-to-artifact provenance method and durable evidence location; and
+- source-to-artifact provenance method, what identifies a candidate this repository did not build,
+  and durable evidence location; and
 - required, observe-only, and deferred checks, with reasons.
 
 P0 covers core value, auth, money, destructive state changes, or a flow that must not regress.
@@ -260,6 +310,11 @@ Ask about what inspection cannot reach:
 - **Acceptable deferral.** Which gaps may be deferred and why. A deferral the user did not make is
   the model deciding what may ship broken.
 - **Release target.** What this baseline is being written against.
+- **Who owns the release surface.** Whether this repository builds and releases what it tests, or
+  holds criteria for a service another team ships. A test tree looks the same either way, and the
+  answer decides whether `release-gate` may return a verdict at all. Where the answer is another
+  team, ask what identifies a candidate and what this repository can see of the owner's CI,
+  provenance, and artifacts — none of it is inferable from here.
 
 Then propose. Inferred answers may be presented for confirmation only after that first round, and
 each still names what it was inferred from.
