@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "pointer-contract-fidelity",
+  "classification": "minor",
+  "migration": "none",
+  "summary": "Make a document qualify as the Test Contract only on scenario detail that resolves tracked in the repository, so an unresolvable delegation becomes a recorded gap instead of inherited coverage; give a pointer a Carried here field for operational criteria the document never held, sourced from the interview rather than inspection; judge qualification per document so an unaccepted sibling is named as excluded scope that release-gate reports rather than gates; and teach release-gate to read both fields and audit each named document's own check. Also clarify that the draft path governs the pointer form, that a structured question tool may batch questions that are each one topic, and that a first run has no prior Bug Cases to mine.",
+  "paths": [
+    "README.md",
+    "skills/release-gate/SKILL.md",
+    "skills/test-plan/SKILL.md"
+  ]
+}

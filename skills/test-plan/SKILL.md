@@ -61,9 +61,27 @@ document. A mature project usually does.
 It qualifies when it carries all four:
 
 - stable per-item IDs that survive the item being retired;
-- both expected behaviour **and** the negative — what must never happen;
+- both expected behaviour **and** the negative — what must never happen, and both readable from
+  this repository: resolve every path the document cites for a scenario's authoritative detail, and
+  require it to be tracked at the revision being approved;
 - a priority or blocking classification the project actually honours; and
 - a record that the user accepted it, not just that someone wrote it.
+
+Resolve those citations rather than reading past them. A document that delegates each scenario's
+detail elsewhere can assert it covers the negative half and still leave that half unreadable from a
+fresh clone — the cited path is two characters short of correct, or correct and pointing into a
+directory nobody committed. Neither is visible to a reviewer; only resolving is. `release-gate`
+already re-resolves what a row cites as its seam because a citation that no longer exists makes the
+row unevaluated instead of passing; the contract's own citations are the same problem one level up,
+and nothing else checks them.
+
+A delegation that does not resolve fails this condition for the scenarios it covers, not for the
+whole document: record those as `unreadable` under **Not carried by that document** rather than
+inheriting the coverage they claim. Disqualifying an otherwise good document over one broken path
+would force the restatement this section exists to avoid. When the delegation covers every
+scenario, though, nothing readable is left to point at — that is the threshold below, and the
+document does not qualify. Citations of discussion — tracker items, published standards — are not
+criteria and are not what this checks.
 
 When it qualifies, **do not restate it**. `.harness-ship/test-contract.md` becomes a pointer:
 
@@ -71,17 +89,58 @@ When it qualifies, **do not restate it**. `.harness-ship/test-contract.md` becom
 # Test Contract — pointer
 
 - **Contract:** `<path>` — the document this project already treats as its release criteria
-- **Qualifies because:** `<where its stable IDs, expected, forbidden, and priority live>`
-- **Approved by / date:** `<user + date>`
+- **Qualifies because:** `<where its stable IDs, expected, forbidden, priority, and acceptance
+  record live>`
 - **Kept honest by:** `<the check that fails when it drifts | nothing>`
-- **Not carried by that document:** `<what the two-layer model has and it does not>`
+- **Approved by / date:** `<user + date>`
+- **Carried here:** `<criteria this project supplies that the document does not>`
+- **Not carried by that document:**
+  - `<undecided: what nobody has ruled on yet>`
+  - `<unreadable: a scenario whose authoritative detail this document delegates to something that
+    does not resolve>`
+  - `<excluded: a sibling document nobody has accepted, named with the condition it failed>`
 ```
 
-The last field is what stops a pointer from being a way to skip the work. A document written for
-one release usually has no reusable baseline separable from its delta, so re-reviewing one candidate
-means re-reviewing everything; say that rather than letting the pointer imply full coverage. If the
-gap is large enough that release criteria cannot be read out of the document at all, it does not
-qualify — draft a contract instead.
+Repeat the first three fields for each qualifying document. Conditions three and four are judged per
+document, so one shared line cannot say which document carries an acceptance record and which
+carries a check — and a pointer that cannot say that is back to implying coverage it has not
+established.
+
+The last two fields are what stop a pointer from being a way to skip the work, and they are not the
+same field. **Carried here** holds what this project can answer now and the document simply never
+covered — safe test-data rules, environment, evidence location. Its content comes from the
+interview in `## Ask before drafting`, never from inspection alone: it is the one part of a pointer
+that `release-gate` reads as criteria to pass, so criteria the model wrote and nobody chose would
+pass against themselves. A pointer may extend the document it names, never contradict it, and the
+extension is approved with the pointer. Without this the mature-project path cannot satisfy the
+Project Test Baseline's operational half, and mature projects are exactly the ones whose document
+was written for another purpose and omits it.
+
+**Not carried by that document** holds what this project's criteria do not establish — never merely
+what is absent from that file. `release-gate` treats an `undecided` or `unreadable` entry there as
+an unevaluated gap that blocks, so an answered question filed there blocks on its own answer. A
+document written for one release usually has no reusable baseline separable from its delta, so
+re-reviewing one candidate means re-reviewing everything; that belongs there. If the gap is large
+enough that release criteria cannot be read out of the document at all, it does not qualify — draft
+a contract instead.
+
+Qualification is per document, not per project. Sibling documents covering related capabilities
+mature at different rates: the shipped one has a closed acceptance record, the one still in flight
+has nobody's acceptance at all. Both available moves are then wrong — pointing at both launders
+unapproved criteria into an approved contract, and restating the good one instead discards a real
+acceptance record to create the second source of truth this section exists to avoid. Point at each
+document that qualifies, and name any that do not as `excluded` under **Not carried by that
+document**, with the condition each failed.
+
+Only a whole document is excluded this way, and only exclusion leaves the gated scope:
+`release-gate` gates the qualifying documents and reports an excluded one as scope it did not
+evaluate, while an `unreadable` scenario belongs to a document that did qualify, stays in scope, and
+blocks like any other unevaluated row. Blocking on an excluded document instead would hold every
+release hostage to a capability nobody has finished accepting, which is the pressure that turns
+acceptance into a rubber stamp. What the exclusion buys is that its scenarios are never counted as
+proven — unevaluated, not passed and not deferred, since nobody has decided they may ship unproven.
+A user may still decide to defer them, but a deferral is a decision with a reason and is recorded as
+one; silence is not deferral.
 
 A project whose existing document is enforced by its own check is ahead of this template, not behind
 it. Replacing it with a restatement loses that enforcement and creates a second source of truth that
@@ -154,10 +213,10 @@ Inspect before proposing change:
 1. inventory the complete test tree, runners, CI jobs, deployment path, and artifact provenance;
 2. identify current green, red, flaky, skipped, and missing capabilities;
 3. map existing tests to user journeys and risks;
-4. mine the project's own defect history — every Bug Case and Diagnosis Receipt already under
-   `.harness-ship/bugs/`, plus closed defect issues, revert and fix commits, and incident records,
-   and the predecessor's when the project is a rewrite, clustering by failure mechanism rather than
-   by file; and
+4. mine the project's own defect history — any Bug Case and Diagnosis Receipt already under
+   `.harness-ship/bugs/`, of which a first run has none because this skill creates that tree, plus
+   closed defect issues, revert and fix commits, and incident records, and the predecessor's when
+   the project is a rewrite, clustering by failure mechanism rather than by file; and
 5. preserve repository-native tools while classifying gates as required, observe-only, or deferred.
 
 What has already broken is the most reliable evidence of what must be proven. A recurring mechanism
@@ -174,14 +233,16 @@ Do not replace a framework or duplicate coverage merely to make the project rese
 
 Inspection establishes what the project *has*. It cannot establish what *matters*, and the contract
 is a statement about what matters. Complete at least one round of real answers before drafting any
-scenario table.
+scenario table, and before filling a pointer's **Carried here** — a pointer inherits what it points
+at, but whatever it supplies itself is subject to this section exactly as a drafted contract is.
 
-Use the harness's structured question tool where one exists. Ask one topic per question and wait for
-the answer before the next; add rounds rather than folding several topics into one choice. Where
-inspection suggests an answer, lead with it as a hypothesis to confirm or correct — never as a
-finished fact. Skip anything the repository already answers with explicit evidence; a purpose
-transcribed from a README is a hypothesis, not evidence. A topic the user has already answered
-unprompted is answered — do not re-ask it to satisfy the round.
+Use the harness's structured question tool where one exists. One topic per question, never several
+folded into one choice — but where the tool accepts several questions in a call, one call may carry
+several, and a topic whose framing depends on an earlier answer waits for its own round. Add rounds
+rather than widening a question. Where inspection suggests an answer, lead with it as a hypothesis
+to confirm or correct — never as a finished fact. Skip anything the repository already answers with
+explicit evidence; a purpose transcribed from a README is a hypothesis, not evidence. A topic the
+user has already answered unprompted is answered — do not re-ask it to satisfy the round.
 
 Ask about what inspection cannot reach:
 
@@ -210,10 +271,14 @@ verdict traces back to a scenario the user never actually agreed to.
 
 ## Approval and revision
 
-Present the complete baseline plus release delta. Only the user may approve the Test Contract.
-Until then it stays at `.harness-ship/test-contract.draft.md` with a `DRAFT` header, and
-`release-gate` gates against the approved file — or returns `NO-GO` when no approved file exists
-yet. Writing the draft is not approval.
+Present the complete draft — baseline plus release delta, or the pointer. Only the user may approve
+the Test Contract. Until then it stays at `.harness-ship/test-contract.draft.md` with a `DRAFT`
+header, and `release-gate` gates against the approved file — or returns `NO-GO` when no approved
+file exists yet. Writing the draft is not approval.
+
+This holds for both forms. A pointer is short and mostly citation, which makes writing it straight
+to the approved path tempting, but what a pointer commits this project to is exactly what the user
+has to approve, and `release-gate` gates the approved file either way.
 
 On approval, record the approving user and date, replace `.harness-ship/test-contract.md` with the
 draft's content, and delete the draft. A candidate already tested against the previous revision now

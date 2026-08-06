@@ -20,9 +20,13 @@ Given the candidate's full source SHA, read these before asking the user for any
   plus Release Delta. Gate against this file only. A `.harness-ship/test-contract.draft.md` beside
   it is an unapproved revision in progress and is never evidence, but its presence is also never a
   reason to reject a candidate the approved file covers. When this file is a pointer, follow it and
-  gate against the document it names; its `Not carried by that document` field states what this
-  project's criteria genuinely do not cover, and an item listed there is an unevaluated gap, never a
-  pass;
+  gate against every document it names plus its `Carried here` field — that field is contract text
+  approved with the pointer, carrying criteria the named documents never held. Its `Not carried by
+  that document` field states what nobody has decided, and its entries are read by their label, not
+  by whether they name a file: `undecided` and `unreadable` are unevaluated gaps that block exactly
+  as a missing result does and are never a pass, while `excluded` is a whole document outside the
+  gated scope — report it as scope this verdict did not evaluate rather than letting the pointer
+  imply it was covered;
 - `.harness-ship/candidates/<short-sha>/report.md` and `ledger.md` — the `testing-workflow` report
   and its append-only ledger for this candidate;
 - `.harness-ship/candidates/<short-sha>/handoff.md` — the exact artifact/environment revision and
@@ -52,9 +56,10 @@ from whatever the user can paste into the session.
    `exploratory`, or `not-configured` name steps rather than code and are out of scope here — they
    are already governed by their own evidence rules.
 
-   Where the contract is a pointer and the document it names is enforced by the project's own check,
-   record that check and its result instead of repeating it. A project that already fails CI when a
-   cited test disappears has solved this better than an inspection at gate time.
+   Where the contract is a pointer and a document it names is enforced by the project's own check,
+   record that check and its result instead of repeating it, once per document — a pointer naming
+   several documents that share one recorded check leaves the rest unaudited. A project that already
+   fails CI when a cited test disappears has solved this better than an inspection at gate time.
 
    A contract nobody has audited grows more authoritative and less true at the same rate. This is
    the one failure mode that produces a confident `GO` with nothing behind it.
