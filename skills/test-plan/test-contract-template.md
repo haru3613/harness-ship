@@ -7,7 +7,12 @@ While `DRAFT`, `release-gate` returns `NO-GO`. Only the user approves this contr
 
 - **Product type and supported surfaces:** `<what ships, on what>`
 - **Release target:** `<milestone or release train>`
+- **Release surface owner:** `<this repository | the repository, team, or vendor that owns the candidate and decides its release>`
+- **Visible from here:** `<all — this repository owns the surface | what of the owner's CI, provenance, and artifacts this repository can actually read>`
 - **Revision reason:** `<new project | test audit | release delta | approved change to expected behaviour>`
+
+An owner other than this repository means `release-gate` returns `NO-GO` because the verdict belongs
+to the owning repository. That is intended, not a gap to close here.
 
 Unchanged baseline content from an earlier revision is referenced, never copied or re-approved.
 
@@ -41,6 +46,7 @@ passing.
 ### Source-to-artifact provenance
 
 - **Method:** `<how a tested artifact is bound to a full source SHA | not-configured>`
+- **Candidate identifier:** `<the full source SHA — or, when this repository did not build the candidate, what it exposes plus what that is read from and what makes it unique per candidate>`
 - **Durable evidence location:** `.harness-ship/candidates/`, one directory per candidate
 
 `not-configured` provenance blocks release on its own; no amount of passing tests substitutes for it.
@@ -64,7 +70,7 @@ What has already broken, clustered by mechanism. Sampled history yields floors, 
 
 ## Release Delta — `<candidate>`
 
-- **Full candidate source SHA:** `<40-character SHA | not yet fixed>`
+- **Full candidate source SHA:** `<40-character SHA | not yet fixed | unobtainable — this repository did not build the candidate and the owner does not expose one; blocks the source gate on its own>`
 - **Source range:** `<base..head>`
 - **Release scope:** `<what this candidate changes>`
 - **Affected baseline scenarios:** `<SC-IDs; unchanged ones are referenced, not restated>`

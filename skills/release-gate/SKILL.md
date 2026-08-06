@@ -14,14 +14,20 @@ promotes, tags, publishes, seeds data, or changes release criteria.
 
 ## Required inputs
 
-Given the candidate's full source SHA, read these before asking the user for anything:
+Given the candidate's full source SHA, read these before asking the user for anything. Read the
+contract before asking for the SHA: a repository that does not own its release surface has no
+candidate SHA to give, and asking produces this repository's `HEAD`, which is the substitution the
+stop below exists to refuse.
 
 - `.harness-ship/test-contract.md` — the user-approved contract containing Project Test Baseline
   plus Release Delta. Gate against this file only. A `.harness-ship/test-contract.draft.md` beside
   it is an unapproved revision in progress and is never evidence, but its presence is also never a
   reason to reject a candidate the approved file covers. When this file is a pointer, follow it and
   gate against every document it names plus its `Carried here` field — that field is contract text
-  approved with the pointer, carrying criteria the named documents never held. Its `Not carried by
+  approved with the pointer, carrying criteria the named documents never held, except its
+  declarations about where the release surface is, what identifies a candidate, and what this
+  repository can see of that owner: those pass or fail nothing, and the stop below acts on them
+  instead. Its `Not carried by
   that document` field states what nobody has decided, and its entries are read by their label, not
   by whether they name a file: `undecided` and `unreadable` are unevaluated gaps that block exactly
   as a missing result does and are never a pass, while `excluded` is a whole document outside the
@@ -42,10 +48,30 @@ not permission to infer PASS. An absent `.harness-ship/` is `NO-GO` with the rea
 project has no contract to gate against — say that, rather than offering to evaluate the candidate
 from whatever the user can paste into the session.
 
+**Stop when the contract declares the release surface is elsewhere.** Read it from the contract's
+**Release surface owner** field, or from a pointer's `Carried here`. A repository that ships nothing — a
+QA-owned suite, a contract-test repository, a vendor-acceptance suite — holds criteria for a
+candidate another team builds and releases. Return `NO-GO` whose reason is that the verdict belongs
+to the repository that owns the candidate, and hand over what this repository does have: the
+`testing-workflow` report and ledger, any open Bug Case, and the contract's **Visible from here** —
+which tells the owning team what this repository could not see, and is the only place that fact
+does any work. Report that short form rather than the
+full gate-by-gate layout below — there are no gate results, and producing them is the failure this
+stop prevents. This is the skill working, not a defect here and not a gap to fill.
+
+Refuse rather than adapt, because adapting is easy and silent. The nearest SHA to hand is this
+repository's own `HEAD`, and substituting it satisfies every gate mechanically — the contract's
+seams are test files that resolve here, this repository's CI is green, and provenance binding this
+repository to itself is trivially consistent. The result is a confident `GO` that proves the test
+suite compiles and says nothing about the candidate. Do not reach across to the owning side's CI or
+artifact provenance either; not having it is the condition, not the obstacle.
+
 ## Evaluate in order
 
 1. **Contract** — the baseline and delta are approved, current, and cover the candidate scope, and
-   the contract still describes this repository. Every gate below reads this document; nothing else
+   the contract still describes the repository it names as the release surface. A contract that
+   names another repository as that surface is not drift to report here; it is the stop above,
+   already applied before this gate runs. Every gate below reads this document; nothing else
    checks whether it is still true. At the candidate SHA, resolve what each `required` and P0 row
    with an `automated` method names as its seam — the test file, test name, command, or CI job.
    A citation that no longer resolves makes that row **unevaluated**, which blocks exactly as a
@@ -78,7 +104,9 @@ Do not add a universal coverage percentage, framework checklist, or test-count t
 
 Apply the first matching rule:
 
-- **NO-GO** — unapproved or stale contract; source/artifact mismatch; any required or P0 result is
+- **NO-GO** — unapproved or stale contract; a contract declaring the release surface is elsewhere,
+  which no other rule below matches because every gate can be made to pass against this repository's
+  own `HEAD`; source/artifact mismatch; any required or P0 result is
   FAIL, FLAKY, BLOCKED, NOT TESTED, skipped, stale, or missing; or an applicable operational gate
   lacks evidence.
 - **GO WITH CAVEATS** — all required and P0 gates PASS, while only explicitly non-blocking gaps

@@ -110,7 +110,11 @@ configured. Drafts stay separate so that planning the next revision never distur
 being tested or gated against the current one.
 
 The layout carries no product or surface qualifier, so it assumes **one release surface per
-repository**. A monorepo whose services release on independent cadences does not fit.
+repository**. A monorepo whose services release on independent cadences does not fit. A repository
+that ships nothing does fit — a QA-owned suite holding criteria for a service another team releases
+plans here, and executes here whenever the candidate exposes a source revision it can record — but
+its contract records that the release surface is elsewhere, and `release-gate` then refuses the
+verdict rather than gating this repository's own `HEAD` in its place.
 
 A project that already states its release criteria somewhere — a journey coverage map, an accepted
 gate checklist — keeps that document. `test-contract.md` then holds a pointer to it rather than a

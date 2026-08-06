@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "external-release-surface",
+  "classification": "minor",
+  "migration": "none",
+  "summary": "Name the repository that holds release criteria for a service another team builds and releases, give its contract fields for the release-surface owner, what this repository can see of that owner, and the candidate identifier, and route those through the interview. Make release-gate stop before evaluating with NO-GO whose reason is that the verdict belongs to the repository owning the candidate, list that reason in the verdict rules, and reconcile gate 1 so an external surface is not reported as contract drift. Generalize the candidate directory name to the contract-defined identifier while keeping per-candidate uniqueness, and forbid recording this repository's own HEAD as a candidate's source SHA when the owner exposes none.",
+  "paths": [
+    "README.md",
+    "skills/release-gate/SKILL.md",
+    "skills/test-plan/SKILL.md",
+    "skills/test-plan/test-contract-template.md"
+  ]
+}
