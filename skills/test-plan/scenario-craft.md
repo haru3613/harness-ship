@@ -99,3 +99,31 @@ A row is not ready while any of these is true:
 
 The last one is the honest failure. `not-configured` is a truthful state; a row whose seam cannot
 reach its own forbidden clause is a row that will report PASS forever.
+
+## Then ask why this seam and not a better one
+
+A ready row still has one question left, and it is not a readiness condition — the author usually
+cannot fix it. Ask it anyway, of every row: **is there a seam that would catch a failure this one
+structurally cannot see, which was not used because it could not be run here?**
+
+Better means reach, not realism. The rubric stays *the cheapest stable seam that proves the row*, so
+a more faithful seam is not automatically a better one — a real browser that proves exactly what the
+component test proves is more expensive, not better. It is better only when the used seam is blind to
+something the forbidden half names, and the answer is no whenever the used seam already reaches it.
+
+Answer yes and the row still stands: record it in **Seam runnability** with what the used seam cannot
+see, and an owner. This is where the two failures divide. The bullet above applies first — a seam
+that reaches nothing the row forbids proves nothing, and that row is `not-configured` no matter how
+unrunnable its alternative was. **Seam runnability** records a proof weaker than it should be, never
+a proof that is not one.
+
+Ask it at writing time because afterwards nothing looks wrong. A row saying "component test, mocked
+API" reads as a considered choice; what happened may have been that no local database was running, so
+the faithful seam was never on the table. Both produce the same sentence and are entirely different
+facts — one is a decision, the other is an unfixed environment. Six months later nobody can tell them
+apart, and the environment is still unfixed.
+
+Which is worth more than it looks. An agent writes tests at the layer where it can get a real signal,
+and no instruction moves that — making the layer runnable does. A workflow that quietly accepts an
+unrunnable seam is discarding the one intervention that changes what gets written, so this is a
+finding about the project's environment, not a footnote about the row.
