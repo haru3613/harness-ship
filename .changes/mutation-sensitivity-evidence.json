@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "mutation-sensitivity-evidence",
+  "classification": "minor",
+  "migration": "recommended",
+  "summary": "Classify a P0 scenario automated only once something showed its test failing for the reason the row names: a RED watched fail already is that evidence, and where no honest RED exists \u2014 coverage for behaviour that already ships, or characterization for a refactor \u2014 tdd injects the row's forbidden state in one line against a local working copy, runs the new test and the nearest existing tests, and reverts with the revert confirmed. Existing tests reddening too means the risk was already covered; the new test surviving means it catches nothing. Until the receipt exists the row is not-configured on the accurate ground that the capability to prove it is unestablished, cited in Reason rather than in the per-candidate evidence column. exploratory-testing states it cannot produce this and routes to tdd. Binds on coverage added or changed from here, not retroactively.",
+  "paths": [
+    "docs/upgrade-guide.md",
+    "skills/exploratory-testing/SKILL.md",
+    "skills/tdd/SKILL.md",
+    "skills/test-plan/SKILL.md",
+    "skills/test-plan/scenario-craft.md",
+    "skills/test-plan/test-contract-template.md",
+    "skills/testing-workflow/SKILL.md",
+    "skills/testing-workflow/execution-ledger-template.md"
+  ]
+}

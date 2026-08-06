@@ -88,6 +88,9 @@ A row is not ready while any of these is true:
   *"never behaves incorrectly"*. Name the wrong state, not the absence of the right one.
 - neither half is observable from outside the system. *"Never calls the repository twice"* is an
   implementation claim; it belongs in a test, not a contract.
+- it is P0 and `automated`, and nothing has shown its test failing for the reason this row names.
+  That row is `not-configured` until something has — `tdd` produces the proof; the argument that a
+  test covers a risk is not the proof.
 - no evidence would distinguish a pass from a fail. If a passing run and a failing run produce the
   same artifact, the row's evidence requirement is not written yet.
 - an `automated` row names its seam in a form nobody can resolve later. *"Covered by the pricing

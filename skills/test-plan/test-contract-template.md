@@ -33,7 +33,7 @@ Stable IDs survive retirement so old evidence stays interpretable. Unknown capab
 
 | Scenario ID | Journey | P0/P1 | Expected (externally observable) | Forbidden | Cheapest stable seam | Method | Evidence required | Classification | Reason |
 |---|---|---|---|---|---|---|---|---|---|
-| `<SC-001>` | `<journey>` | `<P0>` | `<what the user must be able to do>` | `<what must never happen>` | `<layer + a citation that resolves: path::test name, command, or CI job>` | `<automated/manual/exploratory/not-configured>` | `<what a passing run must produce>` | `<required/observe-only/deferred/retired>` | `<why>` |
+| `<SC-001>` | `<journey>` | `<P0>` | `<what the user must be able to do>` | `<what must never happen>` | `<layer + a citation that resolves: path::test name, command, or CI job>` | `<automated/manual/exploratory/not-configured>` | `<what a passing run must produce>` | `<required/observe-only/deferred/retired>` | `<why; for an automated P0 row, the RED or injected break that showed this test failing for the reason above>` |
 
 P0 covers core value, auth, money, destructive state changes, or a flow that must not regress. When
 a seam cannot prove a scenario, say so in the seam column rather than recording a weaker proof. A

@@ -232,6 +232,32 @@ Record the reusable release expectations:
 P0 covers core value, auth, money, destructive state changes, or a flow that must not regress.
 Unknown capability is `not-configured`, never PASS.
 
+**A P0 row becomes `automated` when something showed its test failing for the reason the row names,
+not when a test exists.** That is a RED watched fail, or the injected one-line break `tdd` runs where
+no RED was available. Either way the row's `Reason` cites it in a form a later reader can check, not
+a summary of how it went: for a RED, the test, the command, and the failure reason watched; for an
+injected break, what went in and where, both commands, and both results.
+Nothing downstream re-resolves this citation, so authoring is the only time it is ever verified.
+
+Until then the row is `not-configured` — which is not a claim that no test exists, but the accurate
+one that the capability to *prove this row* has not been established. Record that as the reason, so
+the row is not read as missing automation that is sitting right there.
+
+A green suite that would stay green through the failure it claims to prevent is what this workflow
+exists to prevent, and it is invisible from outside: the row reads `automated`, the run reads PASS,
+and nothing separates it from coverage that works. Below P0 the argument for a case stands on its
+own; the cost lands on the rows that would hurt.
+
+This binds on coverage added or changed from here, not retroactively. A P0 row already approved
+`automated` keeps its classification until its next revision touches it, and is backfilled then —
+downgrading an existing contract's whole P0 set would block every release to make a point about
+evidence nobody was asked for.
+
+This rule binds the two-layer form, which is what has a `Method` column. A pointer names a document
+with its own classification scheme and no column to hold `not-configured`, so the rule has no
+referent there — a pointer project that wants it records it in `Carried here` as one of the criteria
+it supplies. That is a real gap in the pointer form, stated rather than papered over.
+
 Read [scenario-craft.md](scenario-craft.md) before writing the scenario table. It covers how to cut
 journeys so their IDs outlive the UI, and how to write the forbidden half — the column that decides
 whether the contract can catch anything, and the one most often left as a restatement of "fails".
