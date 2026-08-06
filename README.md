@@ -19,8 +19,8 @@ cannot provide.
 
 You need Git and a Codex or Claude Code release with plugin marketplace commands.
 
-Install stable first. If that tagged release does not yet expose `test-plan`, switch to the mutually
-exclusive `harness-ship-next` channel described under [Install and channels](#install-and-channels).
+Install stable. The mutually exclusive `harness-ship-next` channel tracks `main` and is for trying
+changes before they are released — see [Install and channels](#install-and-channels).
 
 ### Codex
 
@@ -80,6 +80,14 @@ The Test Contract is the only required judgment gate:
 - **Release Delta** holds only the behaviours and operational risks changed by one candidate.
 - The user approves semantic changes before release-gate execution. The contract may be created
   before implementation or added later to an existing project.
+
+A contract's shape is not the same as a contract worth gating on. The common failure is a table
+where every journey is listed, every row is required, and none of them could have caught the last
+incident — usually because the forbidden half was written as a restatement of failure rather than
+a specific wrong outcome that occurs while the expected half still appears to succeed. `test-plan`
+carries guidance for that: how to cut journeys so their IDs outlive the UI, the four ways a system
+goes wrong while appearing to work, where a project has usually already written its forbidden
+clauses down, and a check that rejects a row whose seam cannot reach its own forbidden clause.
 
 Harness Ship stops at a repair handoff. It preserves the failed artifact, diagnosis, expected fixed
 behaviour, and retest conditions; the user or host agent chooses how to repair the product.
@@ -159,10 +167,16 @@ exploratory; it never replaces required automation or proves a later artifact.
 - only the migration, compatibility, security, performance, accessibility, recovery, or rollback
   checks made applicable by this release.
 
+Before trusting any of it, it audits the contract against the repository. Every gate reads that
+document and nothing else checks whether it is still true, so a row citing a test that has since
+been renamed or deleted would otherwise report PASS forever. `release-gate` re-resolves what each
+required and P0 automated row names as its seam, at the candidate SHA. It resolves; it never runs
+the suite.
+
 It returns:
 
-- **NO-GO** for an unapproved contract, source/artifact mismatch, any non-PASS P0, or missing required
-  evidence;
+- **NO-GO** for an unapproved contract, a cited seam that no longer resolves, source/artifact
+  mismatch, any non-PASS P0, or missing required evidence;
 - **GO WITH CAVEATS** only when required gates pass and the user explicitly accepts non-blocking
   gaps with follow-up; or
 - **GO** when every required gate passes on the exact candidate with no caveat.
