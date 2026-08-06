@@ -4,14 +4,8 @@
 
 Do not disclose vulnerability details in a public issue, pull request, discussion, or chat.
 
-After this repository becomes public, use GitHub's
+Use GitHub's
 [private vulnerability reporting](https://github.com/haru3613/harness-ship/security/advisories/new).
-Public visibility is blocked until the maintainer has enabled that feature and verified the
-`Report a vulnerability` path from a non-maintainer account.
-
-While the repository remains private, current collaborators may create a private draft repository
-security advisory. Anyone without access should open an issue that asks for a private contact
-channel without including technical details.
 
 Include the affected version or commit, impact, reproduction conditions, and suggested mitigation
 when known. Do not include live credentials or private user data.
