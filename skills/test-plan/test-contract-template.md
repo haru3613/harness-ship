@@ -112,8 +112,11 @@ inapplicable, and it blocks like any other missing evidence.
 
 ## Approval
 
-- **Decisions required from the user:** `<the specific choices this revision cannot make alone>`
+- **Decisions required from the user:** `<the specific choices this revision cannot make alone; where a session had no user to ask, each unasked interview topic with what would have been asked and proposed, how that session established there was nobody to ask, and any scenario inspection proposed but could not complete>`
 - **Approved by / date:** `<user + date | pending>`
+
+An `APPROVED` contract carries no unasked-interview entries in that field: answering them is what
+makes the revision presentable, so any that remain mean this is still a `DRAFT`.
 
 After approval, any semantic change to expected behaviour, priority, required evidence, test method,
 or blocking status creates a new revision. Implementation details and equivalent seam corrections do
