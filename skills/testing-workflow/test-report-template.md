@@ -1,13 +1,13 @@
 # Test Report — <feature / release>
 
-Written to `.harness-ship/candidates/<short-sha>/report.md`.
+Written to `.harness-ship/candidates/<short-sha>/report.md`, where that directory takes the **Candidate identifier** the contract defines when its **Release surface owner** is not this repository.
 
 **<Ready for release gate | Not ready>** — <one-sentence reason>
 
 - **Test Contract:** <project-test-id/revision>
 - **Project Test Baseline / Release Delta:** <links>
 - **TEST-RUN-ID / ledger:** <run ID> + `.harness-ship/candidates/<short-sha>/ledger.md`
-- **Source SHA:** <full 40-character SHA>
+- **Source SHA:** <full 40-character SHA — or, where the contract's Release surface owner is not this repository, its Candidate identifier plus what that was read from; never this repository's HEAD>
 - **Artifact/environment:** <exact revision>
 - **Artifact provenance:** <source + receipt>
 - **Date:** <YYYY-MM-DD>

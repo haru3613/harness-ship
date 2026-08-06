@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "testing-workflow-contract-inputs",
+  "classification": "minor",
+  "migration": "none",
+  "summary": "Give the pointer Test Contract a stable ID and revision and state that the revision rule governs both forms, including that a pointer's revision moves when a document it names changes semantically. Teach testing-workflow that contract-derived handoff values come from the Project Test Baseline and Release Delta for a two-layer contract and from the named documents plus Carried here for a pointer, and that a value neither supplies is Not ready rather than a licence to infer an environment. Accept the contract's Candidate identifier wherever a full source SHA is required, and only where its Release surface owner is not this repository, across the handoff, ledger, report, Bug Case, exploratory session, the candidate directory name, and the provenance binding method; forbid substituting this repository's own HEAD.",
+  "paths": [
+    "README.md",
+    "skills/bug-workflow/SKILL.md",
+    "skills/bug-workflow/bug-case-template.md",
+    "skills/exploratory-testing/SKILL.md",
+    "skills/release-gate/SKILL.md",
+    "skills/test-plan/SKILL.md",
+    "skills/test-plan/test-contract-template.md",
+    "skills/testing-workflow/SKILL.md",
+    "skills/testing-workflow/candidate-handoff-template.md",
+    "skills/testing-workflow/execution-ledger-template.md",
+    "skills/testing-workflow/test-report-template.md"
+  ]
+}

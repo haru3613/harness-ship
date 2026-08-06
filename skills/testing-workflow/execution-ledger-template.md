@@ -1,11 +1,12 @@
 # Test Execution Ledger — <feature / release>
 
-Written to `.harness-ship/candidates/<short-sha>/ledger.md`. Append attempts; never overwrite them.
+Written to `.harness-ship/candidates/<short-sha>/ledger.md`, where that directory takes the **Candidate identifier** the contract defines when its **Release surface owner** is not this repository.
+Append attempts; never overwrite them.
 
 - **TEST-RUN-ID:** <stable run ID>
 - **Test Contract:** <project-test-id/revision>
 - **Candidate handoff:** `.harness-ship/candidates/<short-sha>/handoff.md`
-- **Full source SHA:** <40-character SHA>
+- **Full source SHA:** <40-character SHA — or, where the contract's Release surface owner is not this repository, its Candidate identifier plus what that was read from; never this repository's HEAD>
 - **Exact artifact/environment revision:** <immutable artifact + non-production environment>
 - **Artifact-provenance source / receipt:** <source + durable receipt>
 - **Evidence location:** `.harness-ship/candidates/<short-sha>/`

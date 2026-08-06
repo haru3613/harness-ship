@@ -8,7 +8,7 @@ Written to `.harness-ship/bugs/<BUG-ID>.md`. Diagnosis Receipts append to the sa
 - **Disposition:** `<owner + next action | pending>`
 - **Test Contract revision:** `<contract-id/revision>`
 - **Trace:** `<scenario ID → baseline/release delta → originating work>`
-- **Full source SHA:** `<40-character SHA>`
+- **Full source SHA:** `<40-character SHA — or, where the contract's Release surface owner is not this repository, its Candidate identifier plus what that was read from; never this repository's HEAD>`
 - **Exact tested artifact/environment revision:** `<artifact + non-production environment>`
 - **Artifact provenance receipt:** `<durable link/receipt>`
 
@@ -41,4 +41,4 @@ needs-evidence resume, and retest under the same stable BUG-ID.
 - **Retest evidence required:** `<candidate provenance + checks>`
 
 The repair method is intentionally unspecified. A fixed candidate returns with its repair summary,
-full source SHA, exact artifact/environment revision, and new provenance receipt.
+whichever of source SHA or candidate identifier this case already records, exact artifact/environment revision, and new provenance receipt.

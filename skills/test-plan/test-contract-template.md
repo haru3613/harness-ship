@@ -45,7 +45,7 @@ passing.
 
 ### Source-to-artifact provenance
 
-- **Method:** `<how a tested artifact is bound to a full source SHA | not-configured>`
+- **Method:** `<how a tested artifact is bound to the candidate identifier below — a full source SHA, or what an external owner exposes | not-configured>`
 - **Candidate identifier:** `<the full source SHA — or, when this repository did not build the candidate, what it exposes plus what that is read from and what makes it unique per candidate>`
 - **Durable evidence location:** `.harness-ship/candidates/`, one directory per candidate
 
@@ -70,7 +70,7 @@ What has already broken, clustered by mechanism. Sampled history yields floors, 
 
 ## Release Delta — `<candidate>`
 
-- **Full candidate source SHA:** `<40-character SHA | not yet fixed | unobtainable — this repository did not build the candidate and the owner does not expose one; blocks the source gate on its own>`
+- **Full candidate source SHA:** `<40-character SHA | the Candidate identifier above, where Release surface owner is not this repository | not yet fixed | unobtainable — the owner exposes nothing that identifies the build; blocks the source gate on its own>`
 - **Source range:** `<base..head>`
 - **Release scope:** `<what this candidate changes>`
 - **Affected baseline scenarios:** `<SC-IDs; unchanged ones are referenced, not restated>`

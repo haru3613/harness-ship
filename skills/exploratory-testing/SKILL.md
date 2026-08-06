@@ -20,8 +20,9 @@ relevant behaviour is user-approved.
 
 Use a runnable **non-production** surface: local, preview, simulator, or QA. Record:
 
-- full source SHA;
-- artifact/build/environment revision and how it maps to that SHA;
+- full source SHA, or the candidate identifier where the contract's **Release surface owner** is not
+  this repository;
+- artifact/build/environment revision and how it maps to that SHA or identifier;
 - access path, fixtures, permissions, and test data; and
 - evidence destination.
 
