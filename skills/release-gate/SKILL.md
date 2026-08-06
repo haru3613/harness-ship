@@ -34,9 +34,11 @@ stop below exists to refuse.
   gated scope — report it as scope this verdict did not evaluate rather than letting the pointer
   imply it was covered;
 - `.harness-ship/candidates/<short-sha>/report.md` and `ledger.md` — the `testing-workflow` report
-  and its append-only ledger for this candidate;
+  and its append-only ledger for this candidate. That directory is named for the contract's
+  **Candidate identifier** where its **Release surface owner** is not this repository, which is how
+  the stop below finds the records it hands over;
 - `.harness-ship/candidates/<short-sha>/handoff.md` — the exact artifact/environment revision and
-  the provenance receipt binding it to that SHA; and
+  the provenance receipt binding it to that SHA or identifier; and
 - `.harness-ship/bugs/` — any Bug Case still open against a scenario this candidate must pass.
 
 Then establish from outside the repository: the intended release target, exact-head CI/build/test
@@ -55,9 +57,8 @@ candidate another team builds and releases. Return `NO-GO` whose reason is that 
 to the repository that owns the candidate, and hand over what this repository does have: the
 `testing-workflow` report and ledger, any open Bug Case, and the contract's **Visible from here** —
 which tells the owning team what this repository could not see, and is the only place that fact
-does any work. Report that short form rather than the
-full gate-by-gate layout below — there are no gate results, and producing them is the failure this
-stop prevents. This is the skill working, not a defect here and not a gap to fill.
+does any work. Report that short form rather than the full gate-by-gate layout below — there are no
+gate results, and producing them is the failure this stop prevents. This is the skill working, not a defect here and not a gap to fill.
 
 Refuse rather than adapt, because adapting is easy and silent. The nearest SHA to hand is this
 repository's own `HEAD`, and substituting it satisfies every gate mechanically — the contract's

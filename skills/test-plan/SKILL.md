@@ -43,18 +43,17 @@ identifier the contract defines, and the contract states what it is read from.
 Two things do not move with it. The collision rule holds: the identifier must be unique per
 candidate, and a version string usually is not — two builds of `v2.1` would land in one directory
 and one would prove the other — so where the exposed identifier can repeat, the contract says what
-is appended to make it unique. And a looser directory name buys no looser evidence. Naming the
-directory is a filing decision; what binds evidence to a candidate is unchanged, and the records
-still ask for a full source SHA.
+is appended to make it unique. And a looser directory name buys no looser evidence: the records that
+ask for a full source SHA take this identifier in its place, together with what it was read from, so
+a later session can tell a SHA this repository resolved from an identifier someone else supplied.
 
-Which is the constraint to be honest about. Where the candidate exposes a source SHA — a service
-returning its commit id, a build manifest naming one — the records fill normally. Where it exposes
-none, they cannot be completed, and the only 40-character SHA within reach is this repository's own
-`HEAD`. **Never write it.** Recording this repository's `HEAD` as the candidate's source SHA is the
-same substitution `release-gate` refuses, performed one workflow earlier and frozen into the
-handoff, the ledger, the report, and every Bug Case that cites them — and it is worse there, because
-the refusal never sees it. A candidate whose source revision this repository cannot obtain is a
-blocker to raise with the team that owns it, not a field to fill with the nearest plausible value.
+What that does not license is inventing one. Where the owner exposes nothing that identifies the
+build, the records cannot be completed, and the only 40-character SHA within reach is this
+repository's own `HEAD`. **Never write it.** Recording this repository's `HEAD` as the candidate's
+source SHA is the same substitution `release-gate` refuses, performed one workflow earlier and
+frozen into the handoff, the ledger, the report, and every Bug Case that cites them — and it is
+worse there, because the refusal never sees it. A candidate nothing identifies is a blocker to raise
+with the team that owns it, not a field to fill with the nearest plausible value.
 
 One directory per candidate, not per attempt — within one candidate's ledger, append attempts rather
 than starting a second ledger. A fixed candidate is a new SHA and gets its own directory; continuity
@@ -77,8 +76,8 @@ needs this needs a contract change, not a directory convention.
 test suite, a contract-test repository, a vendor-acceptance suite, holding criteria for a service a
 different team builds, deploys, and releases. This topology is common wherever a QA function is
 separate from the delivery team, and unlike the monorepo it is not a misfit: planning belongs here,
-execution belongs here whenever the candidate exposes a source revision this repository can record,
-and only the verdict belongs elsewhere.
+execution belongs here whenever the owner exposes something that identifies the build, and only the
+verdict belongs elsewhere.
 
 Record it in the contract, because every workflow downstream needs to know it before it can behave
 correctly:
@@ -129,7 +128,7 @@ criteria and are not what this checks.
 When it qualifies, **do not restate it**. `.harness-ship/test-contract.md` becomes a pointer:
 
 ```markdown
-# Test Contract — pointer
+# Test Contract — pointer — `<contract-id>` rev.`<n>` — `DRAFT | APPROVED`
 
 - **Contract:** `<path>` — the document this project already treats as its release criteria
 - **Qualifies because:** `<where its stable IDs, expected, forbidden, priority, and acceptance
@@ -343,3 +342,14 @@ against, not this one.
 After approval, any semantic change to expected behaviour, priority, required evidence, test method,
 or blocking status creates a new revision. Implementation details and equivalent seam corrections
 do not. Preserve retired scenarios and IDs so old evidence remains interpretable.
+
+**Both forms carry a stable ID and a revision**, because every record downstream cites one:
+`testing-workflow` requires the approved revision in its handoff and revalidates it before each
+action, and `release-gate` reports it beside the verdict. A pointer's revision moves on the same
+rule, and on one more: a semantic change to a document it names is a change to what this contract
+commits the project to, even though no line of the pointer changed. That is the case the two-layer
+form never has to express, and the case a pointer meets most often — the document is authored by
+whoever owns the capability, on their cadence rather than the contract's, even though the pointer
+requires it to be tracked here. Nothing detects that change for you; the pointer's **Kept honest
+by** field is where a project that can detect it records how. Evidence citing a revision is only
+interpretable if the revision moved when the criteria did.

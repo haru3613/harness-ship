@@ -14,11 +14,14 @@ artifact. Write it from `bug-case-template.md` to `.harness-ship/bugs/<BUG-ID>.m
 
 ## 1 — Intake one Bug Case
 
-Start from the failing attempt in `.harness-ship/candidates/<short-sha>/ledger.md` and the validated
+Start from the failing attempt in `.harness-ship/candidates/<short-sha>/ledger.md` — that directory
+takes the contract's **Candidate identifier** where its **Release surface owner** is not this
+repository — and the validated
 handoff beside it at `handoff.md`. Preserve:
 
 - Test Contract revision, scenario ID, and originating work;
-- full source SHA, exact tested artifact/environment revision, and provenance receipt;
+- full source SHA — or the candidate identifier where the contract's **Release surface owner** is not
+  this repository — exact tested artifact/environment revision, and provenance receipt;
 - expected and actual behaviour, reproducibility, and durable evidence.
 
 Assign one **stable BUG-ID** once. If the tracker publishes the case, use its ID; otherwise assign a
@@ -78,6 +81,7 @@ caller, where it returns later as a separate Bug Case.
 Then stop. The user or host agent chooses the repair process; Harness Ship never requires
 `implement`, `tdd`, a branch strategy, or a deployment method.
 
-When a fixed candidate returns, append its repair summary, full source SHA, exact artifact and
+When a fixed candidate returns, append its repair summary, whichever of the two this Bug Case
+already records, exact artifact and
 provenance receipt, then resume `testing-workflow`. Every repair and retest remains under the same
 BUG-ID. Never overwrite the failed artifact or infer verification from implementation evidence.

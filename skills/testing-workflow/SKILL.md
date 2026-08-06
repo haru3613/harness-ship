@@ -23,14 +23,36 @@ Use [candidate-handoff-template.md](candidate-handoff-template.md), written to
 `.harness-ship/candidates/<short-sha>/handoff.md`. Require:
 
 - approved Test Contract revision and scenario scope;
-- full source SHA;
+- full source SHA — or, where the contract's **Release surface owner** is not this repository, its
+  **Candidate identifier** plus what that was read from;
 - exact non-production artifact/environment revision;
-- provenance source and receipt binding the artifact to the SHA;
-- a writable `.harness-ship/candidates/<short-sha>/`; and
+- provenance source and receipt binding the artifact to that SHA or identifier;
+- a writable `.harness-ship/candidates/<short-sha>/`, whose name is that SHA's first twelve
+  characters, or that identifier; and
 - access path, safe fixtures/accounts, known risks, and established test evidence.
 
 Any missing, placeholder, stale, or mismatched required value makes the handoff `Not ready`. Do not
 execute against production.
+
+**Where the contract-derived values come from depends on the contract's form.** A two-layer contract
+holds them in its Project Test Baseline and Release Delta. A pointer holds its scenario scope in the
+documents it names, and in `Carried here` both the operational values — safe fixtures and accounts,
+environment, evidence location — and the declarations that pass or fail nothing but decide how this
+workflow behaves: who owns the release surface, what identifies a candidate, what this repository
+can see of that owner. A pointer has no separable delta; its delta scope is the handoff's scenario
+scope read against the documents it names. A value neither form supplies is `Not ready` naming which
+one was missing; it is never a reason to infer a safe environment, and an environment inferred
+rather than approved is how a test suite meets production.
+
+**Where the contract's Release surface owner is not this repository**, the source SHA is whatever
+that owner exposes, recorded as the **Candidate identifier** the contract defines together with what
+it was read from, and every record below — handoff, ledger, report, Bug Case — carries that same
+value wherever it asks for a source SHA. Where the owner exposes nothing that identifies the build,
+the handoff is `Not ready` for that reason, and the missing identifier is a blocker to raise with the
+owner. **Never substitute this repository's own `HEAD`**: it is the only 40-character SHA in reach,
+it is not the candidate's, and once written here it propagates into the ledger, the report, and every
+Bug Case citing them as a source binding that was never true. This is the one loosening — a contract
+whose release surface *is* this repository still requires the full source SHA.
 
 ## 2 — Select the candidate scope
 
@@ -53,8 +75,8 @@ artifact cannot prove a later candidate.
 
 Use [execution-ledger-template.md](execution-ledger-template.md), written to
 `.harness-ship/candidates/<short-sha>/ledger.md`. Immediately before each action,
-revalidate the Test Contract revision, source SHA, artifact revision, provenance receipt, evidence
-destination, and command/manual method. On drift, append NOT RUN / NOT TESTED and stop that item.
+revalidate the Test Contract revision, source SHA or candidate identifier, artifact revision,
+provenance receipt, evidence destination, and command/manual method. On drift, append NOT RUN / NOT TESTED and stop that item.
 
 Record every attempt, including PASS, with scenario ID, method, raw outcome, normalized result, and
 durable evidence. Never erase retries.
@@ -85,11 +107,12 @@ For every non-pass, run `bug-workflow` under one stable BUG-ID, recorded at
 `.harness-ship/bugs/<BUG-ID>.md`. Harness Ship classifies the finding, preserves evidence, and
 emits repair/retest conditions; it does not dictate the repair workflow.
 
-When a fixed candidate returns, it is a new candidate at a new SHA: it gets its own directory and its
-own ledger at `.harness-ship/candidates/<short-sha>/ledger.md`, keyed by its own SHA and seeded with
+When a fixed candidate returns, it is a new candidate at a new source SHA — or a new identifier,
+whichever kind this candidate's handoff recorded above: it gets its own directory and its own ledger
+at `.harness-ship/candidates/<short-sha>/ledger.md`, keyed by that same value and seeded with
 a link back to the failed candidate's directory. Require the same BUG-ID, original failed evidence,
-diagnosis when available, repair summary, new full source SHA, new artifact/environment revision,
-new provenance receipt, affected scenarios, and neighbouring regression scope — continuity runs
+diagnosis when available, repair summary, the new one of whichever the handoff recorded, new
+artifact/environment revision, new provenance receipt, affected scenarios, and neighbouring regression scope — continuity runs
 through the BUG-ID, not through reusing a prior candidate's ledger file. Rerun the original
 observation, affected scenarios, and proportionate neighbours. Never overwrite the failed artifact
 or call implementation evidence a verification result.
