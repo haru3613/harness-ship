@@ -27,8 +27,7 @@ stop below exists to refuse.
   approved with the pointer, carrying criteria the named documents never held, except its
   declarations about where the release surface is, what identifies a candidate, and what this
   repository can see of that owner: those pass or fail nothing, and the stop below acts on them
-  instead. Its `Not carried by
-  that document` field states what nobody has decided, and its entries are read by their label, not
+  instead. Its `Not carried by that document` field states what nobody has decided, and its entries are read by their label, not
   by whether they name a file: `undecided` and `unreadable` are unevaluated gaps that block exactly
   as a missing result does and are never a pass, while `excluded` is a whole document outside the
   gated scope — report it as scope this verdict did not evaluate rather than letting the pointer
@@ -51,14 +50,15 @@ project has no contract to gate against — say that, rather than offering to ev
 from whatever the user can paste into the session.
 
 **Stop when the contract declares the release surface is elsewhere.** Read it from the contract's
-**Release surface owner** field, or from a pointer's `Carried here`. A repository that ships nothing — a
-QA-owned suite, a contract-test repository, a vendor-acceptance suite — holds criteria for a
+**Release surface owner** field, or from a pointer's `Carried here`. A repository that ships
+nothing — a QA-owned suite, a contract-test repository, a vendor-acceptance suite — holds criteria for a
 candidate another team builds and releases. Return `NO-GO` whose reason is that the verdict belongs
 to the repository that owns the candidate, and hand over what this repository does have: the
 `testing-workflow` report and ledger, any open Bug Case, and the contract's **Visible from here** —
 which tells the owning team what this repository could not see, and is the only place that fact
 does any work. Report that short form rather than the full gate-by-gate layout below — there are no
-gate results, and producing them is the failure this stop prevents. This is the skill working, not a defect here and not a gap to fill.
+gate results, and producing them is the failure this stop prevents. This is the skill working, not
+a defect here and not a gap to fill.
 
 Refuse rather than adapt, because adapting is easy and silent. The nearest SHA to hand is this
 repository's own `HEAD`, and substituting it satisfies every gate mechanically — the contract's
@@ -97,7 +97,15 @@ artifact provenance either; not having it is the condition, not the obstacle.
    be replaced by exploratory evidence.
 5. **Operational risk** — only checks made applicable by the baseline or delta are required:
    migration, compatibility, security, performance, accessibility, recovery, or rollback.
-6. **Gaps** — every non-blocking caveat names user impact, evidence, owner, and follow-up.
+6. **Gaps** — every non-blocking caveat names user impact, evidence, owner, and follow-up. Report
+   the contract's **Seam runnability** rows here too, reading `What the used seam cannot see` as the
+   user impact and the row itself as the evidence; each names a scenario proven at a seam blind to
+   something its forbidden clause names, because the seam that would catch it cannot be run here.
+   These are already accepted by the contract's approval and do not move the verdict — the evidence
+   they produced is real — but reporting them is what keeps a standing environmental limitation from
+   reading as a settled design choice, one candidate at a time. Where a pointer's `Carried here` does
+   not say whether it has any, report that as a question this verdict did not evaluate rather than
+   reading silence as none.
 
 Do not add a universal coverage percentage, framework checklist, or test-count target.
 
@@ -112,8 +120,13 @@ Apply the first matching rule:
   lacks evidence.
 - **GO WITH CAVEATS** — all required and P0 gates PASS, while only explicitly non-blocking gaps
   remain. This requires the user's recorded acceptance and linked follow-up; without it use NO-GO.
+  A **Seam runnability** row is not a gap of this kind: approving the contract accepted it, it
+  needs no further acceptance per candidate, and it does not move the verdict. Report it and read
+  the next rule.
 - **GO** — all required evidence and P0 gates PASS on the exact candidate and no release caveat
-  remains.
+  remains. Standing **Seam runnability** rows are reported alongside a `GO`, not against it;
+  otherwise a project would be permanently ungateable for admitting where its evidence is thin,
+  which is the opposite of the incentive this record exists to create.
 
 Report the verdict first, then candidate SHA/artifact, contract revision, gate-by-gate evidence,
 gaps, rollback/recovery status, and the human decision still required to perform a release.

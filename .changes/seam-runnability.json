@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "seam-runnability",
+  "classification": "minor",
+  "migration": "none",
+  "summary": "Ask of every scenario whether a seam that would catch a failure the used one is structurally blind to was passed over because this environment cannot run it \u2014 better meaning reach, not realism, so a more faithful seam proving the same thing is not better. Record those in a Seam runnability table naming what the used seam cannot see, with an owner; a row whose used seam reaches nothing its forbidden clause names stays not-configured and blocks. release-gate reports the rows without moving the verdict, since approving the contract accepted them and a project should not become permanently ungateable for admitting where its evidence is thin. Also direct defect-history mining to check whether each fix landed everywhere its mechanism reaches, and give an untouched sibling path a scenario row rather than a prior-failure row.",
+  "paths": [
+    "skills/release-gate/SKILL.md",
+    "skills/test-plan/SKILL.md",
+    "skills/test-plan/scenario-craft.md",
+    "skills/test-plan/test-contract-template.md"
+  ]
+}

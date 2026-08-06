@@ -43,6 +43,26 @@ An `automated` row's seam must stay resolvable against the repository — `relea
 it at the candidate SHA, and a citation that no longer exists makes the row unevaluated rather than
 passing.
 
+### Seam runnability
+
+One row per scenario whose used seam is blind to something its forbidden clause names, where the
+seam that would catch it cannot be run here — not one per scenario that could theoretically use a
+more realistic seam. Delete the example row; an empty table means every row already reaches what
+its forbidden clause names.
+
+| Scenario ID | Seam that would catch it | Seam used instead | What the used seam cannot see | What makes the better one unrunnable | Owner | Follow-up |
+|---|---|---|---|---|---|---|
+| `<SC-001>` | `<the seam that reaches the blind spot>` | `<what the row actually cites>` | `<the failure mode this row's evidence structurally cannot catch — the user impact of the gap>` | `<the environmental blocker: no local stack, no seeded data, no device, unavailable credential>` | `<who can fix the environment>` | `<issue or ticket>` |
+
+A row here is a finding about this project, not about that scenario's author, and `What the used
+seam cannot see` is the whole point of the row — without it the record says a better seam exists
+without saying what it would have caught.
+
+Approving this contract accepts these rows. They are reported by `release-gate` as gaps and do not
+move a verdict, and they stay until the environment changes rather than being re-accepted per
+candidate. A row whose used seam reaches *nothing* its forbidden clause names does not belong here:
+that scenario is `not-configured` and blocks like any other.
+
 ### Source-to-artifact provenance
 
 - **Method:** `<how a tested artifact is bound to the candidate identifier below — a full source SHA, or what an external owner exposes | not-configured>`

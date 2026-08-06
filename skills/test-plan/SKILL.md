@@ -137,7 +137,8 @@ When it qualifies, **do not restate it**. `.harness-ship/test-contract.md` becom
 - **Approved by / date:** `<user + date>`
 - **Carried here:** `<criteria this project supplies that the document does not, and the facts every
   workflow needs before it can behave correctly — who owns the release surface, what identifies a
-  candidate, what this repository can see of that owner>`
+  candidate, what this repository can see of that owner, any scenario proven at a seam blind to
+  something this environment cannot run a check for>`
 - **Not carried by that document:**
   - `<undecided: what nobody has ruled on yet>`
   - `<unreadable: a scenario whose authoritative detail this document delegates to something that
@@ -157,7 +158,8 @@ interview in `## Ask before drafting`, never from inspection alone: most of it i
 `release-gate` as criteria to pass, so criteria the model wrote and nobody chose would pass against
 themselves. It also carries the declarations that are not criteria at all and pass or fail nothing —
 who owns the release surface, what identifies a candidate, what this repository can see of that
-owner — which `release-gate` acts on before it evaluates anything rather than gating. A pointer may extend the document it names, never contradict it, and the
+owner, and any seam-runnability record, which is an inspection finding reported rather than passed —
+which `release-gate` acts on before it evaluates anything rather than gating. A pointer may extend the document it names, never contradict it, and the
 extension is approved with the pointer. Without this the mature-project path cannot satisfy the
 Project Test Baseline's operational half, and mature projects are exactly the ones whose document
 was written for another purpose and omits it.
@@ -218,7 +220,8 @@ Record the reusable release expectations:
   provenance, and artifacts;
 - P0/P1 user journeys with stable scenario IDs and externally observable expected and forbidden
   behaviour;
-- the cheapest stable seam that can prove each journey or risk;
+- the cheapest stable seam that can prove each journey or risk, and separately any seam that would
+  catch a failure the used one is blind to but cannot be run in this environment;
 - method: `automated`, `manual`, `exploratory`, or `not-configured`;
 - established command or exact manual steps, required evidence, environment, fixtures, permissions,
   and safe test-data rules;
@@ -275,6 +278,18 @@ and the scenario keeps whatever classification its own priority earns. When the 
 rather than read in full, say so; a sampled count is a floor, never a reason to lower a
 classification. A defect caught before release is evidence about seam adequacy, not a production
 incident; record which one it is.
+
+For each fix you find, check whether it landed everywhere the mechanism reaches. A validation added
+to the update path and never to the create path, a guard added to one of two sibling handlers, a
+check added to the API and not the importer — the fix commit and its tests look complete, and the
+untouched sibling is now the likeliest place for the same defect, with the added disadvantage that
+someone has already demonstrated it is possible. Clustering by mechanism surfaces the recurrence;
+this asks the same question of a mechanism that has only occurred once. It is cheap: the fix commit
+names the path it changed, and the sibling is usually one grep away.
+
+An untouched sibling is a scenario, not history: give it a row carrying the same forbidden clause as
+the path that was fixed, and cite the fix commit as its prior-failure evidence. It does not belong in
+the prior-failure table, where its recurrence count is zero and neither escaped nor caught is true.
 
 Do not replace a framework or duplicate coverage merely to make the project resemble a template.
 
