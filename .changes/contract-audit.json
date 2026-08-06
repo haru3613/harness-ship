@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "contract-audit",
+  "classification": "minor",
+  "migration": "none",
+  "summary": "Make release-gate re-resolve what each required and P0 automated row cites as its seam at the candidate SHA before trusting the contract, so a citation that no longer exists makes the row unevaluated instead of silently passing, and require automated seams to be written as resolvable citations rather than a layer name so that check has something to resolve.",
+  "paths": [
+    "skills/release-gate/SKILL.md",
+    "skills/test-plan/scenario-craft.md",
+    "skills/test-plan/test-contract-template.md"
+  ]
+}
