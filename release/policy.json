@@ -61,6 +61,16 @@
         "issue-74-75",
         "issue-76"
       ]
+    },
+    {
+      "version": "5.0.0",
+      "declarations": [
+        "contract-audit",
+        "existing-contract-pointer",
+        "record-paths",
+        "scenario-craft",
+        "test-plan-interview"
+      ]
     }
   ]
 }

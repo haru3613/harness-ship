@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.0.0
+
+- [contract-audit] Make release-gate re-resolve what each required and P0 automated row cites as its seam at the candidate SHA before trusting the contract, so a citation that no longer exists makes the row unevaluated instead of silently passing, and require automated seams to be written as resolvable citations rather than a layer name so that check has something to resolve. (classification: minor; migration: none).
+- [existing-contract-pointer] Let a project whose release criteria already live in an accepted document keep that document as its Test Contract, with .harness-ship/test-contract.md as a pointer that must name what the two-layer model carries and the document does not, so a mature project is not made to restate working criteria into a weaker parallel copy that immediately drifts. (classification: minor; migration: none).
+- [record-paths] Give every Harness Ship record a fixed home under .harness-ship/ instead of leaving it a portable template with no address, so release-gate can locate an approved contract, a provenance receipt, and an append-only ledger from a cold start rather than requiring the user to paste them into the session. (classification: breaking; migration: required).
+- [scenario-craft] Teach the craft the contract's shape assumes: how to cut journeys so their IDs outlive the UI, and how to write the forbidden half as one of the four ways a system goes wrong while still appearing to work, plus a readiness check that rejects a row whose seam cannot reach its own forbidden clause. Also connect exploratory-testing to the behaviour-first test and dependency-replacement references, which were reachable only through the user-invoked tdd workflow even though exploratory-testing is the skill that writes the tests. (classification: minor; migration: none).
+- [test-plan-interview] Require test-plan to complete a round of real user answers before drafting any scenario table, naming what inspection cannot reach — P0 priority, what counts as money or irreversible state, forbidden behaviour, whether an existing red or skipped test is accepted or forgotten, acceptable deferrals, and the release target — instead of generating a full baseline from inspection and asking for one blanket approval. (classification: minor; migration: none).
+
 ## 4.2.0
 
 - [issue-74-75] Direct test-plan to mine prior failure evidence when auditing an existing project, and add a portable Test Contract template. (classification: minor; migration: none).
