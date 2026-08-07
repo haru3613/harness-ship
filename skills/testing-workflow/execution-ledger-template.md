@@ -13,7 +13,7 @@ Append attempts; never overwrite them.
 
 | Attempt | Previous | Started / completed | Scenario | Baseline / delta | Method / seam | Raw outcome | Normalized result | Evidence | Notes |
 |---|---|---|---|---|---|---|---|---|---|
-| <1> | <none> | <timestamps> | <SC-001> | <baseline/delta> | <command or manual steps> | <PASS/FAIL/BLOCKED/NOT RUN> | <PASS/FAIL/FLAKY/BLOCKED/NOT TESTED> | <durable link> | <risk result> |
+| <1> | <none> | <timestamps> | <SC-001> | <baseline/delta> | <command or manual steps> | <PASS/FAIL/BLOCKED/NOT RUN> | <PASS/FAIL/FLAKY/BLOCKED/NOT TESTED> | <durable link> | <risk result; for a `not-configured` row, the contract's reason — a test may exist that nothing has shown able to fail> |
 
 Normalize each scenario in this order:
 

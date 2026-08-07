@@ -70,6 +70,19 @@ There is no numeric test limit. Every new case must state:
 
 If that marginal coverage cannot be shown, do not add the case.
 
+Those three are an argument, made by whoever wants the case to exist and checked by nobody. For a
+**P0 scenario** an argument is not enough: the row is classified `automated` only once something has
+shown the test failing for the reason the row names, and demonstrating that means breaking the
+behaviour on purpose — which this skill never does, and cannot do here anyway, since the surface may
+be shared and the injection would invalidate the provenance recorded above. Write the case, state the
+argument, and propose the row as `not-configured` in the report's proposed revision, with the reason
+that its sensitivity is unproven.
+
+Say so when you add the case, not later: that row will not pass a release gate until the proof
+exists, producing it is a `tdd` cycle against a local working copy (see
+[no RED to watch](../tdd/SKILL.md)), and `tdd` is user-invoked — so this is the user's to schedule
+now rather than a surprise `NO-GO` three steps away. Below P0, the argument stands on its own.
+
 Write the minimum sufficient tests in the same context as exploration. Run the changed tests and
 the nearest relevant regression scope. Run a full suite only when repository policy requires it or
 the suite is already cheap. Never install a framework without explicit user approval.

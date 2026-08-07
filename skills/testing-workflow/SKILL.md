@@ -62,7 +62,9 @@ Contract:
 - automated command at its approved seam;
 - exact manual steps;
 - bounded exploratory method; or
-- `not-configured`, recorded as NOT RUN / NOT TESTED.
+- `not-configured`, recorded as NOT RUN / NOT TESTED, carrying the contract row's reason into the
+  ledger entry — a row can be `not-configured` because a test exists but nothing has shown it able
+  to fail, and a bare NOT RUN reads as no test at all.
 
 Test layers follow risk and seam stability, not author role. Avoid rerunning equivalent coverage at
 multiple layers merely to fill a pyramid.

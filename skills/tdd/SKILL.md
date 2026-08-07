@@ -79,7 +79,9 @@ A valid RED:
 Syntax errors, import failures, broken fixtures, unavailable infrastructure, and unrelated failing
 tests are **invalid REDs**. Repair the test harness and rerun until the failure proves the intended
 gap. If the new test passes immediately, determine whether the behaviour already exists or the
-assertion is insensitive; do not manufacture a failure.
+assertion is insensitive; do not manufacture a failure. When the behaviour already exists there is
+no honest RED to watch — see [no RED to watch](#when-there-is-no-red-to-watch) for what stands in
+for one.
 
 ### 3. GREEN — add the smallest implementation
 
@@ -100,3 +102,42 @@ behaviour, start a new RED cycle. A wide prefactor remains its own ticket as def
 A pure refactor ticket has no honest missing-behaviour RED. State that exception, establish
 characterization or existing regression coverage, and keep it green throughout instead of creating
 a fake failing test.
+
+## When there is no RED to watch
+
+A RED you watched fail proves the test is sensitive to the behaviour it names: the assertion fired,
+then it stopped. A test written against behaviour that already works never earns that proof — it
+passes on its first run whether it asserts the right thing, the wrong thing, or nothing at all.
+
+This skill is the only one that may edit code that ships, so producing the substitute is its job.
+For a **P0 scenario** whose coverage was added without a RED — characterization for a refactor, or
+a test for behaviour that already ships — inject the row's **forbidden** state in one line of
+product code, run the new test and the nearest existing tests, then revert:
+
+- **new test fails, existing tests stay green** — the coverage is real and specific. This is the
+  receipt.
+- **existing tests go red too** — that risk was already covered. Re-aim at the exact forbidden state
+  before concluding the new test is redundant; a break wide enough to redden everything proves
+  nothing about either.
+- **new test passes** — it does not catch what it claims, whatever else it asserts. Fix the test, not
+  the mutation.
+
+Aim at the forbidden clause, not at the function. "Swap these two booleans at submit time" is the
+mutation; "throw here" is not, and a suite that survives the first while catching the second was
+never guarding the row.
+
+**Scope, because this breaks working code on purpose:** a local working copy only — never a deployed,
+shared, preview, or QA surface, and never a commit. Revert before running anything else, and confirm
+the revert by re-running the same tests and seeing the pre-injection results return. A run that ends
+between injection and revert leaves broken product code behind a report that says otherwise.
+
+Record the injected line — the file and symbol it went into — both commands, both results, and the
+confirmed revert, alongside the cycle's RED evidence. Then hand it to `test-plan` as the input for
+the revision that promotes the row to `automated`. **`tdd` does not edit the contract**, the same way
+a seam correction is recorded on the ticket rather than written into it: the promotion is a
+classification change to an approved artifact, and only the user approves those.
+
+The unit is the row's forbidden clause, not the slice. One P0 scenario has many slices, and a RED on
+an earlier slice says nothing about a later one; a RED counts as this evidence only when the
+assertion that fired is the one naming the row's forbidden clause. Greenfield REDs usually fail on
+*the code path does not exist yet*, which is not sensitivity to *it stores the wrong field*.

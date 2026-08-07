@@ -46,6 +46,21 @@ Until the contract is at its path, `release-gate` returns `NO-GO` with the reaso
 has no contract to gate against. That is the intended behaviour, not a regression: a verdict the
 session cannot re-derive from the repository is not a verdict.
 
+## P0 rows now cite what showed their test can fail
+
+A P0 scenario is classified `automated` once something has shown its test failing for the reason the
+row names — a RED watched fail, or the one-line break `tdd` injects where no RED was available. The
+row's `Reason` cites it.
+
+**Existing contracts are not downgraded.** The rule binds on coverage added or changed from here; a
+P0 row already approved `automated` keeps its classification until a revision touches it, and is
+backfilled then. Nothing to do at upgrade time.
+
+New P0 coverage is a different matter, and deliberately so: a P0 row added from here is
+`not-configured` until the receipt exists, which blocks a gate. `tdd` produces the receipt and is
+user-invoked, so schedule that cycle when the coverage is written rather than meeting the block at
+gate time.
+
 ## Test and release confidence migration
 
 Releases with the test-and-release-confidence surface remove mandatory development orchestration
