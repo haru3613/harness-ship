@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "id": "unattended-test-plan",
+  "classification": "minor",
+  "migration": "none",
+  "summary": "Give test-plan a defined terminal state when the session has no user to ask. One round of real answers is unsatisfiable and drafting from inspection alone is forbidden, and between those two rules there was no exit, so the reachable behaviour was to abandon the workflow and write tests with the inspection thrown away. It now stops without writing when a draft already exists, so a scheduled run cannot overwrite an attended revision awaiting approval; otherwise it does the work that needs no answer, writes the DRAFT with an empty scenario table, and records each unasked interview topic, how it established there was nobody to ask, and any scenario it could propose but not complete. That draft is never presented for approval \u2014 approval replaces the approved contract wholesale, so approving a scenario-less draft would delete every scenario the project agreed to \u2014 and is finished by a later session that runs the interview in the same file.",
+  "paths": [
+    "skills/test-plan/SKILL.md",
+    "skills/test-plan/test-contract-template.md"
+  ]
+}

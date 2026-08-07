@@ -364,6 +364,61 @@ approval. An approved contract nobody chose is the failure mode this whole workf
 prevent: `release-gate` will enforce it exactly, and every later Bug Case, Diagnosis Receipt, and
 verdict traces back to a scenario the user never actually agreed to.
 
+## When nobody can answer
+
+Those two rules have no exit between them when the session has no user to ask — a scheduled run, a
+CI job, an agent handed a repository and no way to reach anyone. One round of real answers is
+unsatisfiable and inspection alone is forbidden, so the reachable behaviour is to abandon this
+workflow and go write tests. That is the worst of the available outcomes: the inspection was done
+and thrown away, nothing records that a contract was attempted, and the result is indistinguishable
+from a session that never heard of this skill.
+
+**First, do not destroy a revision somebody is already working on.** The draft path holds one
+revision in progress. If `.harness-ship/test-contract.draft.md` already exists, report that and stop
+— an unattended run is usually a schedule, it fires while people are working, and overwriting an
+attended draft awaiting approval would lose the more valuable work of the two.
+
+Otherwise produce the draft, without the part that needs answers:
+
+1. do every piece of work that needs no answer — the surface inventory, the test-tree and CI
+   inventory, current green/red/flaky/skipped state, the mapping from existing tests to journeys,
+   and defect-history mining;
+2. write it to `.harness-ship/test-contract.draft.md` under the `DRAFT` header;
+3. leave the scenario table empty. A row needs a priority and a forbidden clause, and both are
+   answers. Where inspection produced what a row would say — an untouched sibling path, a mechanism
+   with no journey — record it as a proposed scenario alongside the open questions, with what is
+   known and what is missing, rather than as a row;
+4. record under **Decisions required from the user** each topic you could not ask, naming what you
+   would have asked and what you would have proposed, plus how this session established there was
+   nobody to ask; and
+5. report what is blocked, what it needs, and that a contract requires a user — and never
+   present this draft for approval.
+
+**This draft is never presented for approval.** It is finished by a later session that runs the
+interview and fills the scenario table in the same file, and only that completed draft is presented.
+Approval replaces the approved contract with the draft's content wholesale — approving this one would
+delete every scenario the project already agreed to and leave `release-gate` gating an empty
+document.
+
+Nothing here is laundered, because nothing is approved: `DRAFT` is the state that means *not
+approved*, and `release-gate` gates the approved file only — a draft beside it is never evidence and
+never a reason to reject a candidate the approved file covers. Where no approved file exists yet,
+the verdict stays `NO-GO` for that reason, exactly as before this ran. What the draft buys is the
+expensive half: inspection is most of the work and it is the half a session without a user can
+actually do.
+
+Never fill the gap to finish the document. An inferred P0 set, a forbidden clause nobody stated, a
+red test silently classified as known-accepted, a deferral the user did not make, an owner for the
+release surface — each is the failure this workflow exists to prevent, and none is distinguishable
+afterwards from the real thing. The release-surface owner is the worst of them, because guessing
+*this repository* is what turns `release-gate`'s refusal to gate somebody else's candidate into a
+verdict. A blocked draft that says so is recoverable; a plausible contract nobody chose is not.
+
+A pointer contract has the same dead end and the same exit. It has no scenario table, but its
+`Carried here` is subject to this section too, so an unattended session records the qualifying
+documents it found and leaves `Carried here` unfilled with the same open questions rather than
+supplying criteria nobody chose.
+
 ## Approval and revision
 
 Present the complete draft — baseline plus release delta, or the pointer. Only the user may approve
