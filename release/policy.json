@@ -71,6 +71,17 @@
         "scenario-craft",
         "test-plan-interview"
       ]
+    },
+    {
+      "version": "5.1.0",
+      "declarations": [
+        "external-release-surface",
+        "mutation-sensitivity-evidence",
+        "pointer-contract-fidelity",
+        "seam-runnability",
+        "testing-workflow-contract-inputs",
+        "unattended-test-plan"
+      ]
     }
   ]
 }
