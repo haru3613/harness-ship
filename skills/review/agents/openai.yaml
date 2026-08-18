@@ -1,5 +1,0 @@
-interface:
-  display_name: "Review"
-  short_description: "Standards and spec review axes"
-policy:
-  allow_implicit_invocation: false

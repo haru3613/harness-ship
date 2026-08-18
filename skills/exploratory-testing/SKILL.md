@@ -9,8 +9,10 @@ description: >-
 
 # exploratory-testing
 
-Learn how the feature actually behaves before choosing automation. This skill may edit test code;
-it never edits product code or changes expected behaviour to match an implementation.
+Learn how the feature actually behaves before choosing automation. This skill may edit test code.
+It never changes expected behaviour to match an implementation. The only permitted product-code
+edit is the temporary one-line P0 sensitivity injection below, on a local working copy, reverted
+before anything else.
 
 Read repository instructions and the current Test Contract at `.harness-ship/test-contract.md`
 first. Exploration may proceed against a draft, but do not author automated expectations until the
@@ -72,26 +74,43 @@ If that marginal coverage cannot be shown, do not add the case.
 
 Those three are an argument, made by whoever wants the case to exist and checked by nobody. For a
 **P0 scenario** an argument is not enough: the row is classified `automated` only once something has
-shown the test failing for the reason the row names, and demonstrating that means breaking the
-behaviour on purpose — which this skill never does, and cannot do here anyway, since the surface may
-be shared and the injection would invalidate the provenance recorded above. Write the case, state the
-argument, and propose the row as `not-configured` in the report's proposed revision, with the reason
-that its sensitivity is unproven.
+shown the test failing for the reason the row names.
 
-Say so when you add the case, not later: that row will not pass a release gate until the proof
-exists, producing it is a `tdd` cycle against a local working copy (see
-[no RED to watch](../tdd/SKILL.md)), and `tdd` is user-invoked — so this is the user's to schedule
-now rather than a surprise `NO-GO` three steps away. Below P0, the argument stands on its own.
+If the new test is a valid RED — it reaches the intended interface and fails on the assertion that
+names the missing behaviour — that watched fail is the receipt. Record the test, the command, and
+the failure reason.
+
+If the behaviour already exists, there is no honest RED to watch. A test that passes on its first
+run may assert the right thing, the wrong thing, or nothing at all. Produce the substitute on a
+**local working copy only** — never the exploration surface recorded above, never a deployed,
+shared, preview, or QA candidate, and never a commit. Inject the row's **forbidden** state in one
+line of product code, run the new test and the nearest existing tests, then revert:
+
+- **new test fails, existing tests stay green** — the coverage is real and specific. This is the
+  receipt.
+- **existing tests go red too** — that risk was already covered. Re-aim at the exact forbidden
+  state before concluding the new test is redundant; a break wide enough to redden everything
+  proves nothing about either.
+- **new test passes** — it does not catch what it claims, whatever else it asserts. Fix the test,
+  not the mutation.
+
+Aim at the forbidden clause, not at the function. "Swap these two booleans at submit time" is the
+mutation; "throw here" is not.
+
+Revert before running anything else, and confirm the revert by re-running the same tests and seeing
+the pre-injection results return. Record the injected line — the file and symbol it went into —
+both commands, both results, and the confirmed revert. Then propose the row as `automated` in the
+report's proposed Test Contract revision, citing that receipt. Until the receipt exists, propose
+the row as `not-configured`. Below P0, the argument stands on its own.
 
 Write the minimum sufficient tests in the same context as exploration. Run the changed tests and
 the nearest relevant regression scope. Run a full suite only when repository policy requires it or
 the suite is already cheap. Never install a framework without explicit user approval.
 
 Choosing the right seam does not make the test at that seam a good one. Follow
-[behaviour-first tests](../tdd/tests.md) and [replacing dependencies](../tdd/mocking.md) for the
+[behaviour-first tests](tests.md) and [replacing dependencies](mocking.md) for the
 test's own construction, and [scenario-craft.md](../test-plan/scenario-craft.md) when exploration
-turns up a risk the contract has no scenario for. Reading these is independent of the `tdd` workflow,
-which stays user-invoked.
+turns up a risk the contract has no scenario for.
 
 ## Exploration report
 

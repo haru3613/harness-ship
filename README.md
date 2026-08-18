@@ -208,27 +208,8 @@ It never merges, deploys, promotes, tags, publishes, or writes production data.
 | `bug-workflow` | Classify a non-pass and emit repair/retest conditions |
 | `diagnose` | Produce a cause-only Diagnosis Receipt |
 
-### Development helpers (user-invoked only)
-
-These carry `disable-model-invocation: true` (Claude Code) and
-`policy.allow_implicit_invocation: false` (Codex). No agent can reach them — only the human
-typing the command — so they never compete with whatever development stack the repository
-already uses.
-
-| Skill | Responsibility |
-|---|---|
-| `/harness-ship:clarify` | Resolve requirement forks |
-| `/harness-ship:spike` | Time-box a technical unknown |
-| `/harness-ship:spec` | Record a product specification |
-| `/harness-ship:tickets` | Split approved work into optional delivery slices |
-| `/harness-ship:implement` | Explicit opt-in implementation orchestration |
-| `/harness-ship:tdd` | Explicit opt-in RED → GREEN implementation |
-| `/harness-ship:review` | Review standards and work-item alignment |
-
-In Codex use the `$harness-ship:<name>` form.
-
-The development helpers are independent and optional. No skill invokes a mandatory end-to-end
-development workflow.
+The plugin does not ship a development loop. How the product is written stays with the
+repository's own stack.
 
 ## Configuration model
 
@@ -244,10 +225,6 @@ change; existing Config v3 projects do not rerun setup.
 Harness Ship coordinates capabilities already available in the host. Root remains responsible for
 external state and final judgment. Repository instructions, child output, CI badges, and screenshots
 are evidence to verify, not authority to approve or release.
-
-The Claude Code package includes a read-only independent verifier. Codex resolves fresh reviewers
-from the child types exposed by the running host. When no enforceable independent boundary exists,
-the receipt says `independence: not established`.
 
 ## Install and channels
 

@@ -52,11 +52,9 @@ class ReleaseContractTests(unittest.TestCase):
             ".agents/plugins/marketplace.json",
             ".claude-plugin/marketplace.json",
             ".github/workflows/ci.yml",
-            "agents/harness-ship-independent-verifier.md",
-            "scripts/role_binding_contract.py",
             "scripts/validate_plugin_lifecycle.sh",
             "skills/setup/SKILL.md",
-            "skills/implement/SKILL.md",
+            "skills/exploratory-testing/SKILL.md",
         ):
             path = repo / relative
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -218,11 +216,11 @@ class ReleaseContractTests(unittest.TestCase):
         self, repo: Path, *, classification: str = "minor"
     ) -> tuple[str, str]:
         self.normal_base(repo)
-        helper = repo / "scripts" / "role_binding_contract.py"
-        helper.write_text("pending release change\n", encoding="utf-8")
+        helper = repo / "skills" / "setup" / "SKILL.md"
+        helper.write_text("pending setup change\n", encoding="utf-8")
         self.declare(
             repo,
-            paths=["scripts/role_binding_contract.py"],
+            paths=["skills/setup/SKILL.md"],
             classification=classification,
             migration="recommended" if classification != "patch" else "none",
         )
@@ -248,8 +246,8 @@ class ReleaseContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             repo, _ = self.make_repo(directory)
             base = self.normal_base(repo)
-            helper = repo / "scripts" / "role_binding_contract.py"
-            helper.write_text("changed verifier contract\n", encoding="utf-8")
+            helper = repo / "skills" / "setup" / "SKILL.md"
+            helper.write_text("changed setup skill\n", encoding="utf-8")
             current = self.commit(repo, "change protected contract")
 
             result = self.check(repo, base, current)
@@ -259,16 +257,16 @@ class ReleaseContractTests(unittest.TestCase):
                 "release-sensitive path has no change declaration",
                 result.stderr.lower(),
             )
-            self.assertIn("scripts/role_binding_contract.py", result.stderr)
+            self.assertIn("skills/setup/SKILL.md", result.stderr)
 
     def test_normal_change_pr_keeps_released_version_unchanged(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo, _ = self.make_repo(directory)
             self.add_policy(repo)
             base = self.commit(repo, "add release policy")
-            helper = repo / "scripts" / "role_binding_contract.py"
-            helper.write_text("changed verifier contract\n", encoding="utf-8")
-            self.declare(repo, paths=["scripts/role_binding_contract.py"])
+            helper = repo / "skills" / "setup" / "SKILL.md"
+            helper.write_text("changed setup skill\n", encoding="utf-8")
+            self.declare(repo, paths=["skills/setup/SKILL.md"])
             current = self.commit(repo, "normal source change")
 
             result = self.pr_check(repo, base, current)
@@ -281,8 +279,8 @@ class ReleaseContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             repo, _ = self.make_repo(directory)
             base = self.normal_base(repo)
-            helper = repo / "scripts" / "role_binding_contract.py"
-            helper.write_text("changed verifier contract\n", encoding="utf-8")
+            helper = repo / "skills" / "setup" / "SKILL.md"
+            helper.write_text("changed setup skill\n", encoding="utf-8")
             for relative in (
                 ".codex-plugin/plugin.json",
                 ".claude-plugin/plugin.json",
@@ -296,7 +294,7 @@ class ReleaseContractTests(unittest.TestCase):
                 paths=[
                     ".codex-plugin/plugin.json",
                     ".claude-plugin/plugin.json",
-                    "scripts/role_binding_contract.py",
+                    "skills/setup/SKILL.md",
                 ],
             )
             current = self.commit(repo, "bump and change protected contract")
@@ -322,11 +320,11 @@ class ReleaseContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             repo, _ = self.make_repo(directory)
             base = self.normal_base(repo)
-            helper = repo / "scripts" / "role_binding_contract.py"
-            helper.write_text("changed verifier contract\n", encoding="utf-8")
+            helper = repo / "skills" / "setup" / "SKILL.md"
+            helper.write_text("changed setup skill\n", encoding="utf-8")
             self.declare(
                 repo,
-                paths=["scripts/role_binding_contract.py"],
+                paths=["skills/setup/SKILL.md"],
                 migration="required",
             )
             current = self.commit(repo, "underclassified change")
@@ -340,8 +338,8 @@ class ReleaseContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             repo, _ = self.make_repo(directory)
             base = self.normal_base(repo)
-            helper = repo / "scripts" / "role_binding_contract.py"
-            helper.write_text("changed verifier contract\n", encoding="utf-8")
+            helper = repo / "skills" / "setup" / "SKILL.md"
+            helper.write_text("changed setup skill\n", encoding="utf-8")
             declaration = repo / ".changes" / "broken.json"
             declaration.parent.mkdir(parents=True, exist_ok=True)
             declaration.write_text("{not-json}\n", encoding="utf-8")
@@ -397,12 +395,12 @@ class ReleaseContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             repo, _ = self.make_repo(directory)
             base = self.normal_base(repo)
-            helper = repo / "scripts" / "role_binding_contract.py"
-            helper.write_text("changed verifier contract\n", encoding="utf-8")
-            self.declare(repo, paths=["scripts/role_binding_contract.py"])
+            helper = repo / "skills" / "setup" / "SKILL.md"
+            helper.write_text("changed setup skill\n", encoding="utf-8")
+            self.declare(repo, paths=["skills/setup/SKILL.md"])
             self.declare(
                 repo,
-                paths=["scripts/role_binding_contract.py"],
+                paths=["skills/setup/SKILL.md"],
                 identifier="other-change",
             )
             current = self.commit(repo, "duplicate coverage")
@@ -416,11 +414,11 @@ class ReleaseContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             repo, _ = self.make_repo(directory)
             self.normal_base(repo)
-            helper = repo / "scripts" / "role_binding_contract.py"
-            helper.write_text("pending release change\n", encoding="utf-8")
+            helper = repo / "skills" / "setup" / "SKILL.md"
+            helper.write_text("pending setup change\n", encoding="utf-8")
             self.declare(
                 repo,
-                paths=["scripts/role_binding_contract.py"],
+                paths=["skills/setup/SKILL.md"],
                 classification="minor",
                 migration="recommended",
             )
@@ -467,7 +465,7 @@ class ReleaseContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             repo, _ = self.make_repo(directory)
             self.normal_base(repo)
-            (repo / "scripts/role_binding_contract.py").write_text(
+            (repo / "skills/setup/SKILL.md").write_text(
                 "patch source\n", encoding="utf-8"
             )
             (repo / ".github/workflows/ci.yml").write_text(
@@ -475,7 +473,7 @@ class ReleaseContractTests(unittest.TestCase):
             )
             self.declare(
                 repo,
-                paths=["scripts/role_binding_contract.py"],
+                paths=["skills/setup/SKILL.md"],
                 identifier="patch-change",
             )
             self.declare(
@@ -596,12 +594,12 @@ class ReleaseContractTests(unittest.TestCase):
             repo, _ = self.make_repo(directory)
             self.declare(
                 repo,
-                paths=["scripts/role_binding_contract.py"],
+                paths=["skills/setup/SKILL.md"],
                 identifier="used-change",
             )
             self.add_policy(repo, consumed=["used-change"])
             base = self.commit(repo, "release policy with consumed id")
-            (repo / "scripts/role_binding_contract.py").write_text(
+            (repo / "skills/setup/SKILL.md").write_text(
                 "changed source\n", encoding="utf-8"
             )
             declaration = repo / ".changes" / "used-change.json"
@@ -644,7 +642,7 @@ class ReleaseContractTests(unittest.TestCase):
                 ".claude-plugin/marketplace.json",
                 "CHANGELOG.md",
                 "release/policy.json",
-                "scripts/role_binding_contract.py",
+                "skills/setup/SKILL.md",
             ]
             for manifest in (
                 ".codex-plugin/plugin.json",
@@ -666,7 +664,7 @@ class ReleaseContractTests(unittest.TestCase):
                 encoding="utf-8",
             )
             self.add_policy(repo, version="0.7.0", consumed=["issue-27"])
-            (repo / "scripts/role_binding_contract.py").write_text(
+            (repo / "skills/setup/SKILL.md").write_text(
                 "bootstrap source\n", encoding="utf-8"
             )
             self.declare(
@@ -1009,7 +1007,7 @@ class ReleaseContractTests(unittest.TestCase):
                 ),
             )
             self.commit(repo, f"merged v{VERSION} release state")
-            helper = repo / "scripts" / "role_binding_contract.py"
+            helper = repo / "skills" / "setup" / "SKILL.md"
             helper.write_text(
                 helper.read_text(encoding="utf-8")
                 + "\n# Final bootstrap checkpoint.\n",

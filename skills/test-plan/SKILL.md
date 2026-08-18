@@ -233,8 +233,9 @@ P0 covers core value, auth, money, destructive state changes, or a flow that mus
 Unknown capability is `not-configured`, never PASS.
 
 **A P0 row becomes `automated` when something showed its test failing for the reason the row names,
-not when a test exists.** That is a RED watched fail, or the injected one-line break `tdd` runs where
-no RED was available. Either way the row's `Reason` cites it in a form a later reader can check, not
+not when a test exists.** That is a RED watched fail, or the injected one-line break
+`exploratory-testing` runs on a local working copy where no RED was available. Either way the
+row's `Reason` cites it in a form a later reader can check, not
 a summary of how it went: for a RED, the test, the command, and the failure reason watched; for an
 injected break, what went in and where, both commands, and both results.
 Nothing downstream re-resolves this citation, so authoring is the only time it is ever verified.

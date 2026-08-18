@@ -1,5 +1,0 @@
-interface:
-  display_name: "Implement"
-  short_description: "Root-owned delivery loop for one ticket"
-policy:
-  allow_implicit_invocation: false

@@ -62,10 +62,9 @@ not a stack. A hotfix that touches one contract field is one focused cut, not a
 release baseline.
 
 Present the list. Wait for approval before installing anything or writing test
-code. If the user wants the tests written, hand to `exploratory-testing` for a
-runnable feature, or to `tdd` when they opt into it. If they want approved
-release criteria, hand to `test-plan`. If they want a GO/NO-GO, hand to
-`release-gate` only after a contract and candidate evidence exist.
+code. If the user wants the tests written, hand to `exploratory-testing`. If they
+want approved release criteria, hand to `test-plan`. If they want a GO/NO-GO,
+hand to `release-gate` only after a contract and candidate evidence exist.
 
 ## 4 — Write the report
 
