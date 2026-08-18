@@ -1,7 +1,7 @@
 {
   "name": "harness-ship",
-  "version": "5.1.0",
-  "description": "Test and release confidence for AI coding agents: plan the evidence, explore before automating, verify the exact artifact, and keep release human-owned.",
+  "version": "5.2.0",
+  "description": "Test and release confidence for AI coding agents: advise the next cuts, plan the evidence, explore before automating, verify the exact artifact, and keep release human-owned.",
   "author": {
     "name": "haru3613",
     "url": "https://github.com/haru3613"
@@ -10,6 +10,7 @@
   "license": "MIT",
   "keywords": [
     "testing",
+    "advise",
     "test-planning",
     "exploratory-testing",
     "release-gate",

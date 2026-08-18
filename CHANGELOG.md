@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.2.0
+
+- [issue-105] Make advise the default job after setup: inspect the suite, name the cheapest next cuts, and write a quality report. Demote test-plan and release-gate from first-day climax without changing existing contracts or Config v3. (classification: minor; migration: recommended).
+
 ## 5.1.0
 
 - [external-release-surface] Name the repository that holds release criteria for a service another team builds and releases, give its contract fields for the release-surface owner, what this repository can see of that owner, and the candidate identifier, and route those through the interview. Make release-gate stop before evaluating with NO-GO whose reason is that the verdict belongs to the repository owning the candidate, list that reason in the verdict rules, and reconcile gate 1 so an external surface is not reported as contract drift. Generalize the candidate directory name to the contract-defined identifier while keeping per-candidate uniqueness, and forbid recording this repository's own HEAD as a candidate's source SHA when the owner exposes none. (classification: minor; migration: none).

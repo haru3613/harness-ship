@@ -1,7 +1,7 @@
 {
   "name": "harness-ship",
-  "version": "5.1.0",
-  "description": "Test and release confidence for AI coding agents: plan the evidence, explore before automating, verify the exact artifact, and keep release human-owned.",
+  "version": "5.2.0",
+  "description": "Test and release confidence for AI coding agents: advise the next cuts, plan the evidence, explore before automating, verify the exact artifact, and keep release human-owned.",
   "author": {
     "name": "haru3613",
     "url": "https://github.com/haru3613"
@@ -11,6 +11,7 @@
   "license": "MIT",
   "keywords": [
     "testing",
+    "advise",
     "test-planning",
     "exploratory-testing",
     "release-gate",
@@ -22,7 +23,7 @@
   "interface": {
     "displayName": "Harness Ship",
     "shortDescription": "Test and release confidence",
-    "longDescription": "Create a user-approved Project Test Baseline and Release Delta, explore runnable features before adding minimum sufficient automation, execute the contract against an exact candidate, and return an evidence-backed release verdict without prescribing development or promoting the release.",
+    "longDescription": "Diagnose a project's test gaps and name the cheapest next cuts, then optionally create a user-approved Project Test Baseline and Release Delta, explore runnable features before adding minimum sufficient automation, execute the contract against an exact candidate, and return an evidence-backed release verdict without prescribing development or promoting the release.",
     "developerName": "haru3613",
     "category": "Engineering",
     "capabilities": [
@@ -31,6 +32,7 @@
     "websiteURL": "https://github.com/haru3613/harness-ship",
     "defaultPrompt": [
       "Set up harness-ship for this repository.",
+      "Advise what this project should test next.",
       "Create or update the Test Contract for this project.",
       "Explore this runnable feature before adding the minimum sufficient automated coverage.",
       "Execute the Test Contract against this exact candidate.",
