@@ -82,6 +82,12 @@
         "testing-workflow-contract-inputs",
         "unattended-test-plan"
       ]
+    },
+    {
+      "version": "5.2.0",
+      "declarations": [
+        "issue-105"
+      ]
     }
   ]
 }
