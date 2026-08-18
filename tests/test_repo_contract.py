@@ -82,6 +82,7 @@ class SkillStructureTests(unittest.TestCase):
         """
         canonical = {
             ".harness-ship/",
+            ".harness-ship/quality-report.md",
             ".harness-ship/test-contract.md",
             ".harness-ship/test-contract.draft.md",
             ".harness-ship/bugs/",
@@ -112,6 +113,7 @@ class SkillStructureTests(unittest.TestCase):
 
         # The writers must actually be present; a layout nothing writes is dead.
         for skill, path in (
+            ("advise", ".harness-ship/quality-report.md"),
             ("test-plan", ".harness-ship/test-contract.md"),
             ("release-gate", ".harness-ship/test-contract.md"),
             ("bug-workflow", ".harness-ship/bugs/<BUG-ID>.md"),
@@ -125,6 +127,7 @@ class SkillStructureTests(unittest.TestCase):
         for removed in ("dev-workflow", "acceptance-design"):
             self.assertFalse((SKILLS / removed).exists())
         for current in (
+            "advise",
             "test-plan",
             "exploratory-testing",
             "testing-workflow",
