@@ -39,11 +39,13 @@ DECLARATION_KEYS = {
 CLASSIFICATIONS = {"patch", "minor", "breaking"}
 MIGRATIONS = {"none", "recommended", "required"}
 PRODUCT_DESCRIPTION = (
-    "Test and release confidence for AI coding agents: plan the evidence, explore before "
-    "automating, verify the exact artifact, and keep release human-owned."
+    "Test and release confidence for AI coding agents: advise the next cuts, plan the "
+    "evidence, explore before automating, verify the exact artifact, and keep release "
+    "human-owned."
 )
 PRODUCT_KEYWORDS = [
     "testing",
+    "advise",
     "test-planning",
     "exploratory-testing",
     "release-gate",
@@ -52,13 +54,15 @@ PRODUCT_KEYWORDS = [
     "evidence",
 ]
 PRODUCT_LONG_DESCRIPTION = (
-    "Create a user-approved Project Test Baseline and Release Delta, explore runnable features "
-    "before adding minimum sufficient automation, execute the contract against an exact candidate, "
-    "and return an evidence-backed release verdict without prescribing development or promoting "
-    "the release."
+    "Diagnose a project's test gaps and name the cheapest next cuts, then optionally "
+    "create a user-approved Project Test Baseline and Release Delta, explore runnable "
+    "features before adding minimum sufficient automation, execute the contract against "
+    "an exact candidate, and return an evidence-backed release verdict without "
+    "prescribing development or promoting the release."
 )
 PRODUCT_DEFAULT_PROMPTS = [
     "Set up harness-ship for this repository.",
+    "Advise what this project should test next.",
     "Create or update the Test Contract for this project.",
     "Explore this runnable feature before adding the minimum sufficient automated coverage.",
     "Execute the Test Contract against this exact candidate.",

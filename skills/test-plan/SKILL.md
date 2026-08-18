@@ -2,9 +2,8 @@
 name: test-plan
 description: >-
   Create or revise the user-approved Test Contract that defines what must be proven before release.
-  Use for a new project, an existing project's test audit, a feature's release delta, or when someone
-  asks what should be tested. Triggers: "/test-plan", "plan the tests", "define the release
-  criteria", "audit this project's tests".
+  Use when the user wants approved release criteria, a Project Test Baseline, or a release-specific
+  delta. Triggers: "/test-plan", "plan the tests", "define the release criteria".
 ---
 
 # test-plan
@@ -20,10 +19,11 @@ release criteria in the Test Contract instead of expanding project configuration
 ## Where the records live
 
 Every Harness Ship record is a file under `.harness-ship/` at the repository root, committed with
-the code it describes. `test-plan` creates this tree; the other workflows read and extend it.
+the code it describes. `test-plan` writes the contract files; `advise` may create the tree first.
 
 | Record | Path | Written by |
 |---|---|---|
+| Quality report | `.harness-ship/quality-report.md` | `advise` |
 | Approved Test Contract | `.harness-ship/test-contract.md` | `test-plan` |
 | Test Contract revision in progress | `.harness-ship/test-contract.draft.md` | `test-plan` |
 | Bug Case, then its Diagnosis Receipts appended | `.harness-ship/bugs/<BUG-ID>.md` | `bug-workflow`, `diagnose` |

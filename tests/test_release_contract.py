@@ -537,6 +537,10 @@ class ReleaseContractTests(unittest.TestCase):
 
             self.assertIn("release confidence", codex["description"])
             self.assertEqual(
+                codex["interface"]["defaultPrompt"][1],
+                "Advise what this project should test next.",
+            )
+            self.assertEqual(
                 codex["interface"]["defaultPrompt"][-1],
                 "Run the release gate for this candidate.",
             )
@@ -545,7 +549,8 @@ class ReleaseContractTests(unittest.TestCase):
                 for entry in claude_catalog["plugins"]
                 if entry["name"] == "harness-ship"
             )
-            self.assertIn("explore runnable features", stable["description"])
+            self.assertIn("explore runnable", stable["description"])
+            self.assertIn("advise", stable["keywords"])
             self.assertIn("release-gate", stable["keywords"])
 
     def test_version_pr_accepts_only_exact_generated_files(self) -> None:

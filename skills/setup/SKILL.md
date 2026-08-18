@@ -16,8 +16,9 @@ test, UI, QA, CI, deployment, or automation decision yet.
 ## Fast path
 
 Read `AGENTS.md` or `CLAUDE.md` first. If it already contains exactly one supported
-`## harness-ship` block and the user did not request a policy change, report that it is configured
-and stop. Do not rescan the repository, run a readiness command, or rewrite informational versions.
+`## harness-ship` block and the user did not request a policy change, report that it is
+configured and run `advise`. Do not rescan for policy, run a readiness command, or rewrite
+informational versions.
 
 Duplicate blocks and unsupported Config versions are zero-mutation stops. Preserve every explicit
 choice in a supported existing block, including fields written later by other workflows.
@@ -38,7 +39,7 @@ Ask only when either of these cannot be resolved safely:
 1. the tracker and its allowed access method; or
 2. the integration branch versus protected release branch.
 
-Otherwise write the block and summarize the assumptions in the same turn.
+Otherwise write the block, summarize the assumptions, and run `advise` in the same turn.
 
 ## Write
 
@@ -62,9 +63,11 @@ has one branch, record it for both branch fields.
 
 ## Progressive disclosure
 
-Workflows inspect capabilities when they first need them:
+`advise` is the default job after this block exists. Other workflows inspect capabilities
+when they first need them:
 
-- `test-plan` inventories project surfaces, risks, existing tests, and release expectations;
+- `advise` inventories the test tree and names the next cuts;
+- `test-plan` records approved release criteria;
 - `exploratory-testing` resolves automation only when a runnable feature justifies it;
 - `tdd` resolves a test runner only when the user explicitly opts into TDD;
 - `implement` resolves applicable lint, typecheck, and build checks;

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "issue-105",
+  "classification": "minor",
+  "migration": "recommended",
+  "summary": "Make advise the default job after setup: inspect the suite, name the cheapest next cuts, and write a quality report. Demote test-plan and release-gate from first-day climax without changing existing contracts or Config v3.",
+  "paths": [
+    "docs/upgrade-guide.md",
+    "scripts/check_release_contract.py",
+    "skills/advise/SKILL.md",
+    "skills/advise/quality-report-template.md",
+    "skills/setup/SKILL.md",
+    "skills/test-plan/SKILL.md"
+  ]
+}

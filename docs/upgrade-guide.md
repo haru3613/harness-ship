@@ -21,6 +21,7 @@ the code. Config stays v3; **do not rerun setup**.
 
 ```text
 .harness-ship/
+  quality-report.md             # latest diagnosis: shape, flashlight, next cuts
   test-contract.md              # the approved Project Test Baseline + Release Delta
   test-contract.draft.md        # a revision in progress, until the user approves it
   bugs/<BUG-ID>.md              # Bug Case, with each Diagnosis Receipt appended
@@ -66,7 +67,7 @@ gate time.
 Releases with the test-and-release-confidence surface remove mandatory development orchestration
 and keep Config v3.
 
-- Replace `dev-workflow` with the independent command needed now: `test-plan`,
+- Replace `dev-workflow` with the independent command needed now: `advise`, `test-plan`,
   `exploratory-testing`, `testing-workflow`, or `release-gate`.
 - Replace `acceptance-design` with `test-plan`. Existing acceptance criteria can become the first
   Release Delta; reusable P0 journeys become the Project Test Baseline.
@@ -81,8 +82,16 @@ and keep Config v3.
 - Replace links to `qa-handoff-template.md` and `acceptance-report-template.md` with
   `candidate-handoff-template.md` and `test-report-template.md`.
 
-Existing Config v3 projects **do not rerun setup**. Approve a Test Contract before invoking
-`release-gate`.
+Existing Config v3 projects **do not rerun setup**. After upgrade, run `advise` for the next
+cuts. Approve a Test Contract before invoking `release-gate`.
+
+## Advise is now the default job
+
+After setup, or when someone asks what to test, which framework to add, or whether
+coverage is enough, run `advise`. It overwrites `.harness-ship/quality-report.md`
+with the suite's shape and at most three next cuts. Existing Test Contracts,
+candidate ledgers, and Config v3 are unchanged. `test-plan` still owns approved
+release criteria; `release-gate` remains optional and still needs that contract.
 
 ## Codex
 

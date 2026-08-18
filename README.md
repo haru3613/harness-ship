@@ -1,9 +1,10 @@
 # Harness Ship
 
-Harness Ship helps Codex and Claude Code decide **what must be tested, what was actually tested, and
-whether an exact candidate is ready to release**. It does not prescribe how software must be
-developed.
+Harness Ship helps Codex and Claude Code decide **what a project should test next, what was
+actually tested, and whether an exact candidate is ready to release**. It does not prescribe how
+software must be developed.
 
+**Advise first.** Inspect the suite, name the shape, and speak the cheapest next cuts.
 **Plan the evidence.** Approve a reusable Project Test Baseline plus a release-specific Delta.
 **Explore before automating.** Learn the feature first, then add only the coverage existing tests
 cannot provide.
@@ -34,7 +35,7 @@ Start a new session, then:
 
 ```text
 $harness-ship:setup
-$harness-ship:test-plan
+$harness-ship:advise
 ```
 
 ### Claude Code
@@ -48,33 +49,36 @@ Restart Claude Code, start a new session, then:
 
 ```text
 /harness-ship:setup
-/harness-ship:test-plan
+/harness-ship:advise
 ```
 
-`setup` writes the small Config v3 policy block. `test-plan` creates the user-approved Test
-Contract. Once a feature is runnable, use `exploratory-testing`; once an exact candidate exists, use
+`setup` writes the small Config v3 policy block and then runs `advise`. `advise` inventories the
+suite and names the next cuts. Use `test-plan` when you want approved release criteria; once a
+feature is runnable, use `exploratory-testing`; once an exact candidate exists, use
 `testing-workflow` and then `release-gate`.
 
 ## How it works
 
 ```mermaid
 flowchart LR
-    A[Project Test Baseline]
-    B[Release Delta]
-    C[Explore feature]
-    D[Minimum automation]
-    E[Test exact candidate]
-    F{Release gate}
-    G[Human release action]
-    H[Bug Case and repair handoff]
+    A[Advise next cuts]
+    B[Project Test Baseline]
+    C[Release Delta]
+    D[Explore feature]
+    E[Minimum automation]
+    F[Test exact candidate]
+    G{Release gate}
+    H[Human release action]
+    I[Bug Case and repair handoff]
 
-    A --> B --> C --> D --> E --> F
-    F -->|GO or accepted caveats| G
-    E -->|Non-pass| H
-    H -->|New exact candidate| E
+    A --> B --> C --> D --> E --> F --> G
+    G -->|GO or accepted caveats| H
+    F -->|Non-pass| I
+    I -->|New exact candidate| F
 ```
 
-The Test Contract is the only required judgment gate:
+`advise` is the default job: it does not need a Test Contract. The Test Contract is the
+judgment gate for a release verdict:
 
 - **Project Test Baseline** holds stable P0 journeys, methods, environments, provenance, and generic
   blocking rules.
@@ -100,15 +104,16 @@ describes:
 
 ```text
 .harness-ship/
+  quality-report.md             # latest diagnosis: shape, flashlight, next cuts
   test-contract.md              # the approved Project Test Baseline + Release Delta
   test-contract.draft.md        # a revision in progress, until the user approves it
   bugs/<BUG-ID>.md              # Bug Case, with each Diagnosis Receipt appended
   candidates/<short-sha>/       # handoff.md, ledger.md, report.md for one exact candidate
 ```
 
-`test-plan` creates the tree; the other workflows read and extend it. The paths are fixed, not
-configured. Drafts stay separate so that planning the next revision never disturbs a candidate
-being tested or gated against the current one.
+`advise` or `test-plan` may create the tree; the other workflows read and extend it. The paths are
+fixed, not configured. Drafts stay separate so that planning the next revision never disturbs a
+candidate being tested or gated against the current one.
 
 The layout carries no product or surface qualifier, so it assumes **one release surface per
 repository**. A monorepo whose services release on independent cadences does not fit. A repository
@@ -194,7 +199,8 @@ It never merges, deploys, promotes, tags, publishes, or writes production data.
 
 | Skill | Responsibility |
 |---|---|
-| `setup` | Write the repository's small Config v3 policy block |
+| `setup` | Write the repository's small Config v3 policy block, then run `advise` |
+| `advise` | Diagnose the suite and name the cheapest next cuts |
 | `test-plan` | Create Project Test Baseline and Release Delta |
 | `exploratory-testing` | Explore first, then add minimum sufficient automation |
 | `testing-workflow` | Execute the Test Contract against an exact candidate |
