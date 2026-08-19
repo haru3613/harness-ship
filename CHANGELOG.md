@@ -1,5 +1,9 @@
 # Changelog
 
+## 6.0.0
+
+- [issue-108] Remove the seven development helpers and the unused independent-verifier gate. Harness Ship keeps only the test and release surface; P0 sensitivity proof moves into exploratory-testing. (classification: breaking; migration: required).
+
 ## 5.2.0
 
 - [issue-105] Make advise the default job after setup: inspect the suite, name the cheapest next cuts, and write a quality report. Demote test-plan and release-gate from first-day climax without changing existing contracts or Config v3. (classification: minor; migration: recommended).

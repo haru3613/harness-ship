@@ -1,6 +1,6 @@
 {
   "name": "harness-ship",
-  "version": "5.2.0",
+  "version": "6.0.0",
   "description": "Test and release confidence for AI coding agents: advise the next cuts, plan the evidence, explore before automating, verify the exact artifact, and keep release human-owned.",
   "author": {
     "name": "haru3613",
