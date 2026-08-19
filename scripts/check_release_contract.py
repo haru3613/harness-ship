@@ -73,14 +73,12 @@ RELEASE_SENSITIVE_EXACT = {
     ".github/pull_request_template.md",
     ".github/workflows/ci.yml",
     ".github/workflows/release.yml",
-    "agents/harness-ship-independent-verifier.md",
     "CONTRIBUTING.md",
     "docs/upgrade-guide.md",
     "scripts/check_release_contract.py",
     "scripts/publish_release.py",
-    "scripts/role_binding_contract.py",
     "scripts/validate_plugin_lifecycle.sh",
-    "skills/implement/SKILL.md",
+    "skills/exploratory-testing/SKILL.md",
     "skills/setup/SKILL.md",
 }
 RELEASE_SENSITIVE_PREFIXES = ("agents/", "skills/")

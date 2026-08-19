@@ -79,7 +79,7 @@ Carrying a narrower reach than the receipt established leaves the identical defe
 caller, where it returns later as a separate Bug Case.
 
 Then stop. The user or host agent chooses the repair process; Harness Ship never requires
-`implement`, `tdd`, a branch strategy, or a deployment method.
+a development workflow, a branch strategy, or a deployment method.
 
 When a fixed candidate returns, append its repair summary, whichever of the two this Bug Case
 already records, exact artifact and

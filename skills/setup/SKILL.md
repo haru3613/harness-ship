@@ -69,16 +69,11 @@ when they first need them:
 - `advise` inventories the test tree and names the next cuts;
 - `test-plan` records approved release criteria;
 - `exploratory-testing` resolves automation only when a runnable feature justifies it;
-- `tdd` resolves a test runner only when the user explicitly opts into TDD;
-- `implement` resolves applicable lint, typecheck, and build checks;
-- `review` detects batch/cron database writers before applying its mutation-safety gate;
-- `spec` applies UI conventions to an actual UI request;
 - `testing-workflow` resolves candidate environment, evidence, and test capabilities; and
 - `release-gate` consumes existing evidence without mutating release state.
 
 Never install a framework or append its command without explicit user approval. Do not infer PASS
-from a missing capability. Reviewer identity is resolved by `implement` and `review` at invocation,
-not configured here.
+from a missing capability. Reviewer identity is not configured here.
 
 Re-running setup changes a supported block only for an explicit policy change. Ordinary edits are
 recoverable from version control; no planner, cache, digest, or migration machinery is needed.

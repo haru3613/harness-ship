@@ -50,17 +50,17 @@ session cannot re-derive from the repository is not a verdict.
 ## P0 rows now cite what showed their test can fail
 
 A P0 scenario is classified `automated` once something has shown its test failing for the reason the
-row names — a RED watched fail, or the one-line break `tdd` injects where no RED was available. The
-row's `Reason` cites it.
+row names — a RED watched fail, or the one-line break `exploratory-testing` injects on a local
+working copy where no RED was available. The row's `Reason` cites it.
 
 **Existing contracts are not downgraded.** The rule binds on coverage added or changed from here; a
 P0 row already approved `automated` keeps its classification until a revision touches it, and is
 backfilled then. Nothing to do at upgrade time.
 
 New P0 coverage is a different matter, and deliberately so: a P0 row added from here is
-`not-configured` until the receipt exists, which blocks a gate. `tdd` produces the receipt and is
-user-invoked, so schedule that cycle when the coverage is written rather than meeting the block at
-gate time.
+`not-configured` until the receipt exists, which blocks a gate. `exploratory-testing` produces the
+receipt when it writes the coverage, so schedule that cycle when the coverage is written rather
+than meeting the block at gate time.
 
 ## Test and release confidence migration
 
@@ -73,12 +73,9 @@ and keep Config v3.
   Release Delta; reusable P0 journeys become the Project Test Baseline.
 - Bug Cases stop at a repair handoff. Remove automation that expects
   `bug-workflow → implement → tdd`; return a new exact candidate to `testing-workflow` instead.
-- `implement` and `tdd` remain available only as explicit opt-ins. They are not release
-  prerequisites.
 - The seven development helpers — `clarify`, `spike`, `spec`, `tickets`, `implement`, `tdd`,
-  `review` — are now user-invoked only. Natural language no longer reaches them: "review this"
-  runs whatever your own stack provides. Type `/harness-ship:review` (Codex:
-  `$harness-ship:review`) to run this plugin's version.
+  `review` — are gone. They are not aliases and not opt-ins. Type those commands after upgrade
+  and the host finds no skill. Use the repository's own development stack.
 - Replace links to `qa-handoff-template.md` and `acceptance-report-template.md` with
   `candidate-handoff-template.md` and `test-report-template.md`.
 
@@ -110,14 +107,9 @@ codex plugin marketplace add haru3613/harness-ship --ref main
 codex plugin add harness-ship-next@harness-ship
 ```
 
-**Invocation-time review routing:** no reviewer identity is stored in project config and no custom
-Codex profile is required. Review resolves fresh children from the running host. A specialised
-read-only verifier is preferred; an available generic host child is valid and carries the assurance
-the host can actually establish. This change needs no setup migration.
-
-**After v2.0.0:** the generic `role_binding_contract.py readiness` command is removed. Delete direct
-calls to it; each workflow now resolves missing test, QA, UI, and data-mutation capabilities only
-when an actual task needs them. Existing Config v3 blocks remain valid and do not need setup again.
+**After v2.0.0:** the generic readiness command is gone. Each workflow now resolves missing
+test, QA, UI, and data-mutation capabilities only when an actual task needs them. Existing
+Config v3 blocks remain valid and do not need setup again.
 
 **Which upgrades need a re-run of setup:** only a **Config version** change. The plugin version in
 the block records what wrote it and is never a gate, so a patch or compatible minor release leaves
@@ -134,16 +126,14 @@ the digest chain it existed to preserve, and reconstructing it would cost more t
 setup.
 
 A project still carrying the old table fails closed on its `Config version`, which is the intended
-detection. Reviewer assurance is recorded after invocation and is not an implementation-readiness
-gate.
+detection.
 
 **v0.7.0 migration (historical):** setup proposed Config v1 → v2 without writing it, and applied
 the proposal only after an exact confirmation of the reviewed diff. That two-phase planner was
 removed in v1.0.0; a block on an unsupported Config version is now regenerated, not migrated.
 
 **v0.6.4 migration (historical):** that release required a configured live verifier. Current
-versions supersede that binding with invocation-time reviewer routing; do not create or repair a
-profile when upgrading now.
+versions do not; do not create or repair a profile when upgrading now.
 
 **v0.6.3 migration (historical):** Config v1 projects ran `$harness-ship:setup` to reconcile the
 legacy binding row. That profile-selection flow was removed in v1.0.0.
@@ -172,21 +162,15 @@ claude plugin install harness-ship-next@harness-ship
 The 13-column host binding table, the `Verifier binding-contract version` field, and the
 discovery-receipt input are gone. Re-run setup once per configured project to regenerate the
 `## harness-ship` block without a verifier binding and stamp `Config version: 3`. No automatic
-migration is attempted. Verify the packaged Claude agent with
-`python3 <plugin-root>/scripts/role_binding_contract.py preflight --config CLAUDE.md`; a project
-still carrying the old table fails closed on its `Config version`, which is the intended detection.
-Run it from a Claude Code session — the host sets `CLAUDECODE`, and a plain terminal instead reports
-`independence: not established` and exits `1`. From that session the gate reports
-`assurance: host-enforced`, meaning the packaged verifier agent definition was read and compared at
-check time; `status: pass` is what reports that its tools, model and effort matched.
+migration is attempted. A project still carrying the old table fails closed on its
+`Config version`, which is the intended detection.
 
 **v0.7.0 migration (historical):** setup proposed Config v1 → v2 without writing it, and applied
 the proposal only after an exact confirmation of the reviewed diff. That two-phase planner was
 removed in v1.0.0; a block on an unsupported Config version is now regenerated, not migrated.
 
 **v0.6.4 migration (historical):** that release required a configured live verifier. Current
-versions resolve reviewers at invocation; the packaged Claude verifier remains preferred without a
-project binding.
+versions do not; do not create or repair a profile when upgrading now.
 
 **v0.6.3 migration (historical):** Config v1 projects ran `/harness-ship:setup` to reconcile the
 legacy binding row. That profile-selection flow was removed in v1.0.0.
@@ -208,4 +192,4 @@ automatic migration. Re-run setup once to regenerate it. Test capabilities and r
 belong in the Test Contract rather than Config; unavailable capabilities remain `not-configured`.
 
 Harness Ship updates only the single `## harness-ship` block. It does not replace global agents or
-settings; reviewer identity is resolved from the running host when review starts.
+settings.
