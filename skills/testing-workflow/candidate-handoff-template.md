@@ -3,6 +3,8 @@
 Written to `.harness-ship/candidates/<short-sha>/handoff.md`, where that directory takes the **Candidate identifier** the contract defines when its **Release surface owner** is not this repository.
 
 - **Status:** <Ready | Not ready>
+- **Review target:** <exact PR/ticket URL | none — no human projection>
+- **User-visible change:** <what changes for a user or release owner, in plain language>
 - **Test Contract:** <project-test-id/revision>
 - **Project Test Baseline:** <revision/link — or, for a pointer contract, the documents it names>
 - **Release Delta:** <revision/link — or, for a pointer contract, the scenario scope below read against the documents it names; a pointer has no separable delta>

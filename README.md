@@ -135,6 +135,24 @@ cannot gate anything it did not personally watch happen. A project that also tra
 issue tracker still writes the files: the tracker holds the discussion, the repository holds the
 evidence the next session can find on its own.
 
+## Human-readable candidate thread
+
+Repository records make the decision reproducible; they should not make the release owner decode an
+agent ledger. When a candidate handoff names an exact PR or ticket, `testing-workflow` projects one
+durable, verdict-first comment onto that review target:
+
+`QA handoff → Test result`
+
+The handoff says what changed, which user journeys to verify, how to reach the safe candidate, what
+is risky, and what existing checks already cover. The test result updates the same candidate-scoped
+comment with journey outcomes, evidence, explicit untested scope, user-visible failures, and the
+next action. Reruns update rather than append duplicate comments.
+
+The comment is a human-readable projection, not a second evidence store. The candidate handoff,
+append-only ledger, and report under `.harness-ship/` remain authoritative. If comment publication
+fails, Harness Ship reports that visibility failure without changing a handoff status or test
+result; missing or mismatched evidence remains fail-closed.
+
 ## Greenfield and existing projects
 
 For an empty project, `test-plan` starts with the product surface and first real risks. It does not
