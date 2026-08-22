@@ -23,6 +23,8 @@ Use [candidate-handoff-template.md](candidate-handoff-template.md), written to
 `.harness-ship/candidates/<short-sha>/handoff.md`. Require:
 
 - approved Test Contract revision and scenario scope;
+- an exact review target when a human-readable PR/ticket projection is wanted;
+- the user-visible change in plain language;
 - full source SHA — or, where the contract's **Release surface owner** is not this repository, its
   **Candidate identifier** plus what that was read from;
 - exact non-production artifact/environment revision;
@@ -33,6 +35,29 @@ Use [candidate-handoff-template.md](candidate-handoff-template.md), written to
 
 Any missing, placeholder, stale, or mismatched required value makes the handoff `Not ready`. Do not
 execute against production.
+
+### Project the QA handoff for humans
+
+When the handoff names an exact review target and its configured code-review/PR host or issue
+tracker permits comments, render [human-thread-template.md](human-thread-template.md) from the
+canonical handoff and approved Test Contract. Publish it even when the handoff is `Not ready`:
+missing artifact, provenance, environment, or evidence must be visible to the release owner rather
+than remaining hidden in an agent record. An exact candidate directory key is still required to
+identify the projection. Leave the Test result section `Pending` until execution.
+
+Use the candidate directory key in the hidden marker. Search the exact target for every comment
+carrying that marker:
+
+- zero matches — create the comment;
+- one match written by the current authenticated identity — update that comment in place;
+- one match from another identity — do not edit it or create a duplicate; report the conflict; and
+- More than one matching comment — do not edit or publish another comment; report the projection
+  failure so a human can reconcile the duplicates.
+
+Do not infer a review target from a branch name or edit another author’s marker. If the host cannot
+read, create, or update the projection, preserve the canonical handoff and report the failure. A
+projection failure does not change the handoff status or test result and never makes missing
+evidence pass.
 
 **Where the contract-derived values come from depends on the contract's form.** A two-layer contract
 holds them in its Project Test Baseline and Release Delta. A pointer holds its scenario scope in the
@@ -104,6 +129,13 @@ or tautological check becomes BLOCKED until corrected and rerun.
 Produce [test-report-template.md](test-report-template.md) at
 `.harness-ship/candidates/<short-sha>/report.md` from the ledger. State each user journey, exact
 candidate, method, evidence, gaps, and one verdict: `Ready for release gate` or `Not ready`.
+
+When the handoff has a review target, regenerate both sections of
+[human-thread-template.md](human-thread-template.md) from the canonical handoff, ledger, and report,
+then update the same marker-bearing comment using the rules above. Put the report verdict first,
+describe outcomes in user language, link durable evidence, and distinguish automated PASS,
+manual/exploratory evidence, FAIL, FLAKY, BLOCKED, and NOT TESTED. Never copy secrets, credentials,
+raw tokens, fixture PII, or full logs into the projection.
 
 For every non-pass, run `bug-workflow` under one stable BUG-ID, recorded at
 `.harness-ship/bugs/<BUG-ID>.md`. Harness Ship classifies the finding, preserves evidence, and

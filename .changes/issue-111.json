@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "issue-111",
+  "classification": "minor",
+  "migration": "none",
+  "summary": "Project the canonical candidate handoff and test report into one verdict-first, candidate-scoped PR or ticket comment so release owners can read what QA should verify, what passed, what remains untested, and what happens next without treating the projection as a second source of truth.",
+  "paths": [
+    "README.md",
+    "scripts/validate_plugin_lifecycle.sh",
+    "skills/testing-workflow/SKILL.md",
+    "skills/testing-workflow/candidate-handoff-template.md",
+    "skills/testing-workflow/human-thread-template.md",
+    "tests/test_repo_contract.py"
+  ]
+}
