@@ -1,5 +1,9 @@
 # Changelog
 
+## 6.1.0
+
+- [issue-111] Project the canonical candidate handoff and test report into one verdict-first, candidate-scoped PR or ticket comment so release owners can read what QA should verify, what passed, what remains untested, and what happens next without treating the projection as a second source of truth. (classification: minor; migration: none).
+
 ## 6.0.0
 
 - [issue-108] Remove the seven development helpers and the unused independent-verifier gate. Harness Ship keeps only the test and release surface; P0 sensitivity proof moves into exploratory-testing. (classification: breaking; migration: required).

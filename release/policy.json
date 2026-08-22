@@ -94,6 +94,12 @@
       "declarations": [
         "issue-108"
       ]
+    },
+    {
+      "version": "6.1.0",
+      "declarations": [
+        "issue-111"
+      ]
     }
   ]
 }
