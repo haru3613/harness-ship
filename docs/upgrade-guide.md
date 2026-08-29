@@ -91,6 +91,15 @@ by that id.
 This is not a Config version change. Existing Config v3 projects do not rerun `hs-setup` solely
 because of the rename. After upgrade, run `advise` for the next cuts.
 
+## Test-engineer watch is first-run only
+
+First-run `hs-setup` now also writes `## harness-ship-watch` standing rules into `AGENTS.md` or
+`CLAUDE.md`, copies `.harness-ship/watch/detect.py`, and merges project-scoped hooks for Claude
+Code, Codex, and Grok Build. The detector is zero-LLM and fail-open. Grok `SessionEnd` is unused.
+
+Existing Config v3 blocks without **Test engineer watch** stay off. Do not rerun `hs-setup` to
+pick this up unless the user explicitly asks to enable watch. Config version remains `3`.
+
 ## Advise is now the default job
 
 After `hs-setup`, or when someone asks what to test, which framework to add, or whether
