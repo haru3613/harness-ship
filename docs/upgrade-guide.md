@@ -82,9 +82,27 @@ and keep Config v3.
 Existing Config v3 projects **do not rerun setup**. After upgrade, run `advise` for the next
 cuts. Approve a Test Contract before invoking `release-gate`.
 
+## Setup skill is now `hs-setup`
+
+The published skill id is `hs-setup`. Invoke `/harness-ship:hs-setup` or `$harness-ship:hs-setup`.
+Bare `/setup` is not a Harness Ship command. A host looking up `setup` finds no Harness Ship skill
+by that id.
+
+This is not a Config version change. Existing Config v3 projects do not rerun `hs-setup` solely
+because of the rename. After upgrade, run `advise` for the next cuts.
+
+## Test-engineer watch is first-run only
+
+First-run `hs-setup` now also writes `## harness-ship-watch` standing rules into `AGENTS.md` or
+`CLAUDE.md`, copies `.harness-ship/watch/detect.py`, and merges project-scoped hooks for Claude
+Code, Codex, and Grok Build. The detector is zero-LLM and fail-open. Grok `SessionEnd` is unused.
+
+Existing Config v3 blocks without **Test engineer watch** stay off. Do not rerun `hs-setup` to
+pick this up unless the user explicitly asks to enable watch. Config version remains `3`.
+
 ## Advise is now the default job
 
-After setup, or when someone asks what to test, which framework to add, or whether
+After `hs-setup`, or when someone asks what to test, which framework to add, or whether
 coverage is enough, run `advise`. It overwrites `.harness-ship/quality-report.md`
 with the suite's shape and at most three next cuts. Existing Test Contracts,
 candidate ledgers, and Config v3 are unchanged. `test-plan` still owns approved
@@ -98,7 +116,7 @@ codex plugin marketplace upgrade harness-ship
 codex plugin add harness-ship@harness-ship
 ```
 
-Start a new Codex session before running `$harness-ship:setup`.
+Start a new Codex session before running `$harness-ship:hs-setup`.
 
 To opt in to unreleased next source after removing or deactivating stable:
 
@@ -149,7 +167,7 @@ claude plugin marketplace update harness-ship
 claude plugin update harness-ship@harness-ship
 ```
 
-Restart Claude Code before running `/harness-ship:setup`.
+Restart Claude Code before running `/harness-ship:hs-setup`.
 
 To opt in to unreleased next source after uninstalling stable:
 

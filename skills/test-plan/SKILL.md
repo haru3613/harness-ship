@@ -12,7 +12,7 @@ Define **what must be proven**, not how development must proceed. The Test Contr
 before implementation or added to an existing project later, but its release criteria must be fixed
 before `release-gate` executes.
 
-Read the repository instructions and its `## harness-ship` Config v3 block first. Run `setup` only
+Read the repository instructions and its `## harness-ship` Config v3 block first. Run `hs-setup` only
 when the block is absent or unsupported. Keep Config v3 policy-only; store test capabilities and
 release criteria in the Test Contract instead of expanding project configuration.
 

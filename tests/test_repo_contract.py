@@ -82,6 +82,9 @@ class SkillStructureTests(unittest.TestCase):
             ".harness-ship/candidates/<short-sha>/handoff.md",
             ".harness-ship/candidates/<short-sha>/ledger.md",
             ".harness-ship/candidates/<short-sha>/report.md",
+            ".harness-ship/watch/",
+            ".harness-ship/watch/detect.py",
+            ".harness-ship/watch/RULES.md",
         }
         # README and the upgrade guide cite these paths too. Their tree diagrams
         # list bare filenames inside fenced blocks and are not covered here —
@@ -108,6 +111,7 @@ class SkillStructureTests(unittest.TestCase):
             ("release-gate", ".harness-ship/test-contract.md"),
             ("bug-workflow", ".harness-ship/bugs/<BUG-ID>.md"),
             ("diagnose", ".harness-ship/bugs/<BUG-ID>.md"),
+            ("hs-setup", ".harness-ship/watch/detect.py"),
         ):
             with self.subTest(skill=skill):
                 text = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
@@ -126,7 +130,9 @@ class SkillStructureTests(unittest.TestCase):
             "review",
         ):
             self.assertFalse((SKILLS / removed).exists())
+        self.assertFalse((SKILLS / "setup").exists())
         for current in (
+            "hs-setup",
             "advise",
             "test-plan",
             "exploratory-testing",
@@ -191,6 +197,17 @@ class SkillStructureTests(unittest.TestCase):
         self.assertIn("does not change the handoff status or test result", skill)
         self.assertIn("only source of truth", thread)
         self.assertIn("QA handoff → Test result", readme)
+
+    def test_setup_skill_id_is_hs_setup(self) -> None:
+        skill = (SKILLS / "hs-setup" / "SKILL.md").read_text(encoding="utf-8")
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertRegex(skill, r"(?m)^name:\s*hs-setup\s*$")
+        self.assertNotIn('"/setup"', skill)
+        self.assertNotIn("`/setup`", skill)
+        self.assertIn("/harness-ship:hs-setup", readme)
+        self.assertIn("$harness-ship:hs-setup", readme)
+        self.assertNotIn("/harness-ship:setup\n", readme)
+        self.assertNotIn("$harness-ship:setup\n", readme)
 
 if __name__ == "__main__":
     unittest.main()

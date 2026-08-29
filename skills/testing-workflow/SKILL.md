@@ -13,7 +13,7 @@ Execute the approved Project Test Baseline plus Release Delta. This workflow doe
 the feature was developed, redesign expected behaviour from implementation, repair product code, or
 release the candidate.
 
-Read repository instructions and its `## harness-ship` Config v3 block. Run `setup` only when the
+Read repository instructions and its `## harness-ship` Config v3 block. Run `hs-setup` only when the
 block is absent or unsupported. Resolve test capabilities at the point of use; never install a
 framework without approval or infer PASS from `not-configured`.
 

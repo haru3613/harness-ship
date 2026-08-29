@@ -34,7 +34,7 @@ codex plugin add harness-ship@harness-ship
 Start a new session, then:
 
 ```text
-$harness-ship:setup
+$harness-ship:hs-setup
 $harness-ship:advise
 ```
 
@@ -48,14 +48,16 @@ claude plugin install harness-ship@harness-ship
 Restart Claude Code, start a new session, then:
 
 ```text
-/harness-ship:setup
+/harness-ship:hs-setup
 /harness-ship:advise
 ```
 
-`setup` writes the small Config v3 policy block and then runs `advise`. `advise` inventories the
-suite and names the next cuts. Use `test-plan` when you want approved release criteria; once a
-feature is runnable, use `exploratory-testing`; once an exact candidate exists, use
-`testing-workflow` and then `release-gate`.
+`hs-setup` writes the small Config v3 policy block, host-neutral test-engineer standing rules,
+and project-scoped zero-LLM watch hooks when those paths exist, then runs `advise`. Existing
+Config v3 projects do not rerun `hs-setup`. `advise` inventories the suite and names the next
+cuts. Use `test-plan` when you want approved release criteria; once a feature is runnable, use
+`exploratory-testing`; once an exact candidate exists, use `testing-workflow` and then
+`release-gate`.
 
 ## How it works
 
@@ -109,6 +111,7 @@ describes:
   test-contract.draft.md        # a revision in progress, until the user approves it
   bugs/<BUG-ID>.md              # Bug Case, with each Diagnosis Receipt appended
   candidates/<short-sha>/       # handoff.md, ledger.md, report.md for one exact candidate
+  watch/                        # copied detector and standing rules for host hooks
 ```
 
 `advise` or `test-plan` may create the tree; the other workflows read and extend it. The paths are
@@ -217,7 +220,7 @@ It never merges, deploys, promotes, tags, publishes, or writes production data.
 
 | Skill | Responsibility |
 |---|---|
-| `setup` | Write the repository's small Config v3 policy block, then run `advise` |
+| `hs-setup` | Write Config v3, test-engineer standing rules, and project-scoped watch hooks, then run `advise` |
 | `advise` | Diagnose the suite and name the cheapest next cuts |
 | `test-plan` | Create Project Test Baseline and Release Delta |
 | `exploratory-testing` | Explore first, then add minimum sufficient automation |
@@ -231,12 +234,19 @@ repository's own stack.
 
 ## Configuration model
 
-`setup` records only policy that cannot safely be inferred: tracker/PR access, forbidden tools, and
-branch topology. It does not choose test frameworks, environments, automation, or release criteria.
-Those belong in the versioned Test Contract and are resolved only when a real feature needs them.
+`hs-setup` records only policy that cannot safely be inferred: tracker/PR access, forbidden tools,
+branch topology, and whether the test-engineer watch is on. It does not choose test frameworks,
+environments, automation, or release criteria. Those belong in the versioned Test Contract and are
+resolved only when a real feature needs them.
+
+The optional **Test engineer watch** field is `standing-rules`, `standing-rules+hooks`, or `off`.
+A missing field on an existing Config v3 block means off. First-run default is standing rules in
+`AGENTS.md` / `CLAUDE.md`, plus fail-open project-scoped hooks for Claude Code (`.claude/settings.json`),
+Codex (`.codex/hooks.json`), and Grok Build (`.grok/hooks/harness-ship-watch.json`). The detector
+never calls an LLM. Config version stays `3`.
 
 Config version, not plugin version, is the compatibility gate. Config v3 remains supported by this
-change; existing Config v3 projects do not rerun setup.
+change; existing Config v3 projects do not rerun `hs-setup`.
 
 ## Host support and trust
 

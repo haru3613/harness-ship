@@ -79,9 +79,9 @@ RELEASE_SENSITIVE_EXACT = {
     "scripts/publish_release.py",
     "scripts/validate_plugin_lifecycle.sh",
     "skills/exploratory-testing/SKILL.md",
-    "skills/setup/SKILL.md",
+    "skills/hs-setup/SKILL.md",
 }
-RELEASE_SENSITIVE_PREFIXES = ("agents/", "skills/")
+RELEASE_SENSITIVE_PREFIXES = ("agents/", "skills/", "watch/")
 SEMVER_RE = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$")
 TAG_RE = re.compile(r"^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$")
 
