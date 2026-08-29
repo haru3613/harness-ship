@@ -82,6 +82,9 @@ class SkillStructureTests(unittest.TestCase):
             ".harness-ship/candidates/<short-sha>/handoff.md",
             ".harness-ship/candidates/<short-sha>/ledger.md",
             ".harness-ship/candidates/<short-sha>/report.md",
+            ".harness-ship/watch/",
+            ".harness-ship/watch/detect.py",
+            ".harness-ship/watch/RULES.md",
         }
         # README and the upgrade guide cite these paths too. Their tree diagrams
         # list bare filenames inside fenced blocks and are not covered here —
@@ -108,6 +111,7 @@ class SkillStructureTests(unittest.TestCase):
             ("release-gate", ".harness-ship/test-contract.md"),
             ("bug-workflow", ".harness-ship/bugs/<BUG-ID>.md"),
             ("diagnose", ".harness-ship/bugs/<BUG-ID>.md"),
+            ("hs-setup", ".harness-ship/watch/detect.py"),
         ):
             with self.subTest(skill=skill):
                 text = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")

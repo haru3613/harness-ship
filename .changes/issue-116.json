@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "issue-116",
+  "classification": "minor",
+  "migration": "recommended",
+  "summary": "First-run hs-setup writes host-neutral test-engineer standing rules and fail-open zero-LLM project-scoped hooks for Claude Code, Codex, and Grok Build. Existing Config v3 blocks omit the optional watch field and stay off.",
+  "paths": [
+    "README.md",
+    "docs/upgrade-guide.md",
+    "scripts/check_release_contract.py",
+    "skills/hs-setup/SKILL.md",
+    "tests/test_repo_contract.py",
+    "tests/test_watch_contract.py",
+    "watch/RULES.md",
+    "watch/detect.py",
+    "watch/adapters/claude.settings.json",
+    "watch/adapters/codex.hooks.json",
+    "watch/adapters/grok.hooks.json"
+  ]
+}
