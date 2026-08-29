@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "issue-115",
+  "classification": "minor",
+  "migration": "recommended",
+  "summary": "Rename the setup skill to hs-setup so Claude Code, Codex, and Grok Build users can tell it apart from other /setup skills. Existing Config v3 projects do not rerun hs-setup solely because of the rename.",
+  "paths": [
+    "README.md",
+    "docs/upgrade-guide.md",
+    "scripts/check_release_contract.py",
+    "skills/advise/SKILL.md",
+    "skills/hs-setup/SKILL.md",
+    "skills/test-plan/SKILL.md",
+    "skills/testing-workflow/SKILL.md",
+    "tests/test_release_contract.py",
+    "tests/test_repo_contract.py"
+  ]
+}

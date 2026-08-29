@@ -2,7 +2,7 @@
 name: advise
 description: >-
   Diagnose a project's test gaps and name the cheapest next tests. Use after
-  setup, after plugin install, or when someone asks what to test, which
+  hs-setup, after plugin install, or when someone asks what to test, which
   framework to add, whether coverage is enough, or to audit the test suite.
   Triggers: "/advise", "what should we test", "which test framework",
   "is coverage enough", "audit this project's tests", "quality report".
@@ -16,7 +16,7 @@ Speak as a senior test engineer. Inspect the repository, then name at most three
 draft a Test Contract, install a tool, or return a release verdict.
 
 Read repository instructions and the `## harness-ship` Config v3 block first.
-Run `setup` only when the block is absent or unsupported.
+Run `hs-setup` only when the block is absent or unsupported.
 
 ## 1 — Inventory
 

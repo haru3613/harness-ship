@@ -1,13 +1,13 @@
 ---
-name: setup
+name: hs-setup
 description: >-
   Configure the small amount of project policy Harness Ship cannot safely infer when a workflow
-  needs it. Empty and early repositories are valid inputs. Triggers: "/setup", "set up
+  needs it. Empty and early repositories are valid inputs. Triggers: "/hs-setup", "set up
   harness-ship", "configure harness-ship", "harness-ship setup", or immediately after
   `/plugin install harness-ship`.
 ---
 
-# setup
+# hs-setup
 
 Write the smallest repository config that cannot be recovered safely at the point of use. Setup is
 not a framework selector, readiness gate, or repository audit. An empty repository needs no lint,
@@ -75,5 +75,5 @@ when they first need them:
 Never install a framework or append its command without explicit user approval. Do not infer PASS
 from a missing capability. Reviewer identity is not configured here.
 
-Re-running setup changes a supported block only for an explicit policy change. Ordinary edits are
+Re-running `hs-setup` changes a supported block only for an explicit policy change. Ordinary edits are
 recoverable from version control; no planner, cache, digest, or migration machinery is needed.

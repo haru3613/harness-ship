@@ -126,7 +126,9 @@ class SkillStructureTests(unittest.TestCase):
             "review",
         ):
             self.assertFalse((SKILLS / removed).exists())
+        self.assertFalse((SKILLS / "setup").exists())
         for current in (
+            "hs-setup",
             "advise",
             "test-plan",
             "exploratory-testing",
@@ -191,6 +193,17 @@ class SkillStructureTests(unittest.TestCase):
         self.assertIn("does not change the handoff status or test result", skill)
         self.assertIn("only source of truth", thread)
         self.assertIn("QA handoff → Test result", readme)
+
+    def test_setup_skill_id_is_hs_setup(self) -> None:
+        skill = (SKILLS / "hs-setup" / "SKILL.md").read_text(encoding="utf-8")
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertRegex(skill, r"(?m)^name:\s*hs-setup\s*$")
+        self.assertNotIn('"/setup"', skill)
+        self.assertNotIn("`/setup`", skill)
+        self.assertIn("/harness-ship:hs-setup", readme)
+        self.assertIn("$harness-ship:hs-setup", readme)
+        self.assertNotIn("/harness-ship:setup\n", readme)
+        self.assertNotIn("$harness-ship:setup\n", readme)
 
 if __name__ == "__main__":
     unittest.main()
