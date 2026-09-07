@@ -22,6 +22,7 @@
     "skills/testing-workflow/execution-ledger-template.md",
     "skills/testing-workflow/human-thread-template.md",
     "skills/testing-workflow/test-report-template.md",
+    "tests/test_release_contract.py",
     "tests/test_repo_contract.py",
     "watch/RULES.md",
     "watch/detect.py"
