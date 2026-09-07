@@ -11,9 +11,9 @@
       "source": {
         "source": "github",
         "repo": "haru3613/harness-ship",
-        "ref": "v6.1.0"
+        "ref": "v7.0.0"
       },
-      "description": "Diagnose a project's test gaps and name the cheapest next cuts, then optionally create a user-approved Project Test Baseline and Release Delta, explore runnable features before adding minimum sufficient automation, execute the contract against an exact candidate, and return an evidence-backed release verdict without prescribing development or promoting the release.",
+      "description": "Choose effective tests from current scope, existing coverage, and real risks. Explore runnable features, add useful regression coverage, test the actual candidate, and assess release evidence in one concise summary. Reusable Test Contracts are optional; release remains human-owned.",
       "category": "engineering",
       "keywords": [
         "testing",
@@ -33,7 +33,7 @@
         "repo": "haru3613/harness-ship",
         "ref": "main"
       },
-      "description": "Diagnose a project's test gaps and name the cheapest next cuts, then optionally create a user-approved Project Test Baseline and Release Delta, explore runnable features before adding minimum sufficient automation, execute the contract against an exact candidate, and return an evidence-backed release verdict without prescribing development or promoting the release. Unstable next channel.",
+      "description": "Choose effective tests from current scope, existing coverage, and real risks. Explore runnable features, add useful regression coverage, test the actual candidate, and assess release evidence in one concise summary. Reusable Test Contracts are optional; release remains human-owned. Unstable next channel.",
       "category": "engineering",
       "keywords": [
         "testing",
