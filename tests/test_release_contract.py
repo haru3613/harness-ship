@@ -547,7 +547,18 @@ class ReleaseContractTests(unittest.TestCase):
                 for entry in claude_catalog["plugins"]
                 if entry["name"] == "harness-ship"
             )
-            self.assertIn("explore runnable", stable["description"])
+            self.assertIn("explore runnable", stable["description"].lower())
+            self.assertEqual(
+                stable["description"], codex["interface"]["longDescription"]
+            )
+            self.assertEqual(
+                codex["interface"]["defaultPrompt"][2],
+                "Plan proportionate verification for this change.",
+            )
+            self.assertEqual(
+                codex["interface"]["defaultPrompt"][4],
+                "Test this candidate using current scope and existing coverage.",
+            )
             self.assertIn("advise", stable["keywords"])
             self.assertIn("release-gate", stable["keywords"])
 

@@ -112,7 +112,7 @@ def note_for(text: str) -> str | None:
     if NO_SHA.search(text) and not HAS_SHA.search(text):
         return (
             "Harness Ship: observations are not release evidence without a candidate "
-            "SHA or the Test Contract's non-repo identifier."
+            "SHA or the candidate owner's external build identifier."
         )
     if POST_RELEASE.search(text) and not SMOKE.search(text):
         return (

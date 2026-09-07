@@ -64,7 +64,7 @@ release baseline.
 Present the list. Wait for approval before installing anything or writing test
 code. If the user wants the tests written, hand to `exploratory-testing`. If they
 want approved release criteria, hand to `test-plan`. If they want a GO/NO-GO,
-hand to `release-gate` only after a contract and candidate evidence exist.
+hand to `release-gate` with the current scope and available candidate evidence; a contract is optional.
 
 ## 4 — Write the report
 

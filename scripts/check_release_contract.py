@@ -54,18 +54,17 @@ PRODUCT_KEYWORDS = [
     "evidence",
 ]
 PRODUCT_LONG_DESCRIPTION = (
-    "Diagnose a project's test gaps and name the cheapest next cuts, then optionally "
-    "create a user-approved Project Test Baseline and Release Delta, explore runnable "
-    "features before adding minimum sufficient automation, execute the contract against "
-    "an exact candidate, and return an evidence-backed release verdict without "
-    "prescribing development or promoting the release."
+    "Choose effective tests from current scope, existing coverage, and real risks. "
+    "Explore runnable features, add useful regression coverage, test the actual candidate, "
+    "and assess release evidence in one concise summary. Reusable Test Contracts are "
+    "optional; release remains human-owned."
 )
 PRODUCT_DEFAULT_PROMPTS = [
     "Set up harness-ship for this repository.",
     "Advise what this project should test next.",
-    "Create or update the Test Contract for this project.",
+    "Plan proportionate verification for this change.",
     "Explore this runnable feature before adding the minimum sufficient automated coverage.",
-    "Execute the Test Contract against this exact candidate.",
+    "Test this candidate using current scope and existing coverage.",
     "Run the release gate for this candidate.",
 ]
 RELEASE_SENSITIVE_EXACT = {

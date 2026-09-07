@@ -13,54 +13,25 @@ The marketplace catalog is added or refreshed from `main`; only its stable plugi
 to the release tag. This lets a catalog refresh discover a future stable patch without silently
 moving the already published stable source.
 
-## Records move into the repository
+## Practical testing without a contract gate
 
-Records used to be "portable" — a filled template with no home, which in practice meant it lived in
-the conversation that produced it. They now have fixed paths under `.harness-ship/`, committed with
-the code. Config stays v3; **do not rerun setup**.
+Test Contract approval and fixed candidate files are no longer prerequisites for testing or release
+assessment. Config stays v3; **do not rerun setup**. Existing records remain usable in place.
 
-```text
-.harness-ship/
-  quality-report.md             # latest diagnosis: shape, flashlight, next cuts
-  test-contract.md              # the approved Project Test Baseline + Release Delta
-  test-contract.draft.md        # a revision in progress, until the user approves it
-  bugs/<BUG-ID>.md              # Bug Case, with each Diagnosis Receipt appended
-  candidates/<short-sha>/       # handoff.md, ledger.md, report.md
-```
+Use current task scope, explicit project requirements, and real risks to choose checks. Keep one
+summary in the existing PR/issue or chosen location with candidate/environment, commands/results,
+evidence links, and remaining risks. Do not create or refresh old contracts solely to unblock a run.
+A historical release-specific checklist does not automatically govern the next release.
 
-To migrate a project already using Harness Ship:
+Projects explicitly maintaining a reusable contract can continue doing so. Preserve their current
+requirements and approval decisions. Optional templates remain available, but integrations that
+expect mandatory handoff/ledger/report files must opt into keeping those records or consume the
+chosen summary instead. Comment consumers should no longer assume a separate canonical file set.
 
-- Move the current approved Test Contract into `.harness-ship/test-contract.md`, keeping its
-  contract ID, revision number, and `APPROVED` header. Approval does not need to be re-obtained; an
-  unchanged contract that only moved is the same revision.
-- If a revision was mid-review when you upgraded, put it at `.harness-ship/test-contract.draft.md`
-  instead. The approved file must never carry a `DRAFT` header — `release-gate` gates against it,
-  and a draft parked there would block every candidate the approved revision still covers.
-- Move open Bug Cases to `.harness-ship/bugs/<BUG-ID>.md`, keeping each stable BUG-ID as the
-  filename, and append their existing Diagnosis Receipts to the same file in attempt order.
-- Leave closed candidates where they are. Backfilling `.harness-ship/candidates/` for releases that
-  already shipped proves nothing; the next candidate `testing-workflow` runs writes its own.
-- Where a tracker holds this work, keep it. The tracker holds the discussion, the repository holds
-  the evidence — the file carries the durable link to its tracker item.
-
-Until the contract is at its path, `release-gate` returns `NO-GO` with the reason that the project
-has no contract to gate against. That is the intended behaviour, not a regression: a verdict the
-session cannot re-derive from the repository is not a verdict.
-
-## P0 rows now cite what showed their test can fail
-
-A P0 scenario is classified `automated` once something has shown its test failing for the reason the
-row names — a RED watched fail, or the one-line break `exploratory-testing` injects on a local
-working copy where no RED was available. The row's `Reason` cites it.
-
-**Existing contracts are not downgraded.** The rule binds on coverage added or changed from here; a
-P0 row already approved `automated` keeps its classification until a revision touches it, and is
-backfilled then. Nothing to do at upgrade time.
-
-New P0 coverage is a different matter, and deliberately so: a P0 row added from here is
-`not-configured` until the receipt exists, which blocks a gate. `exploratory-testing` produces the
-receipt when it writes the coverage, so schedule that cycle when the coverage is written rather
-than meeting the block at gate time.
+A missing sensitivity receipt does not downgrade existing automation; evaluate meaningful assertion
+quality when writing or changing tests. Routine non-passes no longer require Bug Cases. Keep durable
+tracking for unresolved defects, recurrence, or handoff, and preserve original failures and retests.
+Real failures, identity mismatches, and unverified material risks remain visible in release verdicts.
 
 ## Test and release confidence migration
 
@@ -80,7 +51,7 @@ and keep Config v3.
   `candidate-handoff-template.md` and `test-report-template.md`.
 
 Existing Config v3 projects **do not rerun setup**. After upgrade, run `advise` for the next
-cuts. Approve a Test Contract before invoking `release-gate`.
+cuts. Use current scope and available evidence when invoking `release-gate`.
 
 ## Setup skill is now `hs-setup`
 
@@ -105,8 +76,8 @@ pick this up unless the user explicitly asks to enable watch. Config version rem
 After `hs-setup`, or when someone asks what to test, which framework to add, or whether
 coverage is enough, run `advise`. It overwrites `.harness-ship/quality-report.md`
 with the suite's shape and at most three next cuts. Existing Test Contracts,
-candidate ledgers, and Config v3 are unchanged. `test-plan` still owns approved
-release criteria; `release-gate` remains optional and still needs that contract.
+candidate ledgers, and Config v3 are unchanged. `test-plan` offers optional planning; `release-gate` assesses current scope and evidence without a
+mandatory contract.
 
 ## Codex
 
@@ -206,8 +177,8 @@ consumer after each source change; managed marketplace upgrade commands do not u
 ## Projects on an earlier Config version
 
 A block whose `Config version` is not the one this release supports is a zero-mutation stop, not an
-automatic migration. Re-run setup once to regenerate it. Test capabilities and release criteria
-belong in the Test Contract rather than Config; unavailable capabilities remain `not-configured`.
+automatic migration. Re-run setup once to regenerate it. Resolve test capabilities and release criteria from the task and repository policy rather than
+Config; unavailable capabilities remain explicit gaps.
 
 Harness Ship updates only the single `## harness-ship` block. It does not replace global agents or
 settings.

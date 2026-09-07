@@ -149,54 +149,22 @@ class SkillStructureTests(unittest.TestCase):
         self.assertTrue((SKILLS / "exploratory-testing" / "tests.md").is_file())
         self.assertTrue((SKILLS / "exploratory-testing" / "mocking.md").is_file())
 
-    def test_testing_workflow_projects_one_human_candidate_thread(self) -> None:
-        skill = (SKILLS / "testing-workflow" / "SKILL.md").read_text(encoding="utf-8")
-        handoff = (
-            SKILLS / "testing-workflow" / "candidate-handoff-template.md"
-        ).read_text(encoding="utf-8")
-        thread = (
-            SKILLS / "testing-workflow" / "human-thread-template.md"
-        ).read_text(encoding="utf-8")
-        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    def test_optional_candidate_templates_remain_available(self) -> None:
+        """Upgrades retain the legacy template entry points and comment marker.
 
-        self.assertIn("[human-thread-template.md](human-thread-template.md)", skill)
-        self.assertIn("**Review target:**", handoff)
-        self.assertIn("**User-visible change:**", handoff)
-        self.assertEqual(
-            thread.count("<!-- harness-ship:testing:<candidate-key> -->"), 1
-        )
-        self.assertLess(
-            thread.index("**<Ready for testing | Ready for release gate | Not ready>**"),
-            thread.index("> Human-readable projection"),
-        )
-        for heading in (
-            "## QA handoff",
-            "### What changed",
-            "### Acceptance criteria to verify",
-            "### How to reach it",
-            "### Known risks",
-            "### Already covered",
-            "### Not tested yet",
-            "## Test result",
-            "### User journeys",
-            "### Coverage and gaps",
-            "### Next action",
+        Instruction behaviour is reviewed with scenarios, not proved by prose grep.
+        """
+        template_root = SKILLS / "testing-workflow"
+        for name in (
+            "candidate-handoff-template.md",
+            "execution-ledger-template.md",
+            "test-report-template.md",
+            "human-thread-template.md",
         ):
-            with self.subTest(heading=heading):
-                self.assertIn(heading, thread)
-        for result in ("PASS", "FAIL", "FLAKY", "BLOCKED", "NOT TESTED"):
-            with self.subTest(result=result):
-                self.assertIn(result, thread)
-        for private in ("secrets", "credentials", "raw tokens", "fixture PII", "full logs"):
-            with self.subTest(private=private):
-                self.assertIn(private, thread)
-
-        self.assertIn("current authenticated identity", skill)
-        self.assertIn("code-review/PR host or issue\ntracker", skill)
-        self.assertIn("More than one matching comment", skill)
-        self.assertIn("does not change the handoff status or test result", skill)
-        self.assertIn("only source of truth", thread)
-        self.assertIn("QA handoff → Test result", readme)
+            with self.subTest(template=name):
+                self.assertTrue((template_root / name).is_file())
+        thread = (template_root / "human-thread-template.md").read_text(encoding="utf-8")
+        self.assertEqual(thread.count("<!-- harness-ship:testing:<candidate-key> -->"), 1)
 
     def test_setup_skill_id_is_hs_setup(self) -> None:
         skill = (SKILLS / "hs-setup" / "SKILL.md").read_text(encoding="utf-8")

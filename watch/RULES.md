@@ -9,8 +9,8 @@ named check, the user already chose the trade-off, or the change is not user-vis
   an external boundary.
 - New Playwright / E2E / full stack because "the project has none", without naming
   the failure a cheaper existing seam cannot catch.
-- Observations treated as release evidence without a candidate SHA, or the Test
-  Contract's non-repo identifier.
+- Observations treated as release evidence without a candidate SHA, or the actual
+  candidate owner's external build identifier.
 - After merge, tag, or deploy: no smoke of that exact candidate on the real surface.
 - Synthetic seed data aimed at a production DSN — stop.
 

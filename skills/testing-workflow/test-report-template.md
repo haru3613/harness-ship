@@ -1,37 +1,13 @@
-# Test Report — <feature / release>
+# Optional test summary — <candidate>
 
-Written to `.harness-ship/candidates/<short-sha>/report.md`, where that directory takes the **Candidate identifier** the contract defines when its **Release surface owner** is not this repository.
+Use the existing PR/issue or chosen record. This can be the whole report; no separate ledger,
+handoff, or approved Test Contract is needed.
 
-**<Ready for release gate | Not ready>** — <one-sentence reason>
+- Result and user-facing reason:
+- Current scope, candidate/artifact/environment, and provenance:
+- Commands/steps, actual results, and evidence links:
+- Reused evidence, original identity, equivalence rationale, and limits:
+- Failures, flaky results, blocked checks, and untested scope:
+- Remaining user impact and next action:
 
-- **Test Contract:** <project-test-id/revision>
-- **Project Test Baseline / Release Delta:** <links>
-- **TEST-RUN-ID / ledger:** <run ID> + `.harness-ship/candidates/<short-sha>/ledger.md`
-- **Source SHA:** <full 40-character SHA — or, where the contract's Release surface owner is not this repository, its Candidate identifier plus what that was read from; never this repository's HEAD>
-- **Artifact/environment:** <exact revision>
-- **Artifact provenance:** <source + receipt>
-- **Date:** <YYYY-MM-DD>
-
-## User journeys
-
-| Journey | Scenario | Baseline / delta | Method / seam | Result | Evidence | User-visible caveat |
-|---|---|---|---|---|---|---|
-| <what the user does> | <SC-001> | <baseline> | <command/manual steps> | <PASS/FAIL/FLAKY/BLOCKED/NOT TESTED> | <ledger/evidence> | <none or impact> |
-
-## Coverage and gaps
-
-- **Automated:** <journeys>
-- **Manual / exploratory:** <journeys allowed by contract>
-- **NOT TESTED:** <scope + reason>
-- **Flaky / blocked:** <scope + linked Bug Cases>
-- **Test data:** <safe fixtures/environment>
-
-## Fixed-candidate comparison
-
-- **Stable BUG-ID:** <ID>
-- **Original failed candidate:** <artifact + evidence>
-- **Fixed candidate:** <artifact + evidence>
-- **Retest result:** <result>
-
-Never replace the original failure with the fixed result. `release-gate` determines GO, GO WITH
-CAVEATS, or NO-GO from this report plus source, artifact, CI, and operational evidence.
+Test results describe what was checked. Release approval remains a separate human action.
