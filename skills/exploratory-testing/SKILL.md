@@ -14,16 +14,16 @@ It never changes expected behaviour to match an implementation. The only permitt
 edit is the temporary one-line P0 sensitivity injection below, on a local working copy, reverted
 before anything else.
 
-Read repository instructions and the current Test Contract at `.harness-ship/test-contract.md`
-first. Exploration may proceed against a draft, but do not author automated expectations until the
-relevant behaviour is user-approved.
+Read repository instructions, the current task, and explicit expected behaviour first. An existing
+Test Contract is optional context. Missing or stale contract paperwork never prevents exploration
+or test authoring. Clarify a material ambiguity before encoding it as an automated expectation;
+continue independent work meanwhile.
 
 ## Candidate boundary
 
 Use a runnable **non-production** surface: local, preview, simulator, or QA. Record:
 
-- full source SHA, or the candidate identifier where the contract's **Release surface owner** is not
-  this repository;
+- full source SHA and local changes, or the actual external candidate identifier;
 - artifact/build/environment revision and how it maps to that SHA or identifier;
 - access path, fixtures, permissions, and test data; and
 - evidence destination.
@@ -42,9 +42,9 @@ surface. Exercise a bounded set of paths chosen by risk:
 - interactions with the nearest external boundary.
 
 Capture exact steps, observations, console/runtime failures, and durable evidence. If observed
-behaviour contradicts the Test Contract, record a Bug Case at `.harness-ship/bugs/<BUG-ID>.md`; do
-not automate the defect as expected behaviour. If expected behaviour is ambiguous, stop for a
-revised Test Contract.
+behaviour contradicts the intended behaviour, preserve the finding and fix/retest within authorized
+scope. Use `bug-workflow` when tracking or handoff is needed. Clarify ambiguous expectations before
+automating them; no revised contract is required.
 
 ## Pass B — existing-test audit
 
@@ -72,36 +72,18 @@ There is no numeric test limit. Every new case must state:
 
 If that marginal coverage cannot be shown, do not add the case.
 
-Those three are an argument, made by whoever wants the case to exist and checked by nobody. For a
-**P0 scenario** an argument is not enough: the row is classified `automated` only once something has
-shown the test failing for the reason the row names.
+For critical new coverage, check sensitivity: does the test fail for the wrong behaviour it claims
+to catch? A meaningful RED observed before a fix already answers that question. Where behaviour
+already works and sensitivity is uncertain, use a focused temporary fault on an isolated local
+working copy when safe. Compare the new and nearest existing tests, then revert the fault and rerun
+the same checks before any other work. Never inject into a shared/deployed surface or commit it.
+An overly broad fault proves little; aim at the specific forbidden outcome. If existing coverage
+already catches that exact risk, improve or reuse it rather than adding a redundant test.
 
-If the new test is a valid RED — it reaches the intended interface and fails on the assertion that
-names the missing behaviour — that watched fail is the receipt. Record the test, the command, and
-the failure reason.
-
-If the behaviour already exists, there is no honest RED to watch. A test that passes on its first
-run may assert the right thing, the wrong thing, or nothing at all. Produce the substitute on a
-**local working copy only** — never the exploration surface recorded above, never a deployed,
-shared, preview, or QA candidate, and never a commit. Inject the row's **forbidden** state in one
-line of product code, run the new test and the nearest existing tests, then revert:
-
-- **new test fails, existing tests stay green** — the coverage is real and specific. This is the
-  receipt.
-- **existing tests go red too** — that risk was already covered. Re-aim at the exact forbidden
-  state before concluding the new test is redundant; a break wide enough to redden everything
-  proves nothing about either.
-- **new test passes** — it does not catch what it claims, whatever else it asserts. Fix the test,
-  not the mutation.
-
-Aim at the forbidden clause, not at the function. "Swap these two booleans at submit time" is the
-mutation; "throw here" is not.
-
-Revert before running anything else, and confirm the revert by re-running the same tests and seeing
-the pre-injection results return. Record the injected line — the file and symbol it went into —
-both commands, both results, and the confirmed revert. Then propose the row as `automated` in the
-report's proposed Test Contract revision, citing that receipt. Until the receipt exists, propose
-the row as `not-configured`. Below P0, the argument stands on its own.
+Record useful sensitivity evidence with the test result. This checks assertion quality; it does
+not require a contract row, revision, or receipt before a test can count as automation. A missing
+historical sensitivity record alone is not a release blocker; a demonstrated ineffective assertion
+is a real coverage gap.
 
 Write the minimum sufficient tests in the same context as exploration. Run the changed tests and
 the nearest relevant regression scope. Run a full suite only when repository policy requires it or
@@ -110,14 +92,14 @@ the suite is already cheap. Never install a framework without explicit user appr
 Choosing the right seam does not make the test at that seam a good one. Follow
 [behaviour-first tests](tests.md) and [replacing dependencies](mocking.md) for the
 test's own construction, and [scenario-craft.md](../test-plan/scenario-craft.md) when exploration
-turns up a risk the contract has no scenario for.
+turns up a risk whose expected or forbidden outcome needs a clearer definition.
 
 ## Exploration report
 
-Publish one durable report containing candidate provenance, paths explored, observations and Bug
-Cases, the existing-coverage map, the automation delta, changed test files, commands/results, and
-any proposed Test Contract revision.
+Return one concise summary of candidate/environment, paths explored, findings, relevant existing
+coverage, tests changed, commands/results, and remaining risks. Use the existing PR/issue or chosen
+location when writes are authorized; separate contract and candidate records are optional.
 
-Exploration evidence satisfies a release criterion only when the approved Test Contract labels that
-criterion `manual` or `exploratory`. It never substitutes for required automation, and evidence from
-an earlier artifact never proves a later release candidate.
+Manual/exploratory observations count for their demonstrated scope. They do not replace explicitly
+required automation. Reuse unchanged-code evidence only with an equivalence rationale; an earlier
+run alone does not prove a new artifact or changed environment.

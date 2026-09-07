@@ -1,11 +1,10 @@
 # Diagnosis Receipt
 
-Appended to `.harness-ship/bugs/<BUG-ID>.md`, after the Bug Case it diagnoses.
+Optional detail for substantial investigation. Append to the existing issue or chosen record.
 
-- **Stable BUG-ID:** `<existing BUG-ID>`
+- **Finding:** `<existing issue or observation>`
 - **Diagnosis attempt:** `<append-only number>`
 - **Status:** `diagnosed | inconclusive | reproduction-blocked`
-- **Test Contract / trace:** `<revision; scenario → baseline/release delta → originating work>`
 - **Original failed-artifact evidence:** `<artifact/environment + ledger/evidence links>`
 - **Observation method:** `<safe deterministic command or bounded non-destructive observation>`
 - **Safety constraint:** `<none | unsafe | destructive | production-only | intermittent>`
@@ -30,5 +29,5 @@ external consumer of a public entry point, or every dispatch through one dynamic
 reaches only the reported caller>` is a valid single row when the evidence establishes it. An
 unenumerated caller is not a caller ruled out.
 
-Append this receipt to the same stable BUG-ID. Never overwrite an earlier diagnosis attempt, force
+Keep this result with the original finding. Never overwrite an earlier diagnosis attempt, force
 an unsafe reproduction, edit product code, create a second defect, or mark the case verified.

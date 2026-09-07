@@ -3,8 +3,7 @@ name: diagnose
 description: >-
   Root-cause an already-triaged product defect by building a red-capable, deterministic
   reproduction when safe, then ranking falsifiable hypotheses and emitting a Diagnosis Receipt.
-  For a test finding, use only after bug-workflow supplies a stable BUG-ID classified
-  product-defect. This skill diagnoses; it does not edit product code. Triggers: "/diagnose",
+  Use for a product defect needing substantial root-cause investigation. This skill diagnoses; it does not edit product code. Triggers: "/diagnose",
   "root-cause this product defect", "diagnose BUG-ID".
 ---
 
@@ -15,9 +14,9 @@ handoff. `diagnose` does not edit product code, create a replacement defect, cho
 workflow, or mark
 the Bug Case `verified`.
 
-**Test boundary:** if the input came from `testing-workflow`, require an existing stable BUG-ID
-whose classification is `product-defect`. Otherwise run `bug-workflow` and stop; do not bypass
-classification.
+Classify the observation first: product behaviour, test defect, environment problem, or ambiguous
+expectation. A formal BUG-ID or Test Contract is not required. Resolve routine non-product problems
+within authorized scope; use `bug-workflow` when durable tracking or handoff is useful.
 
 ## 1 — Establish a safe observation
 
@@ -38,9 +37,10 @@ cause before you accept it. "Plausible because it matches last time" is exactly 
 
 ## 3 — Append the Diagnosis Receipt
 
-Use `diagnosis-receipt-template.md` and append one outcome to the same stable BUG-ID, in the same
-`.harness-ship/bugs/<BUG-ID>.md` file the Bug Case lives in — append-only, never overwriting a
-previous attempt:
+Use [diagnosis-receipt-template.md](diagnosis-receipt-template.md) only when its detail helps.
+Append findings to the existing issue or chosen record, preserving previous attempts. The legacy
+`.harness-ship/bugs/<BUG-ID>.md` location remains supported without a mandatory local mirror.
+Return one outcome:
 
 - `diagnosed` — evidence identifies a falsifiable root cause and a safe repair seam;
 - `inconclusive` — safe observations exist, but the evidence does not distinguish the remaining
@@ -60,5 +60,5 @@ a caller ruled out; when reach cannot be established from safe observation, the 
 ## Handoff
 
 A `diagnosed` receipt supplies the root cause, its reach, safe repair seam, expected fixed behaviour,
-and retest conditions. Append it to the Bug Case and stop. The user or host agent chooses how to repair and
-produce a new candidate; `testing-workflow` verifies that exact candidate later.
+and retest conditions. Record it in the same summary. The host continues already-authorized repair and retesting using
+the repository workflow; return a handoff only when another owner or session must take over.

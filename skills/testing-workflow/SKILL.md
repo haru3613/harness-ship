@@ -1,154 +1,88 @@
 ---
 name: testing-workflow
 description: >-
-  Execute an approved Test Contract against an exact non-production candidate, preserve every
-  attempt, and produce the evidence consumed by release-gate. Use after a candidate handoff or when
-  someone asks to test a release candidate. Triggers: "/testing-workflow", "test this candidate",
-  "verify this artifact".
+  Test a candidate using current task scope, existing coverage, and concrete risks. Report what
+  passed, what failed, and what remains unverified. Use when asked to test a release candidate
+  or verify an artifact.
 ---
 
 # testing-workflow
 
-Execute the approved Project Test Baseline plus Release Delta. This workflow does not prescribe how
-the feature was developed, redesign expected behaviour from implementation, repair product code, or
-release the candidate.
+Read the repository instructions, current task, relevant changes, and existing tests. Use the
+repository's configured tools and a reproducible non-production surface. A Test Contract,
+contract revision, candidate handoff, and `.harness-ship/` directory are optional; their absence or
+age does not prevent testing. Existing issue criteria and user decisions are sufficient inputs.
 
-Read repository instructions and its `## harness-ship` Config v3 block. Run `hs-setup` only when the
-block is absent or unsupported. Resolve test capabilities at the point of use; never install a
-framework without approval or infer PASS from `not-configured`.
+## 1 — Establish scope and candidate
 
-## 1 — Validate the candidate handoff
+Identify what changed, the expected user behaviour, core regressions, and risks at affected
+boundaries. Read existing criteria where useful, including `.harness-ship/test-contract.md` if
+present. Carry forward standing requirements explicitly applicable to this release. Historical
+release-specific requirements need a current reason to apply; do not import an old checklist
+wholesale. Explain scope decisions. Ask only when an unresolved expectation or safety decision
+changes the next action; continue independent checks while waiting.
 
-Use [candidate-handoff-template.md](candidate-handoff-template.md), written to
-`.harness-ship/candidates/<short-sha>/handoff.md`. Require:
+Record once at execution start:
 
-- approved Test Contract revision and scenario scope;
-- an exact review target when a human-readable PR/ticket projection is wanted;
-- the user-visible change in plain language;
-- full source SHA — or, where the contract's **Release surface owner** is not this repository, its
-  **Candidate identifier** plus what that was read from;
-- exact non-production artifact/environment revision;
-- provenance source and receipt binding the artifact to that SHA or identifier;
-- a writable `.harness-ship/candidates/<short-sha>/`, whose name is that SHA's first twelve
-  characters, or that identifier; and
-- access path, safe fixtures/accounts, known risks, and established test evidence.
+- full source SHA and local modifications, or the actual external build identifier;
+- the tested build/artifact, environment, and how they map to that source;
+- entry point, safe fixtures/accounts, and relevant permissions.
 
-Any missing, placeholder, stale, or mismatched required value makes the handoff `Not ready`. Do not
-execute against production.
+Use the candidate owner's identifier, never this test repository's HEAD as a substitute. Missing
+provenance limits the conclusion: safe exploration can continue, but observations do not prove a
+release artifact. Never seed production or execute this workflow against production.
 
-### Project the QA handoff for humans
+## 2 — Choose the cheapest effective checks
 
-When the handoff names an exact review target and its configured code-review/PR host or issue
-tracker permits comments, render [human-thread-template.md](human-thread-template.md) from the
-canonical handoff and approved Test Contract. Publish it even when the handoff is `Not ready`:
-missing artifact, provenance, environment, or evidence must be visible to the release owner rather
-than remaining hidden in an agent record. An exact candidate directory key is still required to
-identify the projection. Leave the Test result section `Pending` until execution.
+Use existing tests and commands covering the changed behaviour, nearby regressions, negative and
+permission cases, and relevant integration boundaries. Add migration, recovery, device, provider,
+performance, or other checks only when current risk or explicit project policy calls for them.
+Run required repository checks. Do not create a framework or duplicate layers to fill a checklist.
 
-Use the candidate directory key in the hidden marker. Search the exact target for every comment
-carrying that marker:
+Reuse valid results for unchanged code when the relevant dependencies, configuration, fixtures,
+and environment remain applicable. State the original tested identity and why reuse applies.
+An older result alone never proves a new binary, deployment, signing configuration, or external
+provider. Run the affected checks when that boundary changed or equivalence cannot be established.
+Preserve an explicit requirement to run automation on the exact candidate.
 
-- zero matches — create the comment;
-- one match written by the current authenticated identity — update that comment in place;
-- one match from another identity — do not edit it or create a duplicate; report the conflict; and
-- More than one matching comment — do not edit or publish another comment; report the projection
-  failure so a human can reconcile the duplicates.
+Manual and exploratory checks can provide real behavioural evidence. Identify their scope and
+limits; they do not silently replace automation explicitly required by the project or user.
 
-Do not infer a review target from a branch name or edit another author’s marker. If the host cannot
-read, create, or update the projection, preserve the canonical handoff and report the failure. A
-projection failure does not change the handoff status or test result and never makes missing
-evidence pass.
+## 3 — Execute and investigate
 
-**Where the contract-derived values come from depends on the contract's form.** A two-layer contract
-holds them in its Project Test Baseline and Release Delta. A pointer holds its scenario scope in the
-documents it names, and in `Carried here` both the operational values — safe fixtures and accounts,
-environment, evidence location — and the declarations that pass or fail nothing but decide how this
-workflow behaves: who owns the release surface, what identifies a candidate, what this repository
-can see of that owner. A pointer has no separable delta; its delta scope is the handoff's scenario
-scope read against the documents it names. A value neither form supplies is `Not ready` naming which
-one was missing; it is never a reason to infer a safe environment, and an environment inferred
-rather than approved is how a test suite meets production.
+Run the selected checks and preserve commands/steps, results, and useful evidence links in one
+summary. Recheck identity and scope when code, deployment, environment, or criteria change, rather
+than before every unchanged test action. Stop affected checks on unsafe drift.
 
-**Where the contract's Release surface owner is not this repository**, the source SHA is whatever
-that owner exposes, recorded as the **Candidate identifier** the contract defines together with what
-it was read from, and every record below — handoff, ledger, report, Bug Case — carries that same
-value wherever it asks for a source SHA. Where the owner exposes nothing that identifies the build,
-the handoff is `Not ready` for that reason, and the missing identifier is a blocker to raise with the
-owner. **Never substitute this repository's own `HEAD`**: it is the only 40-character SHA in reach,
-it is not the candidate's, and once written here it propagates into the ledger, the report, and every
-Bug Case citing them as a source binding that was never true. This is the one loosening — a contract
-whose release surface *is* this repository still requires the full source SHA.
+Distinguish PASS, FAIL, FLAKY, BLOCKED, and NOT TESTED. A failure followed by a pass under unchanged
+conditions is FLAKY; retain both attempts. A repair or environment change starts a distinct retest
+with the change recorded. Missing infrastructure is not PASS or a product defect.
 
-## 2 — Select the candidate scope
+Before trusting green results, check that assertions observe meaningful behaviour, have independent
+expected values, and expose relevant runtime errors. Correct weak tests through
+`exploratory-testing` when test changes are authorized, then rerun affected coverage.
 
-Execute every required baseline item plus the release delta. Choose the method recorded in the Test
-Contract:
+Classify findings briefly before acting. Fix a routine test/environment problem within authorized
+scope and rerun it. Use `bug-workflow` when a defect needs durable tracking, unresolved investigation,
+or handoff; a non-pass does not automatically require a Bug Case. Preserve the original failure and
+verify the repaired candidate without imposing a separate approval step on already-authorized work.
 
-- automated command at its approved seam;
-- exact manual steps;
-- bounded exploratory method; or
-- `not-configured`, recorded as NOT RUN / NOT TESTED, carrying the contract row's reason into the
-  ledger entry — a row can be `not-configured` because a test exists but nothing has shown it able
-  to fail, and a bare NOT RUN reads as no test at all.
+## 4 — Hand over one useful summary
 
-Test layers follow risk and seam stability, not author role. Avoid rerunning equivalent coverage at
-multiple layers merely to fill a pyramid.
+Use [human-thread-template.md](human-thread-template.md) as an optional outline. State what was
+tested, candidate/environment, commands and actual results, reused evidence with its limits, and
+remaining user-visible risks. Name the next useful action. Testing completion is not release approval.
 
-Exploratory evidence may satisfy only a criterion explicitly marked `manual` or `exploratory`.
-Required automation must run on this exact candidate. Evidence from a local, preview, or older
-artifact cannot prove a later candidate.
+Prefer the existing PR/issue testing section or the user's chosen evidence location. A separate
+handoff, ledger, report, fixed path, or contract revision is not required. Existing candidate files
+remain readable evidence; link them instead of copying them. Optional detailed templates are
+[candidate-handoff-template.md](candidate-handoff-template.md),
+[execution-ledger-template.md](execution-ledger-template.md), and
+[test-report-template.md](test-report-template.md) when a multi-person run benefits from them.
 
-## 3 — Execute append-only
-
-Use [execution-ledger-template.md](execution-ledger-template.md), written to
-`.harness-ship/candidates/<short-sha>/ledger.md`. Immediately before each action,
-revalidate the Test Contract revision, source SHA or candidate identifier, artifact revision,
-provenance receipt, evidence destination, and command/manual method. On drift, append NOT RUN / NOT TESTED and stop that item.
-
-Record every attempt, including PASS, with scenario ID, method, raw outcome, normalized result, and
-durable evidence. Never erase retries.
-
-Raw outcomes are PASS, FAIL, BLOCKED, or NOT RUN. Normalize in this order:
-
-1. latest NOT RUN → NOT TESTED;
-2. latest BLOCKED → BLOCKED;
-3. mixed FAIL and PASS in one run → FLAKY;
-4. latest PASS → PASS;
-5. latest FAIL → FAIL.
-
-For P0, anything except PASS makes the candidate Not ready. Quarantine never manufactures PASS.
-
-## 4 — Check test quality
-
-Before trusting green evidence, confirm the check observes the approved behaviour through a stable
-public seam, uses an independent expected value, and does not ignore runtime/console errors. A weak
-or tautological check becomes BLOCKED until corrected and rerun.
-
-## 5 — Report and route
-
-Produce [test-report-template.md](test-report-template.md) at
-`.harness-ship/candidates/<short-sha>/report.md` from the ledger. State each user journey, exact
-candidate, method, evidence, gaps, and one verdict: `Ready for release gate` or `Not ready`.
-
-When the handoff has a review target, regenerate both sections of
-[human-thread-template.md](human-thread-template.md) from the canonical handoff, ledger, and report,
-then update the same marker-bearing comment using the rules above. Put the report verdict first,
-describe outcomes in user language, link durable evidence, and distinguish automated PASS,
-manual/exploratory evidence, FAIL, FLAKY, BLOCKED, and NOT TESTED. Never copy secrets, credentials,
-raw tokens, fixture PII, or full logs into the projection.
-
-For every non-pass, run `bug-workflow` under one stable BUG-ID, recorded at
-`.harness-ship/bugs/<BUG-ID>.md`. Harness Ship classifies the finding, preserves evidence, and
-emits repair/retest conditions; it does not dictate the repair workflow.
-
-When a fixed candidate returns, it is a new candidate at a new source SHA — or a new identifier,
-whichever kind this candidate's handoff recorded above: it gets its own directory and its own ledger
-at `.harness-ship/candidates/<short-sha>/ledger.md`, keyed by that same value and seeded with
-a link back to the failed candidate's directory. Require the same BUG-ID, original failed evidence,
-diagnosis when available, repair summary, the new one of whichever the handoff recorded, new
-artifact/environment revision, new provenance receipt, affected scenarios, and neighbouring regression scope — continuity runs
-through the BUG-ID, not through reusing a prior candidate's ledger file. Rerun the original
-observation, affected scenarios, and proportionate neighbours. Never overwrite the failed artifact
-or call implementation evidence a verification result.
-
-`release-gate` consumes this report. Release promotion remains a separate human-authorized action.
+Publish only when the user has authorized that PR/issue write. Otherwise return the summary in the
+session. When updating a candidate comment, resolve the exact review target and candidate key, find
+its `<!-- harness-ship:testing:<candidate-key> -->` marker, and update only a single match owned by
+the current authenticated identity. With zero matches, create one; with multiple matches or another
+author's match, report the conflict without editing or duplicating it. Publication failure does not
+change test results. Keep secrets, credentials, raw tokens, fixture PII, and full logs out of comments.
