@@ -100,6 +100,14 @@
       "declarations": [
         "issue-111"
       ]
+    },
+    {
+      "version": "7.0.0",
+      "declarations": [
+        "issue-115",
+        "issue-116",
+        "issue-119"
+      ]
     }
   ]
 }

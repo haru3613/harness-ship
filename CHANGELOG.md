@@ -1,5 +1,11 @@
 # Changelog
 
+## 7.0.0
+
+- [issue-115] Rename the setup skill to hs-setup so Claude Code, Codex, and Grok Build users can tell it apart from other /setup skills. Existing Config v3 projects do not rerun hs-setup solely because of the rename. (classification: minor; migration: recommended).
+- [issue-116] First-run hs-setup writes host-neutral test-engineer standing rules and fail-open zero-LLM project-scoped hooks for Claude Code, Codex, and Grok Build. Existing Config v3 blocks omit the optional watch field and stay off. (classification: minor; migration: recommended).
+- [issue-119] Remove mandatory Test Contract and fixed candidate-record gates. Select verification from current scope and risk, use one summary, and retain optional legacy records; consumers expecting mandatory files must opt in or read the chosen summary. Config v3 is unchanged. (classification: breaking; migration: required).
+
 ## 6.1.0
 
 - [issue-111] Project the canonical candidate handoff and test report into one verdict-first, candidate-scoped PR or ticket comment so release owners can read what QA should verify, what passed, what remains untested, and what happens next without treating the projection as a second source of truth. (classification: minor; migration: none).
