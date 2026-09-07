@@ -7,6 +7,7 @@
   "paths": [
     "README.md",
     "docs/upgrade-guide.md",
+    "scripts/check_release_contract.py",
     "skills/advise/SKILL.md",
     "skills/bug-workflow/SKILL.md",
     "skills/bug-workflow/bug-case-template.md",
@@ -22,6 +23,7 @@
     "skills/testing-workflow/human-thread-template.md",
     "skills/testing-workflow/test-report-template.md",
     "tests/test_repo_contract.py",
-    "watch/RULES.md"
+    "watch/RULES.md",
+    "watch/detect.py"
   ]
 }
